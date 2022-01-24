@@ -138,7 +138,7 @@ namespace NetSignal
             connectors.tcpClient = null;
         }
 
-        public static void InitializeSingleConnection(ref Connection connectors, ref ConnectionData connectionData)
+        public async static Task<Tuple<Connection,ConnectionData>> InitializeSingleConnection(Connection connectors, ConnectionData connectionData)
         {
             connectors = new Connection();
             try
@@ -157,8 +157,9 @@ namespace NetSignal
                 connectors.tcpClient = new TcpClient();
 
                 Console.WriteLine("client connects to tcp" + connectionData.serverIp + ":" + connectionData.sendToPort + " " + connectionData.toSendToThis);
-                connectors.tcpClient.Connect(connectionData.toSendToThis);
+                await connectors.tcpClient.ConnectAsync(connectionData.toSendToThis.Address, connectionData.toSendToThis.Port);
 
+                Console.WriteLine("client connected");
                 NetworkStream stream = connectors.tcpClient.GetStream();
                 //Byte[] data = Encoding.ASCII.GetBytes("hallihallo"); //TODO there is only one type of message right now
 
@@ -167,10 +168,14 @@ namespace NetSignal
 
                 Byte[] data = Encoding.ASCII.GetBytes(connectionData.listenPort.ToString());//only send the port we are listening to over udp
 
-                stream.Write(data, 0, data.Length);
+                Console.WriteLine("client write my port");
+                await stream.WriteAsync(data, 0, data.Length);
+                Console.WriteLine("client written");
+
                 data = new Byte[256];
                 string response = null;
-                var byteCount = stream.Read(data, 0, data.Length);
+                var byteCount = await stream.ReadAsync(data, 0, data.Length);
+                Console.WriteLine("client read client id");
                 response = Encoding.ASCII.GetString(data, 0, byteCount);
                 var myClientID = int.Parse(response);
                 connectionData.clientID = myClientID;
@@ -183,6 +188,7 @@ namespace NetSignal
             {
                 Console.WriteLine(e);
             }
+            return new Tuple<Connection, ConnectionData>(connectors, connectionData);
         }
 
         public static void ShutDownConnection(ref Connection connectors)
@@ -211,7 +217,7 @@ namespace NetSignal
             thread.Start();
         }
 
-        public static void AcceptTCPConnections(ConnectionMapping connectionMapping, Connection by, Connection[] storeToConnections, ConnectionData[] storeToConnectionDatas, Func<bool> cancel, Action report)
+        public static async void AcceptTCPConnections(ConnectionMapping connectionMapping, Connection by, Connection[] storeToConnections, ConnectionData[] storeToConnectionDatas, Func<bool> cancel, Action report)
         {
             try
             {
@@ -221,14 +227,17 @@ namespace NetSignal
                 while (!cancel())
                 {
                     //waiting for connection
-                    TcpClient connection = by.tcpListener.AcceptTcpClient();
+                    Console.WriteLine("AcceptTCPConnections: wait for tcp client");
+                    TcpClient connection = await by.tcpListener.AcceptTcpClientAsync();
+                    
 
                     data = null;
 
                     NetworkStream stream = connection.GetStream();
 
+                    Console.WriteLine("AcceptTCPConnections: read stream");
                     int i;
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
+                    while ((i = await stream.ReadAsync(bytes, 0, bytes.Length)) != 0)
                     {
                         //TODO here we need user defined filtering to deserialize into actual IncomingSignals!
                         //expect ud endpoint
@@ -254,7 +263,7 @@ namespace NetSignal
                         Console.WriteLine("tcp received: " + data + " , will send back id " + clientID);
 
                         byte[] response = Encoding.ASCII.GetBytes(clientID.ToString());
-                        stream.Write(response, 0, response.Length);
+                        await stream.WriteAsync(response, 0, response.Length);
                     }
                     stream.Close();
                     connection.Close();
@@ -312,7 +321,7 @@ namespace NetSignal
         }
 
 
-        public static void SyncSignalsToAll(Connection with,  OutgoingSignal[] signals, Func<bool> cancel, params ConnectionData[] all)
+        public async static void SyncSignalsToAll(Connection with,  OutgoingSignal[] signals, Func<bool> cancel, params ConnectionData[] all)
         {
             try
             {
@@ -331,10 +340,12 @@ namespace NetSignal
                                 }
                                 Console.WriteLine("data is dirty. send it to " + to.thisListensTo);
                                 byte[] toSend = Encoding.ASCII.GetBytes(SignalCompressor.Compress(signals[signalI].data));
-                                with.udpClient.Send(toSend, toSend.Length, toSendTo);
+                                await with.udpClient.SendAsync(toSend, toSend.Length, toSendTo);
+                                //with.udpClient.Send(toSend, toSend.Length, toSendTo);
                                 signals[signalI].dataDirty = false;
                             }
                         }
+                        await Task.Delay(1);
                     }
                 }
             }
@@ -354,7 +365,7 @@ namespace NetSignal
             thread.Start();
         }
 
-        public static void ReceiveSignals(Connection connection, ConnectionData connectionData, IncomingSignal[] signals, Func<bool> cancel, Action<string> report)
+        public async static void ReceiveSignals(Connection connection, ConnectionData connectionData, IncomingSignal[] signals, Func<bool> cancel, Action<string> report)
         {
             try
             {
@@ -363,7 +374,11 @@ namespace NetSignal
                 {
                     //Console.WriteLine("I (" + connectionData.listenToEndpoint + ") connect to " + receiveFrom);
                     //connection.udpClient.Connect(receiveFrom);
-                    var bytes = connection.udpClient.Receive(ref receiveFrom);
+                    //var bytes = connection.udpClient.Receive(ref receiveFrom);
+                    var receiveResult = await connection.udpClient.ReceiveAsync();
+                    receiveFrom = receiveResult.RemoteEndPoint;
+                    var bytes = receiveResult.Buffer;
+
                     Console.WriteLine("I (" + connectionData.thisListensTo + ") received sth from (?)" + receiveFrom);
                     //connection.udpClient.Close();
                     //if (receiveFrom != connectionData.listenToEndpoint)
@@ -390,10 +405,11 @@ namespace NetSignal
 
     public class NetSignalStarter
     {
-        public static void StartServer(ref Connection serverConnection, ref ConnectionData serverData, Func<bool> cancel, ref ConnectionMapping connectionMapping, Connection[] connections, ConnectionData[] connectionDatas, OutgoingSignal[] outgoingSignals, IncomingSignal[] incomingSignals)
+        public async static Task<Tuple<Connection,ConnectionData,ConnectionMapping>> StartServer(Connection serverConnection, ConnectionData serverData, Func<bool> cancel, ConnectionMapping connectionMapping, Connection[] connections, ConnectionData[] connectionDatas, OutgoingSignal[] outgoingSignals, IncomingSignal[] incomingSignals)
         {
             //serverData.listenPort = 3000;
             //serverData.serverIp = null;
+            Console.WriteLine("StartServer: init multi connection");
             ConnectionUpdater.InitializeMultiConnection(ref serverConnection, ref serverData);
 
             connectionMapping.ClientIdentificationToEndpoint = new Dictionary<int, IPEndPoint>();
@@ -401,26 +417,43 @@ namespace NetSignal
 
             Console.WriteLine(serverConnection.udpClient);
 
-            SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
+            Console.WriteLine("StartServer: start receive signals");
+            //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
+            SignalUpdater.ReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
 
-            ConnectionUpdater.StartThreadAcceptTCPConnections(connectionMapping, serverConnection, connections, connectionDatas, cancel, () => { });
+            Console.WriteLine("StartServer: start accept tcp connections");
+            //ConnectionUpdater.StartThreadAcceptTCPConnections(connectionMapping, serverConnection, connections, connectionDatas, cancel, () => { });
+            ConnectionUpdater.AcceptTCPConnections(connectionMapping, serverConnection, connections, connectionDatas, cancel, () => { });
 
-            SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
+            Console.WriteLine("StartServer: start sync signals");
+            //SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
+            SignalUpdater.SyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
+
+            return new Tuple<Connection, ConnectionData, ConnectionMapping>(serverConnection, serverData, connectionMapping);
         }
 
-        public static void StartClient(ref Connection clientCon, ref ConnectionData clientData,ref ConnectionData toServer, Func<bool> cancel, IncomingSignal[] incomingSignals, OutgoingSignal[] outgoingSignals)
+        public async static Task<Tuple<Connection,ConnectionData>> StartClient(Connection clientCon, ConnectionData clientData,ConnectionData toServer, Func<bool> cancel, IncomingSignal[] incomingSignals, OutgoingSignal[] outgoingSignals)
         {
             /*clientData.listenPort = 3001;
             clientData.sendToPort = 3000;
             clientData.serverIp = "127.0.0.1";*/
-            ConnectionUpdater.InitializeSingleConnection(ref clientCon, ref clientData);
+            Console.WriteLine("StartClient: init single connection");
+            var returnTuple = await ConnectionUpdater.InitializeSingleConnection(clientCon, clientData);
+            clientCon = returnTuple.Item1;
+            clientData = returnTuple.Item2;
 
-            SignalUpdater.StartThreadReceiveSignals(clientCon, clientData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
+            Console.WriteLine("StartClient: start receive signals");
+            //SignalUpdater.StartThreadReceiveSignals(clientCon, clientData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
+            SignalUpdater.ReceiveSignals(clientCon, clientData, incomingSignals, cancel, (string s) => Console.WriteLine(s));
 
-            SignalUpdater.StartThreadSyncSignalsToAll(clientCon, outgoingSignals, cancel, toServer);
+            Console.WriteLine("StartClient: start sync signals to server");
+            //SignalUpdater.StartThreadSyncSignalsToAll(clientCon, outgoingSignals, cancel, toServer);
+            SignalUpdater.SyncSignalsToAll(clientCon, outgoingSignals, cancel, toServer);
 
             //var datagram = Encoding.ASCII.GetBytes("hellosent");
             //clientCon.udpClient.Send(datagram, datagram.Length);
+
+            return new Tuple<Connection, ConnectionData>(clientCon, clientData);
         }
 
         /*
@@ -504,11 +537,18 @@ namespace NetSignal
 
 
 
-
-            StartServer(ref server, ref serverData, cancel, ref mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            Console.WriteLine("TestDuplex: start server");
+            var updatedServerTuple = await StartServer(server, serverData, cancel,mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 signalsSentFromServer, signalsSeenFromServer);
+            server = updatedServerTuple.Item1;
+            serverData = updatedServerTuple.Item2;
+            mapping = updatedServerTuple.Item3;
 
-            StartClient(ref client0, ref clientData0, ref serverData, cancel, signalsSeenFromClient, signalsSentFromClient);
+            await Task.Delay(1000);
+            Console.WriteLine("TestDuplex: start client");
+            var updatedTuple = await StartClient(client0, clientData0, serverData, cancel, signalsSeenFromClient, signalsSentFromClient);
+            client0 = updatedTuple.Item1;
+            clientData0 = updatedTuple.Item2;
 
             //Server and Client are not listening/sending to the right endpoint?!
             //server listens to Ip.any, 3000 , initialized with UdpClient(...), whereas client doesnt listen, is init with UdpClient() and then .Connect(...) . what exactly is the differnece?
@@ -596,11 +636,15 @@ namespace NetSignal
 
 
 
-            StartServer(ref server, ref serverData, cancel, ref mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            var updatedServerTuple = await StartServer(server, serverData, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 signalsSentFromServer, signalsSeenFromServer);
+            server = updatedServerTuple.Item1;
+            serverData = updatedServerTuple.Item2;
+            mapping = updatedServerTuple.Item3;
 
-            StartClient(ref client0, ref clientData0, ref serverData, cancel, signalsSeenFromClient, signalsSentFromClient);
-
+            var updatedTuple = await StartClient(client0, clientData0, serverData, cancel, signalsSeenFromClient, signalsSentFromClient);
+            client0 = updatedTuple.Item1;
+            clientData0 = updatedTuple.Item2;
             //Server and Client are not listening/sending to the right endpoint?!
             //server listens to Ip.any, 3000 , initialized with UdpClient(...), whereas client doesnt listen, is init with UdpClient() and then .Connect(...) . what exactly is the differnece?
 
@@ -659,11 +703,15 @@ namespace NetSignal
             
             
 
-            StartServer(ref server, ref serverData, cancel, ref mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            var updatedServerTuple = await StartServer(server, serverData, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 signalsSentFromServer, signalsSeenFromServer);
+            server = updatedServerTuple.Item1;
+            serverData = updatedServerTuple.Item2;
+            mapping = updatedServerTuple.Item3;
 
-            StartClient(ref client0, ref clientData0, ref serverData, cancel, signalsSeenFromClient0, signalsSentFromClient);
-
+            var updatedTuple = await StartClient(client0, clientData0, serverData, cancel, signalsSeenFromClient0, signalsSentFromClient);
+            client0 = updatedTuple.Item1;
+            clientData0 = updatedTuple.Item2;
             //Server and Client are not listening/sending to the right endpoint?!
             //server listens to Ip.any, 3000 , initialized with UdpClient(...), whereas client doesnt listen, is init with UdpClient() and then .Connect(...) . what exactly is the differnece?
 
