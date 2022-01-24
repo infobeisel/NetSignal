@@ -68,10 +68,24 @@ namespace NetSignal
 
     public struct IncomingSignal
     {
+        private FloatDataPackage dataMember;
         public FloatDataPackage data
         {
-            get; internal set;
+            internal set
+            {
+                if (!dataMember.data.Equals(value.data))
+                {
+                    dataHasBeenUpdated = true;
+                }
+                dataMember = value;
+            }
+            get
+            {
+                return dataMember;
+            }
         }
+
+        public bool dataHasBeenUpdated;
 
         public override string ToString()
         {
@@ -108,8 +122,11 @@ namespace NetSignal
     public struct Connection
     {
         public UdpClient udpClient;
+
         public TcpClient tcpClient;
+        public DateTime tcpKeepAlive;//maybe, to keep the tcp connection open.
         public TcpListener tcpListener;
+        
     }
 
     public struct ConnectionMapping
@@ -207,15 +224,6 @@ namespace NetSignal
             }
         }
 
-        public static void StartThreadAcceptTCPConnections(ConnectionMapping connectionMapping, Connection by, Connection[] storeToConnections, ConnectionData[] storeToConnectionDatas, Func<bool> cancel, Action report)
-        {
-            if (connectionMapping.EndPointToClientIdentification == null)
-                throw new NullReferenceException("need to init mapping otherwise will not be referable");
-
-            Action accept = () => AcceptTCPConnections(connectionMapping, by, storeToConnections, storeToConnectionDatas, cancel, report);
-            var thread = new Thread(new ThreadStart(accept));
-            thread.Start();
-        }
 
         public static async void AcceptTCPConnections(ConnectionMapping connectionMapping, Connection by, Connection[] storeToConnections, ConnectionData[] storeToConnectionDatas, Func<bool> cancel, Action report)
         {
@@ -313,14 +321,7 @@ namespace NetSignal
 
     public class SignalUpdater
     {
-        public static void StartThreadSyncSignalsToAll(Connection with, OutgoingSignal[] signals, Func<bool> cancel, params ConnectionData[] all)
-        {
-            Action sync = () => SyncSignalsToAll(with, signals, cancel, all);
-            var thread = new Thread(new ThreadStart(sync));
-            thread.Start();
-        }
-
-
+        
         public async static void SyncSignalsToAll(Connection with,  OutgoingSignal[] signals, Func<bool> cancel, params ConnectionData[] all)
         {
             try
@@ -358,13 +359,7 @@ namespace NetSignal
             }
         }
 
-        public static void StartThreadReceiveSignals(Connection connection, ConnectionData connectionData, IncomingSignal[] signals, Func<bool> cancel, Action<string> report)
-        {
-            Action receive = () => ReceiveSignals(connection, connectionData, signals, cancel, report);
-            var thread = new Thread(new ThreadStart(receive));
-            thread.Start();
-        }
-
+        
         public async static void ReceiveSignals(Connection connection, ConnectionData connectionData, IncomingSignal[] signals, Func<bool> cancel, Action<string> report)
         {
             try
@@ -498,7 +493,7 @@ namespace NetSignal
             NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, signalSentFromServer, signalSeenFromClient, signalsSentFromClient, signalsSeenFromServer, conFromServer, consFromServer);
 
             //TODOS:
-            //move from synchronous to ASYNC send and receive.
+            //move from synchronous to ASYNC send and receive. (CHECK)
             //do not always open and close new tcp connection?
             //implement sync and receive signals RELIABLE version (over tcp)
             //refactor into separate files
