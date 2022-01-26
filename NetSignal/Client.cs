@@ -232,6 +232,55 @@ namespace NetSignal
 
     public class ConnectionUpdater
     {
+        private const int connectionInitialsBytesCount = 64;
+
+        [ThreadStaticAttribute]
+        private static byte[] connectionInitialsBytesServerRead_ = null;
+        private static byte[] connectionInitialsBytesServerRead
+        {
+            get
+            {
+                if (connectionInitialsBytesServerRead_ == null)
+                    connectionInitialsBytesServerRead_ = new byte[connectionInitialsBytesCount];
+                return connectionInitialsBytesServerRead_;
+            }
+        }
+
+        [ThreadStaticAttribute]
+        private static byte[] connectionInitialsBytesClientRead_ = null;
+        private static byte[] connectionInitialsBytesClientRead
+        {
+            get
+            {
+                if (connectionInitialsBytesClientRead_ == null)
+                    connectionInitialsBytesClientRead_ = new byte[connectionInitialsBytesCount];
+                return connectionInitialsBytesClientRead_;
+            }
+        }
+
+        [ThreadStaticAttribute]
+        private static byte[] connectionInitialsBytesServerWrite_ = null;
+        private static byte[] connectionInitialsBytesServerWrite
+        {
+            get
+            {
+                if (connectionInitialsBytesServerWrite_ == null)
+                    connectionInitialsBytesServerWrite_ = new byte[connectionInitialsBytesCount];
+                return connectionInitialsBytesServerWrite_;
+            }
+        }
+
+        [ThreadStaticAttribute]
+        private static byte[] connectionInitialsBytesClientWrite_ = null;
+        private static byte[] connectionInitialsBytesClientWrite
+        {
+            get
+            {
+                if (connectionInitialsBytesClientWrite_ == null)
+                    connectionInitialsBytesClientWrite_ = new byte[connectionInitialsBytesCount];
+                return connectionInitialsBytesClientWrite_;
+            }
+        }
 
 
         public static void InitializeMultiConnection(ref ConnectionAPIs connectors, ref ConnectionMetaData connectionData, ConnectionState connectionState)
@@ -374,54 +423,30 @@ namespace NetSignal
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(connectors, connectionData);
         }
 
-        [ThreadStaticAttribute]
-        private static byte [] connectionInitialsBytesServer_ = null;
-        private const int connectionInitialsBytesCount = 64;
-        private static byte [] connectionInitialsBytesServer
-        {
-            get
-            {
-                if (connectionInitialsBytesServer_ == null)
-                    connectionInitialsBytesServer_ = new byte[connectionInitialsBytesCount];
-                return connectionInitialsBytesServer_;
-            }
-        }
-
-        [ThreadStaticAttribute]
-        private static byte[] connectionInitialsBytesClient_ = null;
-        private static byte[] connectionInitialsBytesClient
-        {
-            get
-            {
-                if (connectionInitialsBytesClient_ == null)
-                    connectionInitialsBytesClient_ = new byte[connectionInitialsBytesCount];
-                return connectionInitialsBytesClient_;
-            }
-        }
-
         private static async Task<ConnectionMetaData> ExchangeConnectionInitials(ConnectionAPIs connectors, ConnectionMetaData connectionData)
         {
             //byte[] data = Encoding.ASCII.GetBytes(connectionData.listenPort.ToString());//only send the port we are listening to over udp
-            Util.FlushBytes(connectionInitialsBytesClient);
-            await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionInitialsBytesClient,
+            Util.FlushBytes(connectionInitialsBytesClientWrite);
+            await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionInitialsBytesClientWrite,
                 async () =>
                 {
                     var portString = connectionData.listenPort.ToString();
                     
-                    Encoding.ASCII.GetBytes(portString, 0, portString.Length, connectionInitialsBytesClient, 1);
+                    Encoding.ASCII.GetBytes(portString, 0, portString.Length, connectionInitialsBytesClientWrite, 1);
 
                     Logging.Write("client write my port");
-                    await connectors.tcpStream.WriteAsync(connectionInitialsBytesClient, 0, connectionInitialsBytesClient.Length);
+                    await connectors.tcpStream.WriteAsync(connectionInitialsBytesClientWrite, 0, connectionInitialsBytesClientWrite.Length);
                     Logging.Write("client written");
 
                     string response = null;
-                    var byteCount = await connectors.tcpStream.ReadAsync(connectionInitialsBytesClient, 0, connectionInitialsBytesClient.Length);
+                    Util.FlushBytes(connectionInitialsBytesClientRead);
+                    var byteCount = await connectors.tcpStream.ReadAsync(connectionInitialsBytesClientRead, 0, connectionInitialsBytesClientRead.Length);
 
-                    await MessageDeMultiplexer.Divide(connectionInitialsBytesClient, async () => { Logging.Write("handle float!? unexpected reply to client's tcp connection request"); },
+                    await MessageDeMultiplexer.Divide(connectionInitialsBytesClientRead, async () => { Logging.Write("handle float!? unexpected reply to client's tcp connection request"); },
                         async () =>
                         {
-                            Logging.Write("client read client id from "+ Encoding.ASCII.GetString(connectionInitialsBytesClient, 0, byteCount ));
-                            response = Encoding.ASCII.GetString(connectionInitialsBytesClient, 1, byteCount - 1);
+                            Logging.Write("client read client id from "+ Encoding.ASCII.GetString(connectionInitialsBytesClientRead, 0, byteCount ));
+                            response = Encoding.ASCII.GetString(connectionInitialsBytesClientRead, 1, byteCount - 1);
                             var myClientID = int.Parse(response);
                             connectionData.clientID = myClientID;
                             Logging.Write("i am client " + myClientID);
@@ -480,7 +505,8 @@ namespace NetSignal
                     int readByteCount = 0;
                     try
                     {
-                        readByteCount = await stream.ReadAsync(connectionInitialsBytesServer, 0, connectionInitialsBytesServer.Length);
+                        Util.FlushBytes(connectionInitialsBytesServerRead);
+                        readByteCount = await stream.ReadAsync(connectionInitialsBytesServerRead, 0, connectionInitialsBytesServerRead.Length);
                     } catch (Exception e)
                     {
                         Logging.Write("StartProcessTCPConnections: tcp listener stream got closed, (unfortunately) this is intended behaviour, stop reading.");
@@ -489,12 +515,12 @@ namespace NetSignal
 
                     if ( readByteCount != 0)
                     {
-                        await MessageDeMultiplexer.Divide(connectionInitialsBytesServer,
+                        await MessageDeMultiplexer.Divide(connectionInitialsBytesServerRead,
                             async () => { Logging.Write("tcp float signals not yet implemented and should NOT occur here!?"); },
                             async () => {
                                 //TODO here we need user defined filtering to deserialize into actual IncomingSignals!
                                 //expect ud endpoint
-                                data = Encoding.ASCII.GetString(connectionInitialsBytesServer, 1, readByteCount-1);
+                                data = Encoding.ASCII.GetString(connectionInitialsBytesServerRead, 1, readByteCount-1);
 
                                 //incoming connection, try to identify
                                 IPEndPoint clientEndpoint;
@@ -519,15 +545,15 @@ namespace NetSignal
 
                                     Logging.Write("tcp received: " + data + " , will send back id " + clientID);
 
-                                    Util.FlushBytes(connectionInitialsBytesServer);
-                                    await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionInitialsBytesServer, async () =>
+                                    Util.FlushBytes(connectionInitialsBytesServerWrite);
+                                    await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionInitialsBytesServerWrite, async () =>
                                     {
                                         var clientIdStr = clientID.ToString();
                                         
-                                        Encoding.ASCII.GetBytes(clientIdStr, 0, clientIdStr.Length, connectionInitialsBytesServer, 1);
+                                        Encoding.ASCII.GetBytes(clientIdStr, 0, clientIdStr.Length, connectionInitialsBytesServerWrite, 1);
                                         try
                                         {
-                                            await stream.WriteAsync(connectionInitialsBytesServer, 0, connectionInitialsBytesServer.Length);
+                                            await stream.WriteAsync(connectionInitialsBytesServerWrite, 0, connectionInitialsBytesServerWrite.Length);
                                         }
                                         catch (Exception e)
                                         {
@@ -591,26 +617,58 @@ namespace NetSignal
 
     public class SignalUpdater
     {
-        [ThreadStaticAttribute]
-        private static byte[] signalBytes_ = null;
         private const int signalBytesCount = 256;
-        private static byte[] signalBytes
+
+        [ThreadStaticAttribute]
+        private static byte[] signalBytesServerRead_ = null;
+        public static byte[] signalBytesServerRead
         {
             get
             {
-                if (signalBytes_ == null)
-                    signalBytes_ = new byte[signalBytesCount];
-                return signalBytes_;
+                if (signalBytesServerRead_ == null)
+                    signalBytesServerRead_ = new byte[signalBytesCount];
+                return signalBytesServerRead_;
+            }
+        }
+        private static byte[] signalBytesServerWrite_ = null;
+        public static byte[] signalBytesServerWrite
+        {
+            get
+            {
+                if (signalBytesServerWrite_ == null)
+                    signalBytesServerWrite_ = new byte[signalBytesCount];
+                return signalBytesServerWrite_;
             }
         }
 
+        private static byte[] signalBytesClientWrite_= null;
+        public static byte[] signalBytesClientWrite
+        {
+            get
+            {
+                if (signalBytesClientWrite_ == null)
+                    signalBytesClientWrite_ = new byte[signalBytesCount];
+                return signalBytesClientWrite_;
+            }
+        }
+
+        private static byte[] signalBytesClientRead_ = null;
+        public static byte[] signalBytesClientRead
+        {
+            get
+            {
+                if (signalBytesClientRead_ == null)
+                    signalBytesClientRead_ = new byte[signalBytesCount];
+                return signalBytesClientRead_;
+            }
+        }
         //uses tcp to sync signals reliably
         public async static void SyncSignalsToAllReliably(ConnectionAPIs with, OutgoingSignal [] signals, Func<bool> cancel, params ConnectionAPIs [] toAllCons)
         {
 
         }
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(ConnectionAPIs with,  OutgoingSignal[] signals, Func<bool> cancel, params ConnectionMetaData[] all)
+        public async static void SyncSignalsToAll(ConnectionAPIs with,  OutgoingSignal[] signals, byte[] usingBytes, Func<bool> cancel, params ConnectionMetaData[] all)
         {
             try
             {
@@ -630,12 +688,12 @@ namespace NetSignal
                                 Logging.Write("data is dirty. send it to " + to.thisListensTo);
                                 //byte[] toSend = Encoding.ASCII.GetBytes(SignalCompressor.Compress(signals[signalI].data));
                                 var dataStr = SignalCompressor.Compress(signals[signalI].data);
-                                Util.FlushBytes(signalBytes);
-                                await MessageDeMultiplexer.MarkFloatSignal(signalBytes, async () => {
+                                Util.FlushBytes(usingBytes);
+                                await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () => {
                                     
-                                    Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, signalBytes, 1);
+                                    Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, usingBytes, 1);
                                     try {
-                                        await with.udpClient.SendAsync(signalBytes, signalBytes.Length, toSendTo);
+                                        await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
                                     }
                                     catch (SocketException e)
                                     {
@@ -660,7 +718,7 @@ namespace NetSignal
         }
 
 
-        public async static void ReceiveSignals(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, IncomingSignal[] signals, Func<bool> cancel, Action<string> report)
+        public async static void ReceiveSignals(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, IncomingSignal[] signals, byte[] usingBytes, Func<bool> cancel, Action<string> report)
         {
             try
             {
@@ -735,7 +793,7 @@ namespace NetSignal
 
             Logging.Write("StartServer: start receive signals");
             //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Logging.Write(s));
-            SignalUpdater.ReceiveSignals(serverConnection, serverData, serverState, incomingSignals, cancel, (string s) => Logging.Write(s));
+            SignalUpdater.ReceiveSignals(serverConnection, serverData, serverState, incomingSignals,SignalUpdater.signalBytesServerRead, cancel, (string s) => Logging.Write(s));
 
             Logging.Write("StartServer: start accept tcp connections");
             //ConnectionUpdater.StartThreadAcceptTCPConnections(connectionMapping, serverConnection, connections, connectionDatas, cancel, () => { });
@@ -743,7 +801,7 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             //SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
-            SignalUpdater.SyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
+            SignalUpdater.SyncSignalsToAll(serverConnection, outgoingSignals, SignalUpdater.signalBytesServerWrite, cancel, connectionDatas);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection, cancel, serverState);
             ConnectionUpdater.AwaitAndPerformTearDownTCPListener(serverConnection, cancel, serverState, connections, connectionStates, connectionDatas, connectionMapping);
@@ -763,11 +821,11 @@ namespace NetSignal
 
             Logging.Write("StartClient: start receive signals");
             //SignalUpdater.StartThreadReceiveSignals(clientCon, clientData, incomingSignals, cancel, (string s) => Logging.Write(s));
-            SignalUpdater.ReceiveSignals(clientCon, clientData,clientState, incomingSignals, cancel, (string s) => Logging.Write(s));
+            SignalUpdater.ReceiveSignals(clientCon, clientData,clientState, incomingSignals, SignalUpdater.signalBytesClientRead, cancel, (string s) => Logging.Write(s));
 
             Logging.Write("StartClient: start sync signals to server");
             //SignalUpdater.StartThreadSyncSignalsToAll(clientCon, outgoingSignals, cancel, toServer);
-            SignalUpdater.SyncSignalsToAll(clientCon, outgoingSignals, cancel, toServer);
+            SignalUpdater.SyncSignalsToAll(clientCon, outgoingSignals, SignalUpdater.signalBytesClientWrite, cancel, toServer);
 
 
             ConnectionUpdater.AwaitAndPerformTearDownClientTCP(clientCon, cancel, clientState);
