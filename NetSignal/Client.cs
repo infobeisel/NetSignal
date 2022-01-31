@@ -7,6 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using System.Runtime.InteropServices;
+using System.Net.Http;
+using System.Xml.Serialization;
+using System.Data.SQLite;
+using System.Data;
+
 namespace NetSignal
 {
 
@@ -87,6 +92,10 @@ namespace NetSignal
     //data necessary to run a connection, does (should!) not change during lifetime
     public struct ConnectionMetaData
     {
+
+        public string matchmakingServerIp;
+        public int matchmakingServerPort;
+
         public string serverIp;
         public int listenPort;
         public int sendToPort;
@@ -110,8 +119,9 @@ namespace NetSignal
         public TcpClient tcpClient;
         public NetworkStream tcpStream;
         public TcpListener tcpListener;
-        public object udpClientLock;
-        public object tcpClientLock;
+
+        public HttpListener httpListener;
+        public  HttpClient httpClient;
     }
 
     public struct ConnectionMapping
@@ -608,6 +618,105 @@ namespace NetSignal
                 }
             }
         }
+
+        public static void InitializeMatchMakingServer(ref ConnectionAPIs connection, ref ConnectionMetaData data, ref ConnectionState state) 
+        {
+            try
+            {
+                
+                connection.httpListener = new HttpListener();
+                connection.httpListener.Prefixes.Add("http://*:" + 80.ToString() + "/");
+                connection.httpListener.Start();
+            }
+            catch (Exception e)
+            {
+                Logging.Write(e.Message);
+                return;
+            }
+        }
+
+
+        public struct ServerListElementResponse
+        {
+            public string ip;
+            public int port;
+            public int currentPlayerCount;
+            public int maxPlayerCount;
+        }
+
+        public static async void StartListenMatchmaking(ConnectionAPIs connection, ConnectionMetaData metaData, ConnectionState state)
+        {
+            //TODO StartListenMatchmaking again!
+
+            var requestContext = await connection.httpListener.GetContextAsync();
+            HttpListenerRequest request = requestContext.Request;
+            HttpListenerResponse response = requestContext.Response;
+
+            if (request.HttpMethod.Equals("PUT") && request.Url.LocalPath.Equals("/dedicatedkeepalive"))
+            {
+                var body = request.InputStream;
+                var encoding = request.ContentEncoding;
+                var reader = new System.IO.StreamReader(body, encoding);
+                var data = await reader.ReadToEndAsync();
+                /*
+                 * TODO json
+                 * var execution = JsonUtility.FromJson<InspectionExecution>(data);
+                lock (inspectionExecutionLockObject)
+                {
+                    requestedInspectionExecution.executionStart = execution.executionStart;
+                    requestedInspectionExecution.withGameObjectName = execution.withGameObjectName;
+                    requestedInspectionExecution.withPosition = execution.withPosition;
+                }
+                */
+                //Interlocked.Exchange<InspectionExecution>(ref requestedInspectionExecution, execution);
+                body.Close();
+                reader.Close();
+            }
+
+            if (request.HttpMethod.Equals("GET") && request.Url.LocalPath.Equals("/serverlist"))
+            {
+                //var responseString = "";//get from database
+
+                /*
+                var serverList = new List<ServerListElementResponse>();
+                var element = new ServerListElementResponse();
+                element.currentPlayerCount = 2;
+                element.maxPlayerCount = 8;
+                element.ip = "127.0.0.1";
+                element.port = 3243;
+                serverList.Add(element);
+                */
+                var connectionPath = "URI:file" + "DedicatedServerList";
+                var con = new SQLiteConnection(connectionPath);
+                con.Open();
+                IDbCommand dbcmd;
+                IDataReader reader;
+                dbcmd = con.CreateCommand();
+                /*string q_createTable =
+                  "CREATE TABLE IF NOT EXISTS " + "my_table" + " (" +
+                  "id" + " INTEGER PRIMARY KEY, " +
+                  "val" + " INTEGER )";
+                dbcmd.CommandText = q_createTable;*/
+                dbcmd.CommandText = "FROM serverlisttable SELECT *";
+                reader = dbcmd.ExecuteReader();
+                while(reader.Read())
+                {
+                    var field0 = reader[0];
+                    var field1 = reader[1];
+                } // TODO: serialize results
+
+                reader.Close();
+                con.Close();
+
+                var buffer = System.Text.Encoding.UTF8.GetBytes("SERVERLIST_PLACEHOLDER"); //TODO
+                response.ContentLength64 = buffer.Length;
+                using (System.IO.Stream outputStream = response.OutputStream)
+                {
+                    await outputStream.WriteAsync(buffer, 0, buffer.Length);
+                }
+                response.Close();
+            }
+        }
     }
 
 
@@ -1033,6 +1142,17 @@ namespace NetSignal
 
             serverData[0].listenPort = 3000;
             serverData[0].serverIp = "127.0.0.1";
+
+            //TODO go on here
+            /*
+             * matchmaking server listens to http, following endpoints:
+             * x dedicated server register (will be done manually)
+             * - dedicated server update free slots and keepalive
+             * - client ask for server list (paged subset)
+             * 
+            matchmakingServerData.matchmakingServerIp = "127.0.0.1";
+            matchmakingServerData.matchmakingServerPort = 80;
+            */
 
             clientDatas[0].listenPort = 3001;
             clientDatas[0].serverIp = "127.0.0.1";
