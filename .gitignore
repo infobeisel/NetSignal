@@ -34,7 +34,7 @@ ExportedObj/
 .consulo/
 *.csproj
 *.unityproj
-*.sln
+#*.sln why the fuch
 *.suo
 *.tmp
 *.user
