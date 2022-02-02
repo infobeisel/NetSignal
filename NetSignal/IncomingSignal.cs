@@ -1,4 +1,6 @@
-﻿namespace NetSignal
+using System;
+
+namespace NetSignal
 {
     public struct IncomingSignal
     {
@@ -9,9 +11,11 @@
             {
                 if (!dataMember.data.Equals(value.data))
                 {
+                    dataMember = value;
+                    dataMember.timeStamp = DateTime.UtcNow;//TODO
                     dataHasBeenUpdated = true;
                 }
-                dataMember = value;
+                
             }
             get
             {

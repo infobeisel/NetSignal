@@ -31,9 +31,13 @@ namespace DedicatedServer
             serverData[0].iListenToPort = int.Parse(args[0]);
             serverData[0].myIp = "127.0.0.1";
 
-            NetSignalStarter.StartServer(server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
+            /*
+             * 
+             * NetSignalStarter.StartServer(server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalSentFromServer, reliableSignalsSeenFromServer);
+                */
+            throw new Exception();
 
             while (true)
                 Thread.Sleep(1000);

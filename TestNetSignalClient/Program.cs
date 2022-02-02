@@ -11,7 +11,7 @@ namespace TestNetSignalClient
     {
         static void Main(string[] args)
         {
-
+            /*
             OutgoingSignal[] unreliableSignalSentFromServer = new OutgoingSignal[1];
             IncomingSignal[] unreliableSignalSeenFromClient = new IncomingSignal[1];
             OutgoingSignal[] unreliableSignalsSentFromClient = new OutgoingSignal[1];
@@ -48,13 +48,7 @@ namespace TestNetSignalClient
 
             //NetSignalStarter.TestIncomingOnClient(() => cancel, () => shouldPrint, signalSentFromServer, signalSeenFromClient, signalsSentFromClient, signalsSeenFromServer, conFromServer, consFromServer);
             //await Task.Delay(5000);
-            /*await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
-                unreliableSignalSentFromServer, unreliableSignalSeenFromClient, unreliableSignalsSentFromClient, unreliableSignalsSeenFromServer,
-                reliableSignalSentFromServer, reliableSignalSeenFromClient, reliableSignalsSentFromClient, reliableSignalsSeenFromServer,
-                connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);
-                */
-
+       
             NetSignalStarter.TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
                 unreliableSignalSeenFromClient, unreliableSignalsSentFromClient,
                 reliableSignalSeenFromClient, reliableSignalsSentFromClient,
@@ -63,6 +57,11 @@ namespace TestNetSignalClient
 
             Task.Delay(10000);
             cancel = true;
+
+    */
+            NetSignalStarter.Test().Wait();
+
+            string key = Console.ReadLine();
         }
     }
 }
