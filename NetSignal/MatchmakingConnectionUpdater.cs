@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using System.Data.SQLite;
+using Mono.Data.Sqlite;
+
 using System.Data;
 
 namespace NetSignal
@@ -181,7 +182,7 @@ namespace NetSignal
                 {
 
                     var connectionPath = "data source=netsignal.db";
-                    var con = new SQLiteConnection(connectionPath);
+                    var con = new SqliteConnection(connectionPath);
                     Logging.Write("open db");
                     con.Open();
                     Logging.Write("opened db");
