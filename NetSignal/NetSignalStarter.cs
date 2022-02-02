@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using System.Runtime.InteropServices;
-using System.Xml.Serialization;
+
 
 namespace NetSignal
 {
@@ -123,7 +123,8 @@ namespace NetSignal
             var s = new ConnectionState();
             d.matchmakingServerPort = 5432;
             d.matchmakingServerIp = "http://127.0.0.1";
-             MatchmakingConnectionUpdater.InitializeMatchMakingServer(ref con, ref d, ref s, () => teard);
+
+            MatchmakingConnectionUpdater.InitializeMatchMakingServer(ref con, ref d, ref s, () => teard);
 
             await Task.Delay(1000);
 
@@ -173,16 +174,7 @@ namespace NetSignal
             serverData[0].listenPort = 3000;
             serverData[0].serverIp = "127.0.0.1";
 
-            //TODO go on here
-            /*
-             * matchmaking server listens to http, following endpoints:
-             * x dedicated server register (will be done manually)
-             * - dedicated server update free slots and keepalive
-             * - client ask for server list (paged subset)
-             * 
-            matchmakingServerData.matchmakingServerIp = "127.0.0.1";
-            matchmakingServerData.matchmakingServerPort = 80;
-            */
+            
 
             clientDatas[0].listenPort = 3001;
             clientDatas[0].serverIp = "127.0.0.1";
@@ -206,6 +198,18 @@ namespace NetSignal
             // - also close udp on client and server side if necessary (check)
             //implement sync and receive signals RELIABLE version (over tcp) (CHECK)
             //implement websocket for matchmaking (to find ip to connect to server), set up with strato (?) 
+            // - partial check, set up matchmaking server on strato and test initial server list request
+            // - implement security features (https)
+            //TODO go on here
+            /*
+             * matchmaking server listens to http, following endpoints:
+             * x dedicated server register (will be done manually)
+             * - dedicated server update free slots and keepalive
+             * - client ask for server list (paged subset) (partial check)
+             * 
+            matchmakingServerData.matchmakingServerIp = "127.0.0.1";
+            matchmakingServerData.matchmakingServerPort = 80;
+            */
             //refactor into separate files 
             //import to unity
             //battletest: make scriptable objects that have Incoming- and Outgoing Signals, write Mono Updaters that assign Signals to specific game objects (mainly: Bird slots, state enums for UI)
