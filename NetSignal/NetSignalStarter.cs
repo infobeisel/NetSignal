@@ -137,7 +137,29 @@ namespace NetSignal
             l.list = new List<MatchmakingConnectionUpdater.ServerListElementResponse>();
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref clientCon, ref clientD, ref clientS, () => teard);
             
-            MatchmakingConnectionUpdater.GatherServerList(clientCon, clientD, clientS, l);
+            l = await MatchmakingConnectionUpdater.GatherServerList(clientCon, clientD, clientS);
+
+            await Task.Delay(5555);
+            teard = true;
+        }
+
+
+        public async static void TestMatchMakingClientToSetUpRemoteServer()
+        {
+
+            bool teard = false;
+            var clientCon = new ConnectionAPIs();
+            var clientD = new ConnectionMetaData();
+            var clientS = new ConnectionState();
+            clientD.matchmakingServerPort = 5432;
+            clientD.matchmakingServerIp = "http://85.214.239.45";
+            MatchmakingConnectionUpdater.ServerList l = new MatchmakingConnectionUpdater.ServerList();
+            l.list = new List<MatchmakingConnectionUpdater.ServerListElementResponse>();
+            MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref clientCon, ref clientD, ref clientS, () => teard);
+
+            l = await MatchmakingConnectionUpdater.GatherServerList(clientCon, clientD, clientS);
+
+            Logging.Write(l.ToString());
 
             await Task.Delay(5555);
             teard = true;

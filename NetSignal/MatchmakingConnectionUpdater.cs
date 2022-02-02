@@ -62,31 +62,50 @@ namespace NetSignal
             connection.httpListener.Close();
         }
 
-        public async static void GatherServerList(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ServerList serverList)
+        public async static Task<ServerList> GatherServerList(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
         {
 
             //string uri = "http://127.0.0.1:" + httpPort + "/methodlist/" + selectedInspectable.id;
             string uri = connectionData.matchmakingServerIp + ":" + connectionData.matchmakingServerPort.ToString() + "/v0/matchmaking/serverlist";
+
+            ServerList ret = new ServerList();
+            ret.list = new List<ServerListElementResponse>();
 
             try
             {
                 var getResponse = await connection.httpClient.GetAsync(uri);
                 getResponse.EnsureSuccessStatusCode();
                 string responseString = await getResponse.Content.ReadAsStringAsync();
-                var list = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerList>(responseString);
-                Logging.Write(list.ToString());
+                ret = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerList>(responseString);
+                Logging.Write(ret.ToString());
                                    
             } catch (Exception e)
             {
                 Logging.Write(e);
             }
+            return ret;
         }
 
+
+
+        public async static void AwaitAndPerformTearDownHttpClient(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
+        {
+
+            while (!shouldTearDown())
+            {
+                await Task.Delay(1000);
+            }
+            
+            Logging.Write("clean up http client");
+
+            connection.httpClient.Dispose();
+            
+        }
 
         public static void InitializeMatchMakingClient(ref ConnectionAPIs connection, ref ConnectionMetaData data, ref ConnectionState state, Func<bool> shouldTearDown)
         {
             connection.httpClient = new System.Net.Http.HttpClient();
-
+            AwaitAndPerformTearDownHttpClient(connection, shouldTearDown, state);
             
         }
 
