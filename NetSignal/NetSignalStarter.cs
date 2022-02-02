@@ -61,7 +61,7 @@ namespace NetSignal
             clientData.sendToPort = 3000;
             clientData.serverIp = "127.0.0.1";*/
             Logging.Write("StartClient: init single connection");
-            var returnTuple = await ConnectionUpdater.InitializeSingleConnection(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex]);
+            var returnTuple = await ConnectionUpdater.InitializeSingleConnection(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData[0]);
             clientCon[clientIndex] = returnTuple.Item1;
             clientData[clientIndex] = returnTuple.Item2;
 
@@ -167,14 +167,14 @@ namespace NetSignal
 
         public async static void Test()
         {
-            OutgoingSignal[] unreliableSignalSentFromServer = new OutgoingSignal[2];
-            IncomingSignal[] unreliableSignalSeenFromClient = new IncomingSignal[2];
-            OutgoingSignal[] unreliableSignalsSentFromClient = new OutgoingSignal[2];
-            IncomingSignal[] unreliableSignalsSeenFromServer = new IncomingSignal[2];
-            OutgoingSignal[] reliableSignalSentFromServer = new OutgoingSignal[2];
-            IncomingSignal[] reliableSignalSeenFromClient = new IncomingSignal[2];
-            OutgoingSignal[] reliableSignalsSentFromClient = new OutgoingSignal[2];
-            IncomingSignal[] reliableSignalsSeenFromServer = new IncomingSignal[2];
+            OutgoingSignal[] unreliableSignalSentFromServer = new OutgoingSignal[1];
+            IncomingSignal[] unreliableSignalSeenFromClient = new IncomingSignal[1];
+            OutgoingSignal[] unreliableSignalsSentFromClient = new OutgoingSignal[1];
+            IncomingSignal[] unreliableSignalsSeenFromServer = new IncomingSignal[1];
+            OutgoingSignal[] reliableSignalSentFromServer = new OutgoingSignal[1];
+            IncomingSignal[] reliableSignalSeenFromClient = new IncomingSignal[1];
+            OutgoingSignal[] reliableSignalsSentFromClient = new OutgoingSignal[1];
+            IncomingSignal[] reliableSignalsSeenFromServer = new IncomingSignal[1];
             var cancel = false;
             var shouldPrint = false;
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[1];
@@ -193,30 +193,29 @@ namespace NetSignal
             ConnectionMetaData [] clientDatas = new ConnectionMetaData[1] { new ConnectionMetaData() };
             ConnectionState [] clientState = new ConnectionState[1] { new ConnectionState() };
 
-            serverData[0].listenPort = 3000;
-            serverData[0].serverIp = "127.0.0.1";
-
             
 
-            clientDatas[0].listenPort = 3001;
-            clientDatas[0].serverIp = "127.0.0.1";
-            clientDatas[0].sendToPort = 3000;
-
-
-            //NetSignalStarter.TestIncomingOnClient(() => cancel, () => shouldPrint, signalSentFromServer, signalSeenFromClient, signalsSentFromClient, signalsSeenFromServer, conFromServer, consFromServer);
-            //await Task.Delay(5000);
-            /*await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
+            serverData[0].iListenToPort = 5000;
+            serverData[0].myIp = "127.0.0.1";
+            clientDatas[0].iListenToPort = 5001;
+            clientDatas[0].myIp = "127.0.0.1";
+            await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
                 unreliableSignalSentFromServer, unreliableSignalSeenFromClient, unreliableSignalsSentFromClient, unreliableSignalsSeenFromServer,
                 reliableSignalSentFromServer, reliableSignalSeenFromClient, reliableSignalsSentFromClient, reliableSignalsSeenFromServer,
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
                 server, serverData, serverState, mapping, clients, clientDatas, clientState);
-                */
 
+
+            /*
+            serverData[0].iListenToPort = 5000;
+            serverData[0].myIp = "85.214.239.45";
+            clientDatas[0].iListenToPort= 5001;
+            clientDatas[0].myIp= "";
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
                 unreliableSignalSeenFromClient, unreliableSignalsSentFromClient,
                 reliableSignalSeenFromClient, reliableSignalsSentFromClient,
 
-                server, serverData, serverState, clients, clientDatas, clientState);
+                server, serverData, serverState, clients, clientDatas, clientState);*/
 
 
             cancel = true;
@@ -556,6 +555,12 @@ namespace NetSignal
                 Console.Write(outgoing.ToString() + "   |   ");
             }
             Logging.Write("");
+
+            for(int i = 0; i < signalsSeenFromServer.Length; i++)
+            {
+                Logging.Write("Test Above: " + (signalsSentFromClient[i].Equals(signalsSeenFromServer[i])));
+            }
+            
         }
 
         private static void LogServerToClientCommunication(OutgoingSignal[] signalsSentFromServer, IncomingSignal[] signalsSeenFromClient0)
@@ -573,6 +578,11 @@ namespace NetSignal
                 Console.Write(incoming.ToString() + "   |   ");
             }
             Logging.Write("");
+
+            for (int i = 0; i < signalsSentFromServer.Length; i++)
+            {
+                Logging.Write("Test Above: " + (signalsSentFromServer[i].Equals(signalsSeenFromClient0[i])));
+            }
         }
     }
 }

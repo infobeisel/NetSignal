@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace NetSignal
 {
@@ -9,19 +9,25 @@ namespace NetSignal
         public string matchmakingServerIp;
         public int matchmakingServerPort;
 
-        public string serverIp;
-        public int listenPort;
-        public int sendToPort;
+        /*
+        public string serverIpToSendTo;
+        public int thisListensToPort;
+        public int portToSendTo;
         public IPEndPoint toSendToThis;
         public IPEndPoint thisListensTo;
 
         public IPEndPoint toSendToServer;
 
-        public int clientID;
-
         public override string ToString()
         {
-            return "server IP : " + serverIp + " server port " + listenPort + " sendtoendpoint " + toSendToThis + " listentoendpoint " + thisListensTo + " clientID " + clientID;
+            return "server IP : " + serverIpToSendTo + " server port " + thisListensToPort + " sendtoendpoint " + toSendToThis + " listentoendpoint " + thisListensTo + " clientID " + clientID;
         }
+        */
+
+        public string myIp;
+        public int iListenToPort;
+
+        public int clientID;
+
     }
 }

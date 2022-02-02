@@ -28,8 +28,8 @@ namespace DedicatedServer
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
             ConnectionMapping mapping = new ConnectionMapping();
 
-            serverData[0].listenPort = int.Parse(args[0]);
-            serverData[0].serverIp = "127.0.0.1";
+            serverData[0].iListenToPort = int.Parse(args[0]);
+            serverData[0].myIp = "127.0.0.1";
 
             NetSignalStarter.StartServer(server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalSentFromServer, unreliableSignalsSeenFromServer,

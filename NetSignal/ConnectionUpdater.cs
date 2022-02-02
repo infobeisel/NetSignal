@@ -13,9 +13,9 @@ namespace NetSignal
         {
             connectors = new ConnectionAPIs();
 
-            connectionData.thisListensTo = new IPEndPoint(IPAddress.Any, connectionData.listenPort);
-            //connectionData.listenToEndpoint = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.listenPort);
-            connectors.udpClient = new UdpClient(connectionData.thisListensTo);
+            
+            
+            connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
             Util.Exchange(ref  connectionState.udpStateName, StateOfConnection.ReadyToOperate);
             
             //connectors.udpClient = new UdpClient();
@@ -23,7 +23,7 @@ namespace NetSignal
             Logging.Write("server: udpclient local: " + (IPEndPoint)connectors.udpClient.Client.LocalEndPoint);
             //            Logging.Write("server: udpclient remote: " + (IPEndPoint)connectors.udpClient.Client.RemoteEndPoint);
 
-            connectors.tcpListener = new TcpListener(IPAddress.Any, connectionData.listenPort);
+            connectors.tcpListener = new TcpListener(IPAddress.Any, connectionData.iListenToPort);
             connectors.tcpClient = null;
 
             for(int connectionI = 0; connectionI < toConnections.Length; connectionI ++)
@@ -34,7 +34,6 @@ namespace NetSignal
                 connections[connectionI].udpClient = null;
 
                 connectionDatas[connectionI].clientID = -1;
-                connectionDatas[connectionI].thisListensTo = null;
 
                 toConnections[connectionI] = new ConnectionState();
             }
@@ -42,7 +41,7 @@ namespace NetSignal
         }
 
 
-        public async static Task<ConnectionAPIs> SetupClientTCP(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
+        public async static Task<ConnectionAPIs> SetupClientTCP(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData connectTo)
         {
             Util.Exchange(ref connectionState.tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref connectionState.tcpReadStateName, StateOfConnection.Uninitialized);
@@ -50,8 +49,9 @@ namespace NetSignal
             connection.tcpClient = new TcpClient();
 
 
-            Logging.Write("client connects to tcp" + connectionData.serverIp + ":" + connectionData.sendToPort + " " + connectionData.toSendToServer);
-            await connection.tcpClient.ConnectAsync(connectionData.toSendToServer.Address, connectionData.toSendToServer.Port);
+            Logging.Write("client connects to tcp" + connectTo .myIp + ":" + connectTo.iListenToPort+ " " );
+            //await connection.tcpClient.ConnectAsync(connectionData.toSendToServer.Address, connectionData.toSendToServer.Port);
+            connection.tcpClient.Connect(IPAddress.Parse(connectTo.myIp), connectTo.iListenToPort);
 
             Logging.Write("client connected");
             NetworkStream stream = connection.tcpClient.GetStream();
@@ -94,7 +94,6 @@ namespace NetSignal
                 clientCons[conI].tcpListener = null;
 
                 clientDatas[conI].clientID = -1;
-                clientDatas[conI].thisListensTo = null;
 
                 Util.Exchange(ref clientStates[conI].tcpWriteStateName, StateOfConnection.Uninitialized);
                 Util.Exchange(ref clientStates[conI].tcpReadStateName, StateOfConnection.Uninitialized);
@@ -147,26 +146,25 @@ namespace NetSignal
             connection.udpClient.Close();
         }
 
-        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState)
+        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
         {
             connectors = new ConnectionAPIs();
             try
             {
                 //connectionData.listenToEndpoint = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.listenPort);
-                connectionData.thisListensTo = new IPEndPoint(IPAddress.Any, connectionData.listenPort);
-
+                
                 //connectionData.toSendToThis = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.sendToPort);
-                connectionData.toSendToServer = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.sendToPort);
+                
 
-                connectors.udpClient = new UdpClient(connectionData.thisListensTo);
+                connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
                 Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
-                Logging.Write("client connects to udp" + connectionData.listenPort);
+                Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
                 //connectors.udpClient = new UdpClient(connectionData.listenToEndpoint);
                 //connectors.udpClient.Connect(connectionData.listenToEndpoint);//make the udp client react only to incoming messages that come from the given port
 
                 connectors.tcpListener = null;
 
-                connectors = await SetupClientTCP(connectors, connectionData, connectionState);
+                connectors = await SetupClientTCP(connectors, connectionData, connectionState, toServer);
 
                 connectionData = await ExchangeConnectionInitials(connectors, connectionData, connectionState);
 
@@ -185,7 +183,7 @@ namespace NetSignal
             await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionState.tcpWriteBytes,
                 async () =>
                 {
-                    var portString = connectionData.listenPort.ToString();
+                    var portString = connectionData.iListenToPort.ToString();
                     
                     Encoding.ASCII.GetBytes(portString, 0, portString.Length, connectionState.tcpWriteBytes, 1);
 
@@ -274,8 +272,12 @@ namespace NetSignal
                                     //remember the client
                                     storeToConnections[clientID].tcpClient = connection;
                                     storeToConnections[clientID].tcpStream = stream;
-                                    storeToConnectionDatas[clientID].thisListensTo = clientEndpoint;
+
                                     storeToConnectionDatas[clientID].clientID = clientID;
+                                    Logging.Write("client told me he is " + (clientEndpoint).Address + " " + (clientEndpoint).Port);
+                                    storeToConnectionDatas[clientID].iListenToPort = clientEndpoint.Port;
+                                    storeToConnectionDatas[clientID].myIp =
+                                    clientEndpoint.Address.ToString();
 
                                     storeToConnectionStates[clientID].tcpKeepAlive = DateTime.UtcNow;
 

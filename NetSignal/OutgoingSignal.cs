@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NetSignal
 {
@@ -25,6 +25,11 @@ namespace NetSignal
         public override string ToString()
         {
             return "data : " + data + " dataDirty " + dataDirty;
+        }
+
+        public bool Equals(IncomingSignal incoming)
+        {
+            return data.data == incoming.data.data;
         }
     }
 }

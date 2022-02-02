@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -112,13 +112,12 @@ namespace NetSignal
                                 {
                                     continue;
                                 }*/
-
-                                IPEndPoint toSendTo = to.thisListensTo;
-                                if (to.thisListensTo.Address == IPAddress.Any) //can not send to any, send to serverIP instead
+                                IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(to.myIp),  to.iListenToPort);
+                                /*if (to.thisListensTo.Address == IPAddress.Any) //can not send to any, send to serverIP instead
                                 {
-                                    toSendTo = new IPEndPoint(IPAddress.Parse(to.serverIp), to.thisListensTo.Port);
-                                }
-                                Logging.Write("data is dirty. send it to " + to.thisListensTo);
+                                    toSendTo = new IPEndPoint(IPAddress.Parse(to.serverIpToSendTo), to.thisListensTo.Port);
+                                }*/
+                                Logging.Write("data is dirty. send it to " + toSendTo);
                                 //byte[] toSend = Encoding.ASCII.GetBytes(SignalCompressor.Compress(signals[signalI].data));
                                 var dataStr = SignalCompressor.Compress(signals[signalI].data);
                                 var usingBytes = connectionState.udpWriteBytes;
@@ -223,10 +222,7 @@ namespace NetSignal
             var usingBytes = connectionState.udpReadBytes;
             try
             {
-                
 
-
-                IPEndPoint receiveFrom = new IPEndPoint(connectionData.thisListensTo.Address, connectionData.thisListensTo.Port);
                 while (!cancel())
                 {
 
@@ -258,7 +254,6 @@ namespace NetSignal
                         Logging.Write("ReceiveSignals: udp socket has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                         continue;
                     }
-                    receiveFrom = receiveResult.RemoteEndPoint;
                     var bytes = receiveResult.Buffer;
 
                     await WriteToIncomingSignals(connectionData, signals, report, bytes);
@@ -278,9 +273,8 @@ namespace NetSignal
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
-                Logging.Write("I (" + connectionData.thisListensTo + ") received sth ");
+                Logging.Write("I (" + connectionData.iListenToPort + ") received sth ");
 
-                Logging.Write("receive from (?)" + connectionData.thisListensTo);
                 Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length );
                 var parsedString = Encoding.ASCII.GetString(bytes, 1, bytes.Length - 1);
                 Logging.Write("report " + parsedString);
