@@ -17,9 +17,9 @@ namespace NetSignal
                 //Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length);
                 var parsedString = Encoding.ASCII.GetString(bytes, 1, bytes.Length - 1);
 
-                
+
+                report(parsedString);
                 var package = SignalCompressor.DecompressFloatPackage(parsedString);
-                
                 report(package.ToString());
                 signals[package.clientId][package.index].data = package;
                 signals[package.clientId][package.index].cameIn = DateTime.UtcNow;
