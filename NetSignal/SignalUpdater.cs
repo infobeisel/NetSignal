@@ -321,11 +321,10 @@ namespace NetSignal
                 if (fromConnectionDatas.Length == 1) //already know the from connection
                 {
                     Logging.Write("I, client,  (" + fromConnectionDatas[0].iListenToPort + ") received sth ");
-                } else 
+                } else if(fromConnectionDatas.Length > package.clientId)
                 {
-                    Logging.Write("I, server,  received sth from " + udpReceiveResult.RemoteEndPoint);
-                    System.Diagnostics.Debug.Assert(fromConnectionDatas.Length > package.clientId);
-                    System.Diagnostics.Debug.Assert( package.clientId >= 0);
+                    Logging.Write("I, server,  received sth from " + udpReceiveResult.RemoteEndPoint + " . write to " + package.clientId);
+                    
                     fromConnectionDatas[package.clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
                     fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
                 }

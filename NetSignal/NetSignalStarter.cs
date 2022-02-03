@@ -332,14 +332,35 @@ namespace NetSignal
                 }
                 await Task.Delay(1000);
             }
+
+            //initial alive packet
             if (!cancel())
             {
                 var a = new FloatDataPackage();
-                a.data = 13.331f;
+                a.data = 10;
                 a.clientId = 0;
                 a.timeStamp = DateTime.UtcNow;
                 clientUnreliableOutgoing[0][0][0].data = a;
                 await Task.Delay(1000);
+                clientUnreliableOutgoing[1][1][0].data = a;
+                await Task.Delay(1000);
+                clientUnreliableOutgoing[2][2][0].data = a;
+                await Task.Delay(1000);
+
+            }
+
+
+            if (!cancel())
+            {
+                var a = new FloatDataPackage();
+                a.data = 8;
+                a.clientId = 0;
+                a.timeStamp = DateTime.UtcNow;
+                clientUnreliableOutgoing[0][0][0].data = a;
+                clientUnreliableOutgoing[1][1][0].data = a;
+                clientUnreliableOutgoing[2][2][0].data = a;
+                await Task.Delay(1000);
+
             }
 
             if (!cancel())
