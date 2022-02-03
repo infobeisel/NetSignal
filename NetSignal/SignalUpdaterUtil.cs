@@ -13,13 +13,7 @@ namespace NetSignal
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
 
-
-                //Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length);
-                var parsedString = Encoding.ASCII.GetString(bytes, 1, bytes.Length - 1);
-
-
-                report(parsedString);
-                var package = SignalCompressor.DecompressFloatPackage(parsedString);
+                var package = SignalCompressor.DecompressFloatPackage(bytes, 1);
                 report(package.ToString());
                 signals[package.clientId][package.index].data = package;
                 signals[package.clientId][package.index].cameIn = DateTime.UtcNow;
@@ -29,8 +23,9 @@ namespace NetSignal
                                     async () => { Logging.Write("ReceiveSignals: unexpected package tcp keepalive!?"); },
             async () => {
                 //Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length);
-                var parsedString = Encoding.ASCII.GetString(bytes, 1, bytes.Length - 1);
-                var package = SignalCompressor.DecompressKeepAlive(parsedString);
+
+                var package = SignalCompressor.DecompressKeepAlive(bytes, 1);
+
                 report(package.ToString());
                 if (fromConnectionDatas.Length > package.clientId)
                 {

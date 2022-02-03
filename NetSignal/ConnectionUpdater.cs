@@ -336,14 +336,15 @@ namespace NetSignal
 
                     var usingBytes = connectionState.udpWriteBytes;
                     Util.FlushBytes(usingBytes);
+                    
                     await MessageDeMultiplexer.MarkUdpKeepAlive(usingBytes, async () =>
                     {
-                        foreach(var serverData in toServers)
+                        SignalCompressor.Compress(package, usingBytes, 1);
+                        foreach (var serverData in toServers)
                         {
                             IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(serverData.myIp), serverData.iListenToPort);
-                            var dataStr = SignalCompressor.Compress(package);
+                            
                             report("keepalive " + package + " to " + toSendTo);
-                            Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, usingBytes, 1);
                             try
                             {
                                 await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);

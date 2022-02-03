@@ -207,7 +207,7 @@ namespace NetSignal
 
             
 
-            /*serverData[0].iListenToPort = 5000;
+            serverData[0].iListenToPort = 5000;
             serverData[0].myIp = "127.0.0.1";
             clientDatas[0].iListenToPort = 5001;
             clientDatas[0].myIp = "127.0.0.1";
@@ -218,9 +218,9 @@ namespace NetSignal
             await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
                 
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);*/
+                server, serverData, serverState, mapping, clients, clientDatas, clientState);
                 
-
+            /*
             
             serverData[0].iListenToPort = 5000;
             serverData[0].myIp = "85.214.239.45";
@@ -233,7 +233,7 @@ namespace NetSignal
 
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
                 server, serverData, serverState, clients, clientDatas, clientState);
-                
+              */  
 
             cancel = true;
             //TODOS:

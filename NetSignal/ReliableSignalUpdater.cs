@@ -65,13 +65,13 @@ namespace NetSignal
                                     modified.index = signalI;
                                     signals[fromClientI][signalI].data = modified;*/
 
-                                    var dataStr = SignalCompressor.Compress(signals[fromClientI][signalI].data);
+                                    
                                     //Logging.Write("will send " + dataStr);
                                     var usingBytes = toConnectionStates[connectionI].tcpWriteBytes;
                                     Util.FlushBytes(usingBytes);
                                     await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
                                     {
-                                        Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, usingBytes, 1);
+                                        SignalCompressor.Compress(signals[fromClientI][signalI].data, usingBytes, 1);
                                         try
                                         {
                                             await toConnections[connectionI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);

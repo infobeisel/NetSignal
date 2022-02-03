@@ -45,13 +45,14 @@ namespace NetSignal
 
                                     report("send data to " + toSendTo + " : " + signals[fromClientI][signalI].data);
 
-                                    var dataStr = SignalCompressor.Compress(signals[fromClientI][signalI].data);
+                                    
                                     //Logging.Write("will send " + dataStr);
                                     var usingBytes = connectionState.udpWriteBytes;
                                     Util.FlushBytes(usingBytes);
+                                    SignalCompressor.Compress(signals[fromClientI][signalI].data, usingBytes, 1);
                                     await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
                                     {
-                                        Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, usingBytes, 1);
+                                        
                                         try
                                         {
                                             await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
