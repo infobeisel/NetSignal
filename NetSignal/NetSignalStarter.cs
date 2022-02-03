@@ -207,7 +207,7 @@ namespace NetSignal
 
             
 
-            serverData[0].iListenToPort = 5000;
+            /*serverData[0].iListenToPort = 5000;
             serverData[0].myIp = "127.0.0.1";
             clientDatas[0].iListenToPort = 5001;
             clientDatas[0].myIp = "127.0.0.1";
@@ -216,15 +216,10 @@ namespace NetSignal
             clientDatas[2].iListenToPort = 5003;
             clientDatas[2].myIp = "127.0.0.1";
             await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
-                //unreliableSignalSentFromServer, 
-                //unreliableSignalSeenFromClient, unreliableSignalsSentFromClient, 
-                //unreliableSignalsSeenFromServer,
-                //reliableSignalSentFromServer, 
-                //reliableSignalSeenFromClient, reliableSignalsSentFromClient, 
-                //reliableSignalsSeenFromServer,
+                
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);
-                /*
+                server, serverData, serverState, mapping, clients, clientDatas, clientState);*/
+                
 
             
             serverData[0].iListenToPort = 5000;
@@ -238,7 +233,7 @@ namespace NetSignal
 
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
                 server, serverData, serverState, clients, clientDatas, clientState);
-                */
+                
 
             cancel = true;
             //TODOS:
@@ -333,53 +328,37 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            if (!cancel())
-            {
-                //if(shouldReport())
-                {
-                    LogSignals("client0", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
-                }
-                await Task.Delay(1000);
-            }
 
-            //initial alive packet
-            if (!cancel())
+            var rng = new System.Random(645);
+            for (int i = 0; i < 1000; i++)
             {
+                Console.Clear();
+
+
+                LogSignals("client0", "client0", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
+                LogSignals("client1", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
+                LogSignals("client2", "client2", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
+
                 var a = new FloatDataPackage();
-                a.data = 10;
+                a.data = (float)rng.NextDouble();
                 a.clientId = 0;
+                a.index = 0;
                 a.timeStamp = DateTime.UtcNow;
                 clientUnreliableOutgoing[0][0][0].data = a;
-                await Task.Delay(1000);
+
+                a.clientId = 1;
+                a.index = 1;
+                a.data = (float)rng.NextDouble();
                 clientUnreliableOutgoing[1][1][0].data = a;
-                await Task.Delay(1000);
+
+                a.clientId = 2;
+                a.index = 2;
+                a.data = (float)rng.NextDouble();
                 clientUnreliableOutgoing[2][2][0].data = a;
-                await Task.Delay(1000);
 
+                await Task.Delay(100);
             }
 
-
-            if (!cancel())
-            {
-                var a = new FloatDataPackage();
-                a.data = 8;
-                a.clientId = 0;
-                a.timeStamp = DateTime.UtcNow;
-                clientUnreliableOutgoing[0][0][0].data = a;
-                clientUnreliableOutgoing[1][1][0].data = a;
-                clientUnreliableOutgoing[2][2][0].data = a;
-                await Task.Delay(1000);
-
-            }
-
-            if (!cancel())
-            {
-                LogSignals("client0", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
-
-                LogSignals("client0", "client2", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[2][0]);
-
-                await Task.Delay(1000);
-            }
 
         }
 
@@ -387,14 +366,6 @@ namespace NetSignal
         public async static Task TestDuplex(
         Func<bool> cancel,
         Func<bool> shouldReport,
-        //OutgoingSignal[] unreliableSignalsSentFromServer,
-        //IncomingSignal[] unreliableSignalsSeenFromClient,
-        //OutgoingSignal[] unreliableSignalsSentFromClient,
-        //IncomingSignal[] unreliableSignalsSeenFromServer,
-        //OutgoingSignal[] reliableSignalsSentFromServer,
-        //IncomingSignal[] reliableSignalsSeenFromClient,
-        //OutgoingSignal[] reliableSignalsSentFromClient,
-        //IncomingSignal[] reliableSignalsSeenFromServer,
         ConnectionAPIs[] clientConnectionsSeenFromServer,
         ConnectionMetaData[] clientConnectionDatasSeenFromServer,
         ConnectionState[] clientConnectionStatesSeenFromServer,
@@ -528,97 +499,7 @@ namespace NetSignal
                 
                 await Task.Delay(1000);
             }
-            /*
-            await Task.Delay(3000);
-            Logging.Write("RELIABLE SIGNALS: ------------------------------------------------------------");
-
-            if (!cancel())
-            {
-                //if(shouldReport())
-                {
-                    LogClientToServerCommunication("client0", "client1", clientReliableOutgoing[0], clientReliableIncoming[1]);
-                }
-                await Task.Delay(1000);
-            }
-            if (!cancel())
-            {
-                var a = new FloatDataPackage();
-                a.data = 13.331f;
-                a.id = 0;
-                a.timeStamp = DateTime.UtcNow;
-                clientReliableOutgoing[0][0].data = a;
-                await Task.Delay(1000);
-            }
-
-            if (!cancel())
-            {
-                LogClientToServerCommunication("client0", "client1", clientReliableOutgoing[0], clientReliableIncoming[1]);
-                await Task.Delay(1000);
-            }
-            */
-            /*
-
-
-            //reliable----------------------------------
-
-
-            await Task.Delay(3000);
-            Logging.Write("RELIABLE SIGNALS: ------------------------------------------------------------");
-
-
-            if (!cancel())
-            {
-                //if(shouldReport())
-                {
-                    LogClientToServerCommunication(clientReliableOutgoing[0], reliableSignalsSeenFromServer);
-                }
-                await Task.Delay(1000);
-            }
-            if (!cancel())
-            {
-                var a = new FloatDataPackage();
-                a.data = 42f;
-                a.id = 0;
-                a.timeStamp = DateTime.UtcNow;
-                clientReliableOutgoing[0][0].data = a;
-                await Task.Delay(1000);
-            }
-
-            if (!cancel())
-            {
-                LogClientToServerCommunication(clientReliableOutgoing[0], reliableSignalsSeenFromServer);
-                await Task.Delay(1000);
-            }
-
-
-
-            if (!cancel())
-            {
-                //if(shouldReport())
-                {
-                    LogServerToClientCommunication(reliableSignalsSentFromServer, clientReliableIncoming[0]);
-                }
-                await Task.Delay(1000);
-            }
-            if (!cancel())
-            {
-                var a = new FloatDataPackage();
-                a.data = 42f;
-                a.id = 0;
-                a.timeStamp = DateTime.UtcNow;
-                reliableSignalsSentFromServer[0].data = a;
-                await Task.Delay(1000);
-            }
-
-            if (!cancel())
-            {
-                //if(shouldReport())
-                LogServerToClientCommunication(reliableSignalsSentFromServer, clientReliableIncoming[0]);
-                await Task.Delay(1000);
-            }
-
-    */
-
+            
         }
 
 
