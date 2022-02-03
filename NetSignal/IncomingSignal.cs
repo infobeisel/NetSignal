@@ -9,12 +9,8 @@ namespace NetSignal
         {
             internal set
             {
-                
                 dataMember = value;
-                dataMember.timeStamp = DateTime.UtcNow;//TODO
                 dataHasBeenUpdated = true;
-                
-                
             }
             get
             {

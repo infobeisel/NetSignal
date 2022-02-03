@@ -12,12 +12,13 @@ namespace DedicatedServer
         static void Main(string[] args)
         {
 
+            int maxPlayers = int.Parse(args[1]);
 
             var cancel = false;
             var shouldPrint = false;
-            ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[3];
-            ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[3];
-            ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[3];
+            ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[maxPlayers];
+            ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[maxPlayers];
+            ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[maxPlayers];
 
 
             //only for symmetry, this is always supposed to be an array of size one, 
@@ -26,10 +27,18 @@ namespace DedicatedServer
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
             ConnectionMapping mapping = new ConnectionMapping();
 
+            
             //this can and will be array of size N
-            ConnectionAPIs[] clients = new ConnectionAPIs[3] { new ConnectionAPIs(), new ConnectionAPIs(), new ConnectionAPIs() };
-            ConnectionMetaData[] clientDatas = new ConnectionMetaData[3] { new ConnectionMetaData(), new ConnectionMetaData(), new ConnectionMetaData() };
-            ConnectionState[] clientState = new ConnectionState[3] { new ConnectionState(), new ConnectionState(), new ConnectionState() };
+            ConnectionAPIs[] clients = new ConnectionAPIs[maxPlayers];
+            ConnectionMetaData[] clientDatas = new ConnectionMetaData[maxPlayers];
+            ConnectionState[] clientState = new ConnectionState[maxPlayers];
+
+            for (int i = 0; i < maxPlayers; i++)
+            {
+                clients[i] = new ConnectionAPIs();
+                clientDatas[i] = new ConnectionMetaData();
+                clientState[i] = new ConnectionState();
+            }
 
 
 

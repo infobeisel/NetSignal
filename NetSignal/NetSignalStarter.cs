@@ -179,8 +179,8 @@ namespace NetSignal
             ConnectionMapping mapping = new ConnectionMapping();
 
             serverData[0].iListenToPort = 5000;
-            //serverData[0].myIp = "127.0.0.1";
-            serverData[0].myIp = "85.214.239.45";
+            serverData[0].myIp = "127.0.0.1";
+            //serverData[0].myIp = "85.214.239.45";
 
             //this can and will be array of size N
             ConnectionAPIs [] clients = new ConnectionAPIs[clientCount] ;
@@ -196,16 +196,15 @@ namespace NetSignal
                 clientDatas[i].myIp = "127.0.0.1";
             }
 
-            /*await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
-                
+            await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);*/
+                server, serverData, serverState, mapping, clients, clientDatas, clientState);
 
 
            
 
-            await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);
+            /*await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
+                server, serverData, serverState, clients, clientDatas, clientState);*/
              
 
             cancel = true;
@@ -291,7 +290,7 @@ namespace NetSignal
 
 
 
-                var updatedTuple = await StartClient(clientI, clientInstancesAPI, clientInstancesData, clientInstancesState,  serverInstanceData, cancel,
+                var updatedTuple = await StartClient(clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
                 clientInstancesAPI[clientI] = updatedTuple.Item1;
@@ -299,36 +298,44 @@ namespace NetSignal
 
             }
             await Task.Delay(1000);
+            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
 
+        }
+
+        private static async Task SyncLogCheckWithPlayer0And1(IncomingSignal[][][] clientUnreliableIncoming, OutgoingSignal[][][] clientUnreliableOutgoing)
+        {
+            bool wasSame = false;
 
 
             var rng = new System.Random(645);
             for (int i = 0; i < 1000; i++)
             {
-                Console.Clear();
 
-                for (int clientId = 0; clientId < clientInstancesAPI.Length; clientId++)
+                wasSame = clientUnreliableOutgoing[0][0][0].Equals(clientUnreliableIncoming[1][0][0]);
+
+                if (wasSame)
                 {
-                    LogSignals("client" + 0, "client" + clientId, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[clientId][0]);
-
+                    Console.Clear();
+                    LogSignals("client" + 0, "client" + 1, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
                 }
 
 
-                var a = new FloatDataPackage();
-                a.data = (float)rng.NextDouble();
-                a.clientId = 0;
-                a.index = 0;
-                a.timeStamp = DateTime.UtcNow;
-                clientUnreliableOutgoing[0][0][0].data = a;
 
+
+                if (wasSame)
+                {
+                    var a = new FloatDataPackage();
+                    a.data = (float)rng.NextDouble();
+                    a.clientId = 0;
+                    a.index = 0;
+                    a.timeStamp = DateTime.UtcNow;
+                    clientUnreliableOutgoing[0][0][0].data = a;
+                }
 
                 await Task.Delay(100);
             }
-
-
         }
 
-    
         public async static Task TestDuplex(
         Func<bool> cancel,
         Func<bool> shouldReport,
@@ -412,7 +419,9 @@ namespace NetSignal
             }
             await Task.Delay(1000);
 
-
+            //TODO 
+            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
+            /*
             var rng = new System.Random(645);
             for (int i = 0; i < 1000; i++)
             {
@@ -434,7 +443,7 @@ namespace NetSignal
 
                 
                 await Task.Delay(100);
-            }
+            }*/
 
         }
 
