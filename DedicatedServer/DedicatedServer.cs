@@ -53,7 +53,7 @@ namespace DedicatedServer
             serverData[0].myIp = "127.0.0.1";
 
             
-             NetSignalStarter.StartServer(server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
+             NetSignalStarter.StartServer(true, server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
 

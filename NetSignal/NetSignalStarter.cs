@@ -10,14 +10,14 @@ namespace NetSignal
 
     public class NetSignalStarter
     {
-        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData, ConnectionMapping>> StartServer(
+        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData, ConnectionMapping>> StartServer(bool shouldLog,
             ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionMapping connectionMapping, ConnectionAPIs[] connections,
             ConnectionMetaData[] connectionDatas, ConnectionState[] connectionStates,
             OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
             OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
         {
 
-            bool shouldReport = false;
+            
 
             //serverData.listenPort = 3000;
             //serverData.serverIp = null;
@@ -31,7 +31,7 @@ namespace NetSignal
 
             Logging.Write("StartServer: start receive signals");
             //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Logging.Write(s));
-            UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel, (string r) => { if (shouldReport) Logging.Write("server receive: " + r); }, connectionDatas);
+            UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel, (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
 
             ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, connections, connectionDatas, connectionStates);
 
@@ -43,7 +43,7 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             //SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
-            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,(string r) => { if (shouldReport) Logging.Write("server send: " + r); },  cancel, connectionDatas);
+            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,(string r) => { if (shouldLog) Logging.Write("server send: " + r); },  cancel, connectionDatas);
 
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
 
@@ -400,7 +400,7 @@ namespace NetSignal
 
             Logging.Write("TestDuplex: start server");
             //TODO server needs to have [clientInstancesAPI.Length, 5] signals!
-            var updatedServerTuple = await StartServer(serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            var updatedServerTuple = await StartServer(false, serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 clientConnectionStatesSeenFromServer, 
                 unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer);
