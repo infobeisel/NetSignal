@@ -28,7 +28,7 @@ namespace NetSignal
 
         public override string ToString()
         {
-            return "D: " + data + "png:" + (cameIn - dataMember.timeStamp).TotalMilliseconds.ToString("000.00");
+            return "D: " + data + "pn:" + (cameIn - dataMember.timeStamp).TotalMilliseconds.ToString("000.00");
         }
     }
 }

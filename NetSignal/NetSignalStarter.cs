@@ -107,33 +107,6 @@ namespace NetSignal
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(clientCon[clientIndex], clientData[clientIndex]);
         }
 
-        /*
-         * TEST for immediate:
-         *
-         * using NetSignal;
-        OutgoingSignal[] signalSentFromServer = new OutgoingSignal[2];
-        IncomingSignal[] signalSeenFromClient = new IncomingSignal[2];
-        var cancel = false;
-        var shouldPrint = false;
-        ConnectionData[] consFromServer = new ConnectionData[1];
-        Connection[] conFromServer = new Connection[1];
-        Connection server = new Connection();
-        ConnectionData serverD = new ConnectionData();
-        var connectionMapping = new ConnectionMapping();
-        NetSignalStarter.StartServer(ref server, ref serverD, () => cancel, ref connectionMapping, conFromServer, consFromServer, signalSentFromServer);
-        Connection client = new Connection();
-        ConnectionData clientD = new ConnectionData();
-        NetSignalStarter.StartClient(ref client, ref clientD, () => cancel, signalSeenFromClient);
-        System.Net.Sockets.UdpClient
-        try to identify client with endpoint 127.0.0.1:55030
-        tcp received: 127.0.0.1|55030 , will send back id 0
-        i am client 0
-        receive127.0.0.1:3123
-        var datagram = Encoding.ASCII.GetBytes("hellosent");
-        server.udpClient.Send(datagram, datagram.Length, "127.0.0.1", 53512);
-        server.udpClient.Send(datagram, datagram.Length, "127.0.0.1", 55030);
-        */
-
         public async static void TestMatchMaking()
         {
             var teard = false;
@@ -189,9 +162,14 @@ namespace NetSignal
           
             var cancel = false;
             var shouldPrint = false;
-            ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[3];
-            ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[3];
-            ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[3];
+
+            int clientCount = 32;
+
+            ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
+            ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
+            ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[clientCount];
+            
+            
 
 
             //only for symmetry, this is always supposed to be an array of size one, 
@@ -200,40 +178,35 @@ namespace NetSignal
             ConnectionState [] serverState = new ConnectionState[1] { new ConnectionState() };
             ConnectionMapping mapping = new ConnectionMapping();
 
-            //this can and will be array of size N
-            ConnectionAPIs [] clients = new ConnectionAPIs[3] { new ConnectionAPIs() , new ConnectionAPIs() , new ConnectionAPIs() };
-            ConnectionMetaData [] clientDatas = new ConnectionMetaData[3] { new ConnectionMetaData() , new ConnectionMetaData() , new ConnectionMetaData() };
-            ConnectionState [] clientState = new ConnectionState[3] { new ConnectionState() , new ConnectionState() , new ConnectionState() };
-
-            
-
             serverData[0].iListenToPort = 5000;
-            serverData[0].myIp = "127.0.0.1";
-            clientDatas[0].iListenToPort = 5001;
-            clientDatas[0].myIp = "127.0.0.1";
-            clientDatas[1].iListenToPort = 5002;
-            clientDatas[1].myIp = "127.0.0.1";
-            clientDatas[2].iListenToPort = 5003;
-            clientDatas[2].myIp = "127.0.0.1";
-            await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
+            //serverData[0].myIp = "127.0.0.1";
+            serverData[0].myIp = "85.214.239.45";
+
+            //this can and will be array of size N
+            ConnectionAPIs [] clients = new ConnectionAPIs[clientCount] ;
+            ConnectionMetaData [] clientDatas = new ConnectionMetaData[clientCount] ;
+            ConnectionState [] clientState = new ConnectionState[clientCount];
+
+            for (int i = 0; i < clientCount; i++)
+            {
+                clients[i] = new ConnectionAPIs();
+                clientDatas[i] = new ConnectionMetaData();
+                clientState[i] = new ConnectionState();
+                clientDatas[i].iListenToPort = 5000 + 1 + i;
+                clientDatas[i].myIp = "127.0.0.1";
+            }
+
+            /*await NetSignalStarter.TestDuplex(() => cancel, () => shouldPrint, 
                 
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);
-                
-            /*
-            
-            serverData[0].iListenToPort = 5000;
-            serverData[0].myIp = "85.214.239.45";
-            clientDatas[0].iListenToPort = 5001;
-            clientDatas[0].myIp = "127.0.0.1";
-            clientDatas[1].iListenToPort = 5002;
-            clientDatas[1].myIp = "127.0.0.1";
-            clientDatas[2].iListenToPort = 5003;
-            clientDatas[2].myIp = "127.0.0.1";
+                server, serverData, serverState, mapping, clients, clientDatas, clientState);*/
+
+
+           
 
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
                 server, serverData, serverState, clients, clientDatas, clientState);
-              */  
+             
 
             cancel = true;
             //TODOS:
@@ -243,7 +216,7 @@ namespace NetSignal
             // - close tcp client on client side (check)
             // - also close udp on client and server side if necessary (check)
             //implement sync and receive signals RELIABLE version (over tcp) (CHECK)
-            //implement websocket for matchmaking (to find ip to connect to server), set up with strato (?) 
+            //implement websocket for matchmaking (to find ip to connect to server), set up with strato !!
             // - partial check, set up matchmaking server on strato and test initial server list request
             // - implement security features (https)
             //TODO go on here
@@ -334,10 +307,12 @@ namespace NetSignal
             {
                 Console.Clear();
 
+                for (int clientId = 0; clientId < clientInstancesAPI.Length; clientId++)
+                {
+                    LogSignals("client" + 0, "client" + clientId, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[clientId][0]);
 
-                LogSignals("client0", "client0", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
-                LogSignals("client1", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
-                LogSignals("client2", "client2", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
+                }
+
 
                 var a = new FloatDataPackage();
                 a.data = (float)rng.NextDouble();
@@ -346,15 +321,6 @@ namespace NetSignal
                 a.timeStamp = DateTime.UtcNow;
                 clientUnreliableOutgoing[0][0][0].data = a;
 
-                a.clientId = 1;
-                a.index = 1;
-                a.data = (float)rng.NextDouble();
-                clientUnreliableOutgoing[1][1][0].data = a;
-
-                a.clientId = 2;
-                a.index = 2;
-                a.data = (float)rng.NextDouble();
-                clientUnreliableOutgoing[2][2][0].data = a;
 
                 await Task.Delay(100);
             }
@@ -447,29 +413,17 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-
-            //Server and Client are not listening/sending to the right endpoint?!
-            //server listens to Ip.any, 3000 , initialized with UdpClient(...), whereas client doesnt listen, is init with UdpClient() and then .Connect(...) . what exactly is the differnece?
-
-            if (!cancel())
-            {
-                //if(shouldReport())
-                {
-                    LogSignals("client0", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
-                }
-                await Task.Delay(1000);
-            }
-
-
             var rng = new System.Random(645);
-            for (int i  = 0; i < 1000; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 Console.Clear();
 
+                for (int clientId = 0; clientId < clientInstancesAPI.Length; clientId++)
+                {
+                    LogSignals("client" + 0, "client" + clientId, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[clientId][0]);
 
-                LogSignals("client0", "client0", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
-                LogSignals("client1", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
-                LogSignals("client2", "client2", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[0][0]);
+                }
+
 
                 var a = new FloatDataPackage();
                 a.data = (float)rng.NextDouble();
@@ -477,29 +431,11 @@ namespace NetSignal
                 a.index = 0;
                 a.timeStamp = DateTime.UtcNow;
                 clientUnreliableOutgoing[0][0][0].data = a;
-                
-                a.clientId = 1;
-                a.index = 1;
-                a.data = (float)rng.NextDouble();
-                clientUnreliableOutgoing[1][1][0].data = a;
-                
-                a.clientId = 2;
-                a.index = 2;
-                a.data = (float)rng.NextDouble();
-                clientUnreliableOutgoing[2][2][0].data = a;
 
+                
                 await Task.Delay(100);
             }
-            
-            if (!cancel())
-            {
-                LogSignals("client0", "client1", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
 
-                LogSignals("client0", "client2", clientUnreliableOutgoing[0][0], clientUnreliableIncoming[2][0]);
-                
-                await Task.Delay(1000);
-            }
-            
         }
 
 
