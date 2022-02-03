@@ -5,13 +5,14 @@ namespace NetSignal
     [Serializable]
     public struct FloatDataPackage
     {
-        public int id;
+        public int clientId;
+        public int index;
         public DateTime timeStamp;
         public float data;
 
         public override string ToString()
         {
-            return "id : " + id + " timestamp " + timeStamp + " data " + data;
+            return "id : " + clientId + " index " + index + " timestamp " + timeStamp + " data " + data;
         }
     }
 }

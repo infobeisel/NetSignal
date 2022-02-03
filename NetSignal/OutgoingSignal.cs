@@ -12,10 +12,11 @@ namespace NetSignal
             {
                 if (!dataMember.data.Equals(value.data))
                 {
-                    dataDirty = true;
+                    dataMember = value;
                     dataMember.timeStamp = DateTime.UtcNow;//TODO
+                    dataDirty = true;
                 }
-                dataMember = value;
+                
             }
             internal get { return dataMember; }
         }

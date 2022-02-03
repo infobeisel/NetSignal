@@ -51,7 +51,7 @@ namespace NetSignal
 
             Logging.Write("client connects to tcp" + connectTo .myIp + ":" + connectTo.iListenToPort+ " " );
             //await connection.tcpClient.ConnectAsync(connectionData.toSendToServer.Address, connectionData.toSendToServer.Port);
-            connection.tcpClient.Connect(IPAddress.Parse(connectTo.myIp), connectTo.iListenToPort);
+            await connection.tcpClient.ConnectAsync(IPAddress.Parse(connectTo.myIp), connectTo.iListenToPort);
 
             Logging.Write("client connected");
             NetworkStream stream = connection.tcpClient.GetStream();
