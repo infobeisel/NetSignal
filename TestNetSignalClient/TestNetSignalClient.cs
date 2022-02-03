@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TestNetSignalClient
 {
-    class Program
+    class TestNetSignalClient
     {
         static void Main(string[] args)
         {

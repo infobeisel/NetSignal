@@ -50,7 +50,7 @@ namespace NetSignal
 
 
             Logging.Write("client connects to tcp" + connectTo .myIp + ":" + connectTo.iListenToPort+ " " );
-            //await connection.tcpClient.ConnectAsync(connectionData.toSendToServer.Address, connectionData.toSendToServer.Port);
+            
             await connection.tcpClient.ConnectAsync(IPAddress.Parse(connectTo.myIp), connectTo.iListenToPort);
 
             Logging.Write("client connected");
@@ -149,30 +149,20 @@ namespace NetSignal
         public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
         {
             connectors = new ConnectionAPIs();
-            try
-            {
-                //connectionData.listenToEndpoint = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.listenPort);
-                
-                //connectionData.toSendToThis = new IPEndPoint(IPAddress.Parse(connectionData.serverIp), connectionData.sendToPort);
                 
 
-                connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-                Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
-                Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-                //connectors.udpClient = new UdpClient(connectionData.listenToEndpoint);
-                //connectors.udpClient.Connect(connectionData.listenToEndpoint);//make the udp client react only to incoming messages that come from the given port
+            connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
+            Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
+            Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
+            //connectors.udpClient = new UdpClient(connectionData.listenToEndpoint);
+            //connectors.udpClient.Connect(connectionData.listenToEndpoint);//make the udp client react only to incoming messages that come from the given port
 
-                connectors.tcpListener = null;
+            connectors.tcpListener = null;
 
-                connectors = await SetupClientTCP(connectors, connectionData, connectionState, toServer);
+            connectors = await SetupClientTCP(connectors, connectionData, connectionState, toServer);
 
-                connectionData = await ExchangeConnectionInitials(connectors, connectionData, connectionState);
+            connectionData = await ExchangeConnectionInitials(connectors, connectionData, connectionState);
 
-            }
-            catch (SocketException e)
-            {
-                Logging.Write(e.Message);
-            }
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(connectors, connectionData);
         }
 
