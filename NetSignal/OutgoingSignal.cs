@@ -10,12 +10,11 @@ namespace NetSignal
         {
             set
             {
-                if (!dataMember.data.Equals(value.data))
-                {
-                    dataMember = value;
-                    dataMember.timeStamp = DateTime.UtcNow;//TODO
-                    dataDirty = true;
-                }
+                
+                dataMember = value;
+                dataMember.timeStamp = DateTime.UtcNow;//TODO
+                dataDirty = true;
+                
                 
             }
             internal get { return dataMember; }
@@ -25,7 +24,7 @@ namespace NetSignal
 
         public override string ToString()
         {
-            return "data : " + data + " dataDirty " + dataDirty;
+            return "D: " + data + ", d: " + dataDirty;
         }
 
         public bool Equals(IncomingSignal incoming)

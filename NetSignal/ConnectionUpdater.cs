@@ -194,7 +194,8 @@ namespace NetSignal
                             connectionData.clientID = myClientID;
                             Logging.Write("i am client " + myClientID);
                         },
-                        async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); });
+                        async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
+                        async () => { Logging.Write("handle udp keepalive!? unexpected reply to client's tcp connection request"); });
                 });
             return connectionData;
         }
@@ -295,7 +296,8 @@ namespace NetSignal
                                     
                                 }
                             },
-                            async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); }
+                            async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); },
+                            async () => { Logging.Write("udp keepalive receive not yet implemented and should NOT occur here!?"); }
                             );
                     }
 
@@ -312,7 +314,54 @@ namespace NetSignal
             }
         }
 
-        
+
+
+        public async static void PeriodicallySendKeepAlive(ConnectionAPIs with, ConnectionMetaData connection, ConnectionState connectionState, ConnectionMetaData [] toServers, Action<string> report, Func<bool> cancel, int msKeepAlivePeriod = 1000)
+        {
+
+            try
+            {
+                while (!cancel())
+                {
+                    var previousState = Util.CompareExchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
+
+                    if (previousState != StateOfConnection.ReadyToOperate)
+                    {
+                        await Task.Delay(30);
+                        continue;
+                    }
+                    var package = new KeepAlivePackage();
+                    package.clientId = connection.clientID;
+                    package.timeStamp = DateTime.UtcNow;
+
+                    var usingBytes = connectionState.udpWriteBytes;
+                    Util.FlushBytes(usingBytes);
+                    await MessageDeMultiplexer.MarkUdpKeepAlive(usingBytes, async () =>
+                    {
+                        foreach(var serverData in toServers)
+                        {
+                            IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(serverData.myIp), serverData.iListenToPort);
+                            var dataStr = SignalCompressor.Compress(package);
+                            report("keepalive " + package + " to " + toSendTo);
+                            Encoding.ASCII.GetBytes(dataStr, 0, dataStr.Length, usingBytes, 1);
+                            try
+                            {
+                                await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
+                            }
+                            catch (SocketException e)
+                            {
+                                Logging.Write("PeriodicallySendKeepAlive: udp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
+                            }
+                        }
+                    });
+                    await Task.Delay(msKeepAlivePeriod);
+                }
+            }
+            catch (SocketException e)
+            {
+                Logging.Write(e);
+            }
+        }
 
         private static void IdentifyClient(string fromTCPMessage, ConnectionMapping connectionMapping, ConnectionAPIs[] storeToConnections, TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {

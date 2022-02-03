@@ -2,6 +2,7 @@
 
 namespace NetSignal
 {
+
     [Serializable]
     public struct FloatDataPackage
     {
@@ -12,7 +13,7 @@ namespace NetSignal
 
         public override string ToString()
         {
-            return "id : " + clientId + " index " + index + " timestamp " + timeStamp + " data " + data;
+            return "ci: " + clientId + ", si: " + index + ",t: " + timeStamp.ToShortTimeString() + ", p:" + data.ToString("0000.000");
         }
     }
 }

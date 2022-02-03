@@ -9,12 +9,11 @@ namespace NetSignal
         {
             internal set
             {
-                if (!dataMember.data.Equals(value.data))
-                {
-                    dataMember = value;
-                    dataMember.timeStamp = DateTime.UtcNow;//TODO
-                    dataHasBeenUpdated = true;
-                }
+                
+                dataMember = value;
+                dataMember.timeStamp = DateTime.UtcNow;//TODO
+                dataHasBeenUpdated = true;
+                
                 
             }
             get
@@ -24,10 +23,12 @@ namespace NetSignal
         }
 
         public bool dataHasBeenUpdated;
+        public DateTime cameIn;
+
 
         public override string ToString()
         {
-            return "data : " + data;
+            return "D: " + data + "png:" + (cameIn - dataMember.timeStamp).TotalMilliseconds.ToString("000.00");
         }
     }
 }

@@ -4,6 +4,21 @@ namespace NetSignal
 {
     public class SignalCompressor
     {
+        public static string Compress(KeepAlivePackage package)
+        {
+            return package.clientId.ToString("00000000000000000000000000000000") +
+                package.timeStamp.Ticks.ToString("00000000000000000000000000000000");
+        }
+
+        public static KeepAlivePackage DecompressKeepAlive(string compressed)
+        {
+            //TODO OMG MEMORY
+            KeepAlivePackage p = new KeepAlivePackage();
+            p.clientId = int.Parse(compressed.Substring(0, 32));
+            p.timeStamp = new DateTime(Int64.Parse(compressed.Substring(32, 32)));
+            return p;
+        }
+
         public static string Compress(FloatDataPackage package)
         {
 
@@ -16,7 +31,7 @@ namespace NetSignal
                 + Convert.ToString(BitConverter.DoubleToInt64Bits((double)package.data),2).PadLeft(64, '0');*/
         }
 
-        public static FloatDataPackage Decompress(string compressed)
+        public static FloatDataPackage DecompressFloatPackage(string compressed)
         {
             
             //TODO OMG MEMORY

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace NetSignal
@@ -6,7 +6,7 @@ namespace NetSignal
     //contains the NetSignal protocol rules for identifying the right type of an incoming udp or tcp message
     public class MessageDeMultiplexer
     {
-        public async static Task Divide(byte [] message, Func<Task> handleFloatSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal)
+        public async static Task Divide(byte [] message, Func<Task> handleFloatSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal, Func<Task> handleUdpAliveSignal)
         {
             switch (message[0])
             {
@@ -18,6 +18,9 @@ namespace NetSignal
                     break;
                 case 2: //tcp alive signal
                     await handleTCPAliveSignal();
+                    break;
+                case 3: //udp alive signal
+                    await handleUdpAliveSignal();
                     break;
                 default:
                     Logging.Write("found invalid message type: " + message);
@@ -41,6 +44,12 @@ namespace NetSignal
         public async static Task MarkTCPKeepAlive(byte[] message, Func<Task> handleRequest)
         {
             message[0] = 2;
+            await handleRequest();
+        }
+
+        public async static Task MarkUdpKeepAlive(byte[] message, Func<Task> handleRequest)
+        {
+            message[0] = 3;
             await handleRequest();
         }
 
