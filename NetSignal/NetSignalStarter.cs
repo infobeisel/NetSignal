@@ -31,7 +31,8 @@ namespace NetSignal
 
             Logging.Write("StartServer: start receive signals");
             //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Logging.Write(s));
-            UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel, (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
+            UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel,
+                (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
 
             ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, connections, connectionDatas, connectionStates);
 
@@ -43,12 +44,13 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             //SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
-            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,(string r) => { if (shouldLog) Logging.Write("server send: " + r); },  cancel, connectionDatas);
+            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,
+                (string r) => { if (shouldLog) Logging.Write("server send: " + r); },  cancel, connections, connectionDatas, connectionStates);
 
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
-            ConnectionUpdater.AwaitAndPerformTearDownTCPListener(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas, connectionMapping);
+            ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas, connectionMapping);
 
             UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(unreliableIncomingSignals, unreliableOutgoingSignals, cancel);
             UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, cancel);
@@ -64,7 +66,7 @@ namespace NetSignal
             OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
         {
 
-            bool shouldReport = false;
+            bool shouldReport = true;
             
             try
             {
@@ -84,7 +86,7 @@ namespace NetSignal
                 Logging.Write("StartClient: start receive signals");
                 
                 UnreliableSignalUpdater.ReceiveSignals(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableIncomingSignals, cancel,
-                    (string r) => { if (shouldReport) Logging.Write("client receive: " + r); });
+                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " receive: " + r); });
 
 
                 ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, 
@@ -93,12 +95,12 @@ namespace NetSignal
                 Logging.Write("StartClient: start sync signals to server");
                 
                 UnreliableSignalUpdater.SyncSignalsToAll(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableOutgoingSignals,
-                    (string r) => { if (shouldReport) Logging.Write("client send: " + r); }, cancel, serverData);
+                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " send: " + r); }, cancel, null, serverData, null);
 
                 ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, clientCon, clientData, clientState);
 
                 ConnectionUpdater.PeriodicallySendKeepAlive(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData,
-                    (string r) => { if (shouldReport) Logging.Write("client send: " + r); }, cancel);
+                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " send: " + r); }, cancel);
 
                 ConnectionUpdater.AwaitAndPerformTearDownClientTCP(clientCon[clientIndex], cancel, clientState[clientIndex]);
                 ConnectionUpdater.AwaitAndPerformTearDownClientUDP(clientCon[clientIndex], cancel, clientState[clientIndex]);
@@ -161,7 +163,7 @@ namespace NetSignal
         {
           
             var cancel = false;
-            var shouldPrint = false;
+            var shouldPrint = true;
 
             int clientCount = 32;
 
@@ -373,7 +375,7 @@ namespace NetSignal
 
             Logging.Write("TestDuplex: start server");
             //TODO server needs to have [clientInstancesAPI.Length, 5] signals!
-            var updatedServerTuple = await StartServer(false, serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            var updatedServerTuple = await StartServer(shouldReport(), serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 clientConnectionStatesSeenFromServer, 
                 unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer);
@@ -419,7 +421,7 @@ namespace NetSignal
             }
             await Task.Delay(1000);
 
-            //TODO 
+            
             await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
             /*
             var rng = new System.Random(645);

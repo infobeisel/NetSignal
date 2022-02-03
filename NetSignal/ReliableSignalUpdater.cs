@@ -128,14 +128,17 @@ namespace NetSignal
                         }
                         catch (ObjectDisposedException e)
                         {
+                            Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                             Logging.Write("ReceiveSignals: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                             continue;
                         }
                         catch (SocketException e)
                         {
+                            Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                             Logging.Write("ReceiveSignals: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                             continue;
                         }
+                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     await Task.Delay(1);
                 }

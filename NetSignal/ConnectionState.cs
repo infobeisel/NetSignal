@@ -11,7 +11,8 @@ namespace NetSignal
         public int tcpReadStateName;
         public DateTime tcpKeepAlive;//maybe, to keep the tcp connection open.
 
-        public int udpStateName;
+        public int udpWriteStateName;
+        //public int udpReadStateName;
 
         public int httpListenerStateName;
 
@@ -22,7 +23,8 @@ namespace NetSignal
 
         public ConnectionState()
         {
-            udpStateName = (int)StateOfConnection.Uninitialized;
+            udpWriteStateName = (int)StateOfConnection.Uninitialized;
+            //udpReadStateName = (int)StateOfConnection.Uninitialized;
             tcpWriteStateName = (int)StateOfConnection.Uninitialized;
             tcpReadStateName = (int)StateOfConnection.Uninitialized;
             httpListenerStateName = (int)StateOfConnection.Uninitialized;

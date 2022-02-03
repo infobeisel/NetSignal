@@ -12,8 +12,9 @@ namespace NetSignal
 
 
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(ConnectionAPIs with, ConnectionMetaData connectionMetaData, ConnectionState connectionState, OutgoingSignal[][] signals,Action<string> report, Func<bool> cancel, params ConnectionMetaData[] all)
+        public async static void SyncSignalsToAll(ConnectionAPIs with, ConnectionMetaData connectionMetaData, ConnectionState connectionState, OutgoingSignal[][] signals,Action<string> report, Func<bool> cancel, ConnectionAPIs [] toAllApis, ConnectionMetaData[] toAllData, ConnectionState [] toAllStates)
         {
+            bool useOwnUdpClient = toAllApis == null; // whether to use the udp client relying in with, or the udp client that has been set up for each connection
             try
             {
                 while (!cancel())
@@ -23,31 +24,35 @@ namespace NetSignal
                         {
                             if (signals[fromClientI][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                             {
-                                var previousState = Util.CompareExchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
 
-                                if (previousState != StateOfConnection.ReadyToOperate)
+                                for (int toClientI = 0; toClientI  < toAllData.Length; toClientI++)
                                 {
-                                    await Task.Delay(1);
-                                    continue;
-                                }
+                                    TODO: if set to beingoperated (as it should be) , the server never ever sends anything because it has already locked for listening. use two udp clients?
+                                    
 
-                                foreach (var toClient in all)
-                                {
+                                    StateOfConnection previousState = StateOfConnection.Uninitialized;
+                                    if(useOwnUdpClient)
+                                        previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
+                                    else
+                                        previousState = Util.CompareExchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
+
+
+                                    if (previousState != StateOfConnection.ReadyToOperate)
+                                    {
+                                        await Task.Delay(1);
+                                        continue;
+                                    }
+
+                                    var toClient = toAllData[toClientI];
+                                    var udpClientToUse = useOwnUdpClient ? with.udpClient : toAllApis[toClientI].udpClient;
+
                                     IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toClient.myIp), toClient.iListenToPort);
 
                                     
-
-                                    //make sure correct metadata is written. TODO VERIFY
-                                    /*var modified = signals[fromClientI][signalI].data;
-                                    modified.clientId = fromClientI;
-                                    modified.index = signalI;
-                                    signals[fromClientI][signalI].data = modified;*/
-
                                     report("send data to " + toSendTo + " : " + signals[fromClientI][signalI].data);
 
                                     
-                                    //Logging.Write("will send " + dataStr);
-                                    var usingBytes = connectionState.udpWriteBytes;
+                                    var usingBytes = useOwnUdpClient ? connectionState.udpWriteBytes : toAllStates[toClientI].udpWriteBytes;
                                     Util.FlushBytes(usingBytes);
                                     SignalCompressor.Compress(signals[fromClientI][signalI].data, usingBytes, 1);
                                     await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
@@ -55,7 +60,8 @@ namespace NetSignal
                                         
                                         try
                                         {
-                                            await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
+                                            
+                                            await udpClientToUse.SendAsync(usingBytes, usingBytes.Length, toSendTo);
                                         }
                                         catch (SocketException e)
                                         {
@@ -67,10 +73,16 @@ namespace NetSignal
                                         }
 
                                     });
+
+                                    if (useOwnUdpClient)
+                                        previousState = Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
+                                    else
+                                        previousState = Util.Exchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.ReadyToOperate);
+
                                 }
                                 signals[fromClientI][signalI].dataDirty = false;
 
-                                Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
+                                
                             }
                             await Task.Delay(1);
                         }
@@ -129,7 +141,7 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
-                    var previousState = Util.CompareExchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
+                    var previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
                         await Task.Delay(1);
@@ -143,13 +155,13 @@ namespace NetSignal
                     }
                     catch (ObjectDisposedException e)
                     {
-                        Util.Exchange(ref connectionState.udpStateName, StateOfConnection.Uninitialized);
+                        Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.Uninitialized);
                         Logging.Write("ReceiveSignals: udp socket has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                         continue;
                     }
                     var bytes = receiveResult.Buffer;
                     await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, bytes, receiveResult, from);
-                    Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
+                    Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
                 }
             }
             catch (SocketException e)

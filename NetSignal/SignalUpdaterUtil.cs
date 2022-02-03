@@ -22,14 +22,14 @@ namespace NetSignal
                                     async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
                                     async () => { Logging.Write("ReceiveSignals: unexpected package tcp keepalive!?"); },
             async () => {
-                //Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length);
+                
 
                 var package = SignalCompressor.DecompressKeepAlive(bytes, 1);
 
-                report(package.ToString());
+                //report(package.ToString());
                 if (fromConnectionDatas.Length > package.clientId)
                 {
-                    //Logging.Write("I, server,  received sth from " + udpReceiveResult.RemoteEndPoint + " . write to " + package.clientId);
+                
                     fromConnectionDatas[package.clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
                     fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
                 }

@@ -16,12 +16,11 @@ namespace NetSignal
             
             
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            Util.Exchange(ref  connectionState.udpStateName, StateOfConnection.ReadyToOperate);
+            Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             
-            //connectors.udpClient = new UdpClient();
-            //connectors.udpClient.Connect(connectionData.listenToEndpoint);//make the udp client react only to incoming messages that come from the given port
+            
             Logging.Write("server: udpclient local: " + (IPEndPoint)connectors.udpClient.Client.LocalEndPoint);
-            //            Logging.Write("server: udpclient remote: " + (IPEndPoint)connectors.udpClient.Client.RemoteEndPoint);
+            
 
             connectors.tcpListener = new TcpListener(IPAddress.Any, connectionData.iListenToPort);
             connectors.tcpClient = null;
@@ -31,11 +30,14 @@ namespace NetSignal
                 connections[connectionI].tcpClient = null;
                 connections[connectionI].tcpListener = null;
                 connections[connectionI].tcpStream = null;
-                connections[connectionI].udpClient = null;
+                connections[connectionI].udpClient = new UdpClient();
+
+                
 
                 connectionDatas[connectionI].clientID = -1;
 
                 toConnections[connectionI] = new ConnectionState();
+                Util.Exchange(ref toConnections[connectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
             }
 
         }
@@ -63,7 +65,7 @@ namespace NetSignal
         }
 
 
-        public async static void AwaitAndPerformTearDownTCPListener(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState, ConnectionAPIs [] clientCons, ConnectionState[] clientStates, ConnectionMetaData [] clientDatas, ConnectionMapping connectionmapping)
+        public async static void AwaitAndPerformTearDownTCPListenerAndUdpToClients(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState, ConnectionAPIs [] clientCons, ConnectionState[] clientStates, ConnectionMetaData [] clientDatas, ConnectionMapping connectionmapping)
         {
             while (!shouldTearDown())
             {
@@ -92,6 +94,11 @@ namespace NetSignal
                 clientCons[conI].tcpClient = null;
 
                 clientCons[conI].tcpListener = null;
+
+                clientCons[conI].udpClient?.Close();
+                clientCons[conI].udpClient?.Dispose();
+                clientCons[conI].udpClient = null;
+
 
                 clientDatas[conI].clientID = -1;
 
@@ -140,7 +147,7 @@ namespace NetSignal
             }*/
             Logging.Write("clean up udp client");
             
-            Util.Exchange(ref currentState.udpStateName, StateOfConnection.Uninitialized);
+            Util.Exchange(ref currentState.udpWriteStateName, StateOfConnection.Uninitialized);
 
 
             connection.udpClient.Close();
@@ -152,10 +159,8 @@ namespace NetSignal
                 
 
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            Util.Exchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate);
+            Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            //connectors.udpClient = new UdpClient(connectionData.listenToEndpoint);
-            //connectors.udpClient.Connect(connectionData.listenToEndpoint);//make the udp client react only to incoming messages that come from the given port
 
             connectors.tcpListener = null;
 
@@ -323,7 +328,7 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
-                    var previousState = Util.CompareExchange(ref connectionState.udpStateName, StateOfConnection.ReadyToOperate, StateOfConnection.ReadyToOperate);
+                    var previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
@@ -344,7 +349,7 @@ namespace NetSignal
                         {
                             IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(serverData.myIp), serverData.iListenToPort);
                             
-                            report("keepalive " + package + " to " + toSendTo);
+                            //report("keepalive " + package + " to " + toSendTo);
                             try
                             {
                                 await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
@@ -355,6 +360,8 @@ namespace NetSignal
                             }
                         }
                     });
+                    Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
+
                     await Task.Delay(msKeepAlivePeriod);
                 }
             }
