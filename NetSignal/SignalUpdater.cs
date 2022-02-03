@@ -15,7 +15,7 @@ namespace NetSignal
                 try
                 {
                     var byteCountRead = connection.tcpStream.EndRead(ar);
-                    await WriteToIncomingSignals(metaData, signals, report, connectionState.tcpReadBytes);
+                    await WriteToIncomingSignals( signals, report, connectionState.tcpReadBytes, new UdpReceiveResult(), metaData);
 
                     Util.Exchange(ref connectionState.tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
@@ -251,7 +251,7 @@ namespace NetSignal
             }
         }
 
-        public async static void ReceiveSignals(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, IncomingSignal[][] signals, Func<bool> cancel, Action<string> report)
+        public async static void ReceiveSignals(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, params ConnectionMetaData [] from)
         {
             //TODO currently unused
             var usingBytes = connectionState.udpReadBytes;
@@ -286,9 +286,12 @@ namespace NetSignal
                         Logging.Write("ReceiveSignals: udp socket has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                         continue;
                     }
+
+                    
+
                     var bytes = receiveResult.Buffer;
 
-                    await WriteToIncomingSignals(connectionData, signals, report, bytes);
+                    await WriteToIncomingSignals(signals, report, bytes, receiveResult, from);
                 }
             }
             catch (SocketException e)
@@ -301,11 +304,11 @@ namespace NetSignal
             }
         }
 
-        private static async Task WriteToIncomingSignals(ConnectionMetaData connectionData, IncomingSignal[][] signals, Action<string> report, byte[] bytes)
+        private static async Task WriteToIncomingSignals(IncomingSignal[][] signals, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, params ConnectionMetaData [] fromConnectionDatas)
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
-                Logging.Write("I (" + connectionData.iListenToPort + ") received sth ");
+                
 
                 Logging.Write("parse " + bytes.ToString() + " # " + bytes.Length);
                 var parsedString = Encoding.ASCII.GetString(bytes, 1, bytes.Length - 1);
@@ -313,6 +316,21 @@ namespace NetSignal
                 report(parsedString);
                 var package = SignalCompressor.Decompress(parsedString);
                 signals[package.clientId][package.index].data = package;
+
+                //correct endpoint where the udp packet is coming from 
+                if (fromConnectionDatas.Length == 1) //already know the from connection
+                {
+                    Logging.Write("I, client,  (" + fromConnectionDatas[0].iListenToPort + ") received sth ");
+                } else 
+                {
+                    Logging.Write("I, server,  received sth from " + udpReceiveResult.RemoteEndPoint);
+                    System.Diagnostics.Debug.Assert(fromConnectionDatas.Length > package.clientId);
+                    System.Diagnostics.Debug.Assert( package.clientId >= 0);
+                    fromConnectionDatas[package.clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
+                    fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
+                }
+                
+                
             },
                                     async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
                                     async () => { Logging.Write("ReceiveSignals: unexpected package tcp keepalive!?"); });
