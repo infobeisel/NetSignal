@@ -31,10 +31,14 @@ namespace NetSignal
 
             Logging.Write("StartServer: start receive signals");
             //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Logging.Write(s));
-            UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel,
-                (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
 
-            ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, connections, connectionDatas, connectionStates);
+            _ = Task.Run(() =>
+            {
+                UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel,
+                (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
+            });
+
+            //ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, connections, connectionDatas, connectionStates);
 
             
 
@@ -44,29 +48,38 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             //SignalUpdater.StartThreadSyncSignalsToAll(serverConnection, outgoingSignals, cancel, connectionDatas);
-            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,
-                (string r) => { if (shouldLog) Logging.Write("server send: " + r); },  cancel, connections, connectionDatas, connectionStates);
 
-            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
+            
+            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,
+            (string r) => { if (shouldLog) Logging.Write("server send: " + r); }, cancel, connections, connectionDatas, connectionStates);
+            
+            //ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
             ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas, connectionMapping);
 
-            UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(unreliableIncomingSignals, unreliableOutgoingSignals, cancel);
-            UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, cancel);
+            _ = Task.Run(() =>
+            {
+                UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(unreliableIncomingSignals, unreliableOutgoingSignals, cancel);
+            });
+
+            _ = Task.Run(() =>
+            {
+                UnreliableSignalUpdater.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, cancel);
+            });
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData, ConnectionMapping>(serverConnection[0], serverData[0], connectionMapping);
         }
 
         //please provide array with one element for server*
-        public async static Task<Tuple<ConnectionAPIs,ConnectionMetaData>> StartClient(int clientIndex, ConnectionAPIs [] clientCon, ConnectionMetaData [] clientData, ConnectionState [] clientState, 
+        public async static Task<Tuple<ConnectionAPIs,ConnectionMetaData>> StartClient(Func<bool> shouldReport,  int clientIndex, ConnectionAPIs [] clientCon, ConnectionMetaData [] clientData, ConnectionState [] clientState, 
              ConnectionMetaData [] serverData, 
             Func<bool> cancel,
             OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
             OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
         {
 
-            bool shouldReport = true;
+            
             
             try
             {
@@ -84,23 +97,30 @@ namespace NetSignal
             if (StateOfConnection.Uninitialized != (StateOfConnection)clientState[clientIndex].tcpReadStateName)
             {
                 Logging.Write("StartClient: start receive signals");
+
+
+                _ = Task.Run(() =>
+                {
+                    UnreliableSignalUpdater.ReceiveSignals(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableIncomingSignals, cancel,
+                    (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " receive: " + r); });
+                });
                 
-                UnreliableSignalUpdater.ReceiveSignals(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableIncomingSignals, cancel,
-                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " receive: " + r); });
-
-
-                ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, 
-                     new[] { clientCon[clientIndex] }, new[] { clientData[clientIndex] }, new[] { clientState[clientIndex] });
+                //ReliableSignalUpdater.ReceiveSignalsReliably(reliableIncomingSignals, cancel, (string s) => { }, 
+                     //new[] { clientCon[clientIndex] }, new[] { clientData[clientIndex] }, new[] { clientState[clientIndex] });
 
                 Logging.Write("StartClient: start sync signals to server");
+
                 
                 UnreliableSignalUpdater.SyncSignalsToAll(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableOutgoingSignals,
-                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " send: " + r); }, cancel, null, serverData, null);
+                (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " send: " + r); }, cancel, null, serverData, null);
 
-                ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, clientCon, clientData, clientState);
+                //ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, clientCon, clientData, clientState);
 
-                ConnectionUpdater.PeriodicallySendKeepAlive(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData,
-                    (string r) => { if (shouldReport) Logging.Write("client " + clientIndex + " send: " + r); }, cancel);
+                _ = Task.Run(() =>
+                {
+                    ConnectionUpdater.PeriodicallySendKeepAlive(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData,
+                    (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " send: " + r); }, cancel);
+                });
 
                 ConnectionUpdater.AwaitAndPerformTearDownClientTCP(clientCon[clientIndex], cancel, clientState[clientIndex]);
                 ConnectionUpdater.AwaitAndPerformTearDownClientUDP(clientCon[clientIndex], cancel, clientState[clientIndex]);
@@ -163,7 +183,7 @@ namespace NetSignal
         {
           
             var cancel = false;
-            var shouldPrint = true;
+            var shouldPrint = false;
 
             int clientCount = 32;
 
@@ -292,7 +312,7 @@ namespace NetSignal
 
 
 
-                var updatedTuple = await StartClient(clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
+                var updatedTuple = await StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
                 clientInstancesAPI[clientI] = updatedTuple.Item1;
@@ -310,6 +330,8 @@ namespace NetSignal
 
 
             var rng = new System.Random(645);
+
+            var avgPing = 0.0;
             for (int i = 0; i < 1000; i++)
             {
 
@@ -317,11 +339,9 @@ namespace NetSignal
 
                 if (wasSame)
                 {
-                    Console.Clear();
-                    LogSignals("client" + 0, "client" + 1, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[1][0]);
+                    //Logging.Write(clientUnreliableOutgoing[0][0][0] + " vs " + clientUnreliableIncoming[1][0][0].ToString());
+                    avgPing += (clientUnreliableIncoming[1][0][0].cameIn - clientUnreliableIncoming[1][0][0].data.timeStamp).TotalMilliseconds;
                 }
-
-
 
 
                 if (wasSame)
@@ -334,7 +354,13 @@ namespace NetSignal
                     clientUnreliableOutgoing[0][0][0].data = a;
                 }
 
-                await Task.Delay(100);
+                await Task.Delay(40);
+
+                if(i % 10 == 0)
+                {
+                    Logging.Write("avg ping: " + (avgPing / 10.0).ToString("000.000") + " ms");
+                    avgPing = 0.0;
+                }
             }
         }
 
@@ -412,7 +438,7 @@ namespace NetSignal
 
 
 
-                var updatedTuple = await StartClient(clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
+                var updatedTuple = await StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
                 clientInstancesAPI[clientI] = updatedTuple.Item1;

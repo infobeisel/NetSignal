@@ -59,6 +59,11 @@ namespace TestNetSignalClient
             cancel = true;
 
     */
+            int avWThreads; int avIOThreads;
+            System.Threading.ThreadPool.GetMinThreads(out avWThreads, out avIOThreads);
+
+            System.Threading.ThreadPool.SetMaxThreads(40, 40);
+            Logging.Write("max threads " + avWThreads + " , " + avIOThreads);
             NetSignalStarter.Test().Wait();
 
             string key = Console.ReadLine();

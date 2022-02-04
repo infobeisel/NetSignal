@@ -17,8 +17,9 @@ namespace NetSignal
             
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
             Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
-            
-            
+            Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
+
+
             Logging.Write("server: udpclient local: " + (IPEndPoint)connectors.udpClient.Client.LocalEndPoint);
             
 
@@ -38,6 +39,7 @@ namespace NetSignal
 
                 toConnections[connectionI] = new ConnectionState();
                 Util.Exchange(ref toConnections[connectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
+                Util.Exchange(ref toConnections[connectionI].udpReadStateName, StateOfConnection.ReadyToOperate);
             }
 
         }
@@ -148,6 +150,7 @@ namespace NetSignal
             Logging.Write("clean up udp client");
             
             Util.Exchange(ref currentState.udpWriteStateName, StateOfConnection.Uninitialized);
+            Util.Exchange(ref currentState.udpReadStateName, StateOfConnection.Uninitialized);
 
 
             connection.udpClient.Close();
@@ -160,6 +163,7 @@ namespace NetSignal
 
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
             Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
+            Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
 
             connectors.tcpListener = null;
@@ -323,7 +327,7 @@ namespace NetSignal
 
         public async static void PeriodicallySendKeepAlive(ConnectionAPIs with, ConnectionMetaData connection, ConnectionState connectionState, ConnectionMetaData [] toServers, Action<string> report, Func<bool> cancel, int msKeepAlivePeriod = 1000)
         {
-
+            Logging.Write("PeriodicallySendKeepAlive on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
             try
             {
                 while (!cancel())
@@ -332,7 +336,7 @@ namespace NetSignal
 
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
-                        await Task.Delay(30);
+                        //await Task.Delay(30);
                         continue;
                     }
                     var package = new KeepAlivePackage();

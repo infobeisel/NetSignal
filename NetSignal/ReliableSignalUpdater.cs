@@ -51,7 +51,6 @@ namespace NetSignal
 
                                     if (previousState != StateOfConnection.ReadyToOperate)
                                     {
-                                        await Task.Delay(1);
                                         continue;
                                     }
                                     
@@ -80,14 +79,15 @@ namespace NetSignal
                                         {
                                             Logging.Write("SyncSignalsToAll: tcp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
                                         }
-                                        signals[fromClientI][signalI].dataDirty = false;
+                                        //signals[fromClientI][signalI].dataDirty = false;
                                     });
 
                                     Util.Exchange(ref toConnectionStates[connectionI].tcpWriteStateName, StateOfConnection.ReadyToOperate);
                                 }
                             }
-                        await Task.Delay(1);
+                     
                     }
+                    await Task.Delay(30);
                 }
             }
             catch (SocketException e)
@@ -113,7 +113,7 @@ namespace NetSignal
 
                         if (previousState != StateOfConnection.ReadyToOperate)
                         {
-                            await Task.Delay(1);
+                            await Task.Delay(30);
                             continue;
                         }
 
@@ -140,7 +140,7 @@ namespace NetSignal
                         }
                         Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                     }
-                    await Task.Delay(1);
+                    await Task.Delay(30);
                 }
             }
             catch (SocketException e)
