@@ -67,20 +67,23 @@ namespace NetSignal
                                 try
                                 {
                                     await toConnections[toI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
+                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.ReadyToOperate);
                                 }
                                 catch (SocketException e)
                                 {
-                                    Logging.Write("SyncSignalsToAll: tcp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (System.IO.IOException e)
                                 {
-                                    Logging.Write("SyncSignalsToAll: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Logging.Write("SyncSignalsToAllReliably: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                                 }
                                 //signals[fromClientI][signalI].dataDirty = false; TODO need proper mechanism to sync this across threads
                             });
                         }
                     }
-                Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.ReadyToOperate);
+                
                 await Task.Delay(60);
             }
         }
@@ -118,6 +121,7 @@ namespace NetSignal
                         var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
 
                         await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     catch (ObjectDisposedException e)
                     {
@@ -133,13 +137,14 @@ namespace NetSignal
                     }
                     catch (FormatException e)
                     {
+                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                         Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                     }
                     catch (System.IO.IOException e)
                     {
+                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                         Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving." );
                     }
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
             }
             catch (SocketException e)
