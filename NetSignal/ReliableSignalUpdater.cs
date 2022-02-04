@@ -72,6 +72,10 @@ namespace NetSignal
                                 {
                                     Logging.Write("SyncSignalsToAll: tcp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
+                                catch (System.IO.IOException e)
+                                {
+                                    Logging.Write("SyncSignalsToAll: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                                }
                                 //signals[fromClientI][signalI].dataDirty = false; TODO need proper mechanism to sync this across threads
                             });
                         }
