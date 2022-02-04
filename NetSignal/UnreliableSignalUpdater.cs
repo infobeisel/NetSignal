@@ -88,43 +88,7 @@ namespace NetSignal
             Logging.Write("stop SyncSignalsTo on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
         }
 
-        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][] incomingSignals, OutgoingSignal[][] outgoingSignals, Func<bool> cancel)
-        {
-            if (incomingSignals.Length != outgoingSignals.Length)
-                throw new Exception("incoming and outgoing array length unequal");
-
-            var clientCount = Math.Min(incomingSignals.Length, outgoingSignals.Length);
-            try
-            {
-                while (!cancel())
-                {
-                    for (int fromClientI = 0; fromClientI < clientCount; fromClientI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[fromClientI].Length, outgoingSignals[fromClientI].Length); signalI++)
-                        {
-                            if (incomingSignals[fromClientI][signalI].dataHasBeenUpdated)
-                            {
-                                for (int toClientI = 0; toClientI < clientCount; toClientI++)
-                                {
-                                    if (toClientI != fromClientI) //dont send to self
-                                    {
-                                        outgoingSignals[toClientI][signalI].data = incomingSignals[fromClientI][signalI].data;
-                                        incomingSignals[toClientI][signalI].dataHasBeenUpdated = false;
-                                    }
-                                }
-                            }
-                        }
-                    await Task.Delay(30);
-                }
-            }
-            catch (SocketException e)
-            {
-                Logging.Write(e);
-            }
-            finally
-            {
-            }
-        }
-
+        
         public async static void ReceiveSignals(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, params ConnectionMetaData[] from)
         {
             var usingBytes = connectionState.udpReadBytes;

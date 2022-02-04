@@ -8,6 +8,44 @@ namespace NetSignal
     public class SignalUpdaterUtil
     {
 
+        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][] incomingSignals, OutgoingSignal[][] outgoingSignals, Func<bool> cancel)
+        {
+            if (incomingSignals.Length != outgoingSignals.Length)
+                throw new Exception("incoming and outgoing array length unequal");
+
+            var clientCount = Math.Min(incomingSignals.Length, outgoingSignals.Length);
+            try
+            {
+                while (!cancel())
+                {
+                    for (int fromClientI = 0; fromClientI < clientCount; fromClientI++)
+                        for (int signalI = 0; signalI < Math.Min(incomingSignals[fromClientI].Length, outgoingSignals[fromClientI].Length); signalI++)
+                        {
+                            if (incomingSignals[fromClientI][signalI].dataHasBeenUpdated)
+                            {
+                                for (int toClientI = 0; toClientI < clientCount; toClientI++)
+                                {
+                                    if (toClientI != fromClientI) //dont send to self
+                                    {
+                                        outgoingSignals[toClientI][signalI].data = incomingSignals[fromClientI][signalI].data;
+                                        incomingSignals[toClientI][signalI].dataHasBeenUpdated = false;
+                                    }
+                                }
+                            }
+                        }
+                    await Task.Delay(30);
+                }
+            }
+            catch (SocketException e)
+            {
+                Logging.Write(e);
+            }
+            finally
+            {
+            }
+        }
+
+
         public static async Task WriteToIncomingSignals(IncomingSignal[][] signals, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, params ConnectionMetaData[] fromConnectionDatas)
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
