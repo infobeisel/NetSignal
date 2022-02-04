@@ -8,7 +8,6 @@ namespace NetSignal
 
         public string matchmakingServerIp;
         public int matchmakingServerPort;
-
         /*
         public string serverIpToSendTo;
         public int thisListensToPort;

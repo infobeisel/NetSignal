@@ -12,7 +12,7 @@ namespace DedicatedServer
         static void Main(string[] args)
         {
 
-            int maxPlayers = int.Parse(args[1]);
+            int maxPlayers = int.Parse(args[0]);
 
             var cancel = false;
             var shouldPrint = false;
@@ -57,11 +57,10 @@ namespace DedicatedServer
 
             }
 
-
-            serverData[0].iListenToPort = int.Parse(args[0]);
-            serverData[0].myIp = "127.0.0.1";
-            serverData[0].matchmakingServerIp = args[2];
-            serverData[0].matchmakingServerPort = int.Parse(args[3]);
+            serverData[0].myIp = args[1];
+            serverData[0].iListenToPort = int.Parse(args[2]);
+            serverData[0].matchmakingServerIp = args[3];
+            serverData[0].matchmakingServerPort = int.Parse(args[4]);
 
 
 
