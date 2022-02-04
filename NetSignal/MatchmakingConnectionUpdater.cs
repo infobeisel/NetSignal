@@ -15,6 +15,7 @@ namespace NetSignal
         {
             public string name;
             public string ip;
+            public long tick;
             public int port;
             public int currentPlayerCount;
             public int maxPlayerCount;
@@ -78,13 +79,51 @@ namespace NetSignal
                 string responseString = await getResponse.Content.ReadAsStringAsync();
                 ret = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerList>(responseString);
                 Logging.Write(ret.ToString());
-                                   
-            } catch (Exception e)
+
+            }
+            catch (Exception e)
             {
                 Logging.Write(e);
             }
             return ret;
         }
+
+        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Func<bool> cancel, int periodMs)
+        {
+            while (!cancel())
+            {
+                await UpdateServerEntry(connection, connectionData, connectionState);
+                await Task.Delay(periodMs);
+            }
+        }
+
+        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
+        {
+
+            
+            string uri = connectionData.matchmakingServerIp + ":" + connectionData.matchmakingServerPort.ToString() + "/v0/matchmaking/dedicatedkeepalive";
+
+            ServerKeepAlive update = new ServerKeepAlive();
+            update.ip = connectionData.myIp;
+            update.port = connectionData.iListenToPort;
+            update.currentPlayerCount = 0; //TODO
+            update.tick = DateTime.UtcNow.Ticks;
+
+            try
+            {
+                var content = Newtonsoft.Json.JsonConvert.SerializeObject(update, Newtonsoft.Json.Formatting.None);
+
+                var stringContent = new System.Net.Http.StringContent(content, System.Text.Encoding.UTF8, "application/json");
+
+                await connection.httpClient.PostAsync(uri, stringContent);
+                
+            }
+            catch (Exception e)
+            {
+                Logging.Write(e);
+            }
+        }
+
 
 
 
@@ -135,6 +174,13 @@ namespace NetSignal
             }
         }
 
+        public struct ServerKeepAlive
+        {
+            public string ip;
+            public int port;
+            public int currentPlayerCount;
+            public long tick;
+        }
 
         public static async void StartListenMatchmaking(ConnectionAPIs connection, ConnectionMetaData metaData, ConnectionState state, Func<bool> shouldStop)
         {
@@ -161,6 +207,7 @@ namespace NetSignal
             }
 
             
+            
 
             if (requestContext != null && (StateOfConnection)state.httpListenerStateName == StateOfConnection.ReadyToOperate && !shouldStop())
             {
@@ -169,69 +216,47 @@ namespace NetSignal
 
                 StartListenMatchmaking(connection, metaData, state, shouldStop);
 
-                
-
                 HttpListenerRequest request = requestContext.Request;
                 HttpListenerResponse response = requestContext.Response;
 
                 Logging.Write("receive " + request.Url.LocalPath);
 
-                if (request.HttpMethod.Equals("PUT") && request.Url.LocalPath.Equals("/v0/matchmaking/dedicatedkeepalive"))
+                if (request.HttpMethod.Equals("POST") && request.Url.LocalPath.Equals("/v0/matchmaking/dedicatedkeepalive"))
                 {
                     var body = request.InputStream;
                     var encoding = request.ContentEncoding;
                     var reader = new System.IO.StreamReader(body, encoding);
                     var data = await reader.ReadToEndAsync();
-                    /*
-                     * TODO json
-                     * var execution = JsonUtility.FromJson<InspectionExecution>(data);
-                    lock (inspectionExecutionLockObject)
-                    {
-                        requestedInspectionExecution.executionStart = execution.executionStart;
-                        requestedInspectionExecution.withGameObjectName = execution.withGameObjectName;
-                        requestedInspectionExecution.withPosition = execution.withPosition;
-                    }
-                    */
-                    //Interlocked.Exchange<InspectionExecution>(ref requestedInspectionExecution, execution);
+                    var up = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerKeepAlive>(data);
+
                     body.Close();
                     reader.Close();
+                    response.ContentLength64 = 0;
+                    response.Close();
+
+                    MakeDatabaseUpdateOp(
+                        "update MatchList set LastKeepAliveTick = " + up.tick + ", CurrentPlayerCount = " + up.currentPlayerCount +
+                        " where Address =  '" + up.ip + "' and port = " + up.port + "");
+
+
                 }
 
                 if (request.HttpMethod.Equals("GET") && request.Url.LocalPath.Equals("/v0/matchmaking/serverlist"))
                 {
-
-                    var connectionPath = "data source=netsignal.db";
-                    var con = new SqliteConnection(connectionPath);
-                    Logging.Write("open db");
-                    con.Open();
-                    Logging.Write("opened db");
-                    IDbCommand dbcmd;
-                    IDataReader reader;
-                    dbcmd = con.CreateCommand();
-
-                    dbcmd.CommandText = "SELECT * FROM MatchList";
-                    Logging.Write("execute sql");
-                    reader = dbcmd.ExecuteReader();
-                    Logging.Write("executed sql");
-
                     var serverList = new ServerList();
                     serverList.list = new List<ServerListElementResponse>();
-                    while (reader.Read())
+                    MakeDatabaseReadOp("SELECT * FROM MatchList", (IDataReader reader) =>
                     {
-
                         var serverEntry = new ServerListElementResponse();
                         serverEntry.name = reader.GetString(0);
                         serverEntry.currentPlayerCount = reader.GetInt32(1);
                         serverEntry.maxPlayerCount = reader.GetInt32(2);
                         serverEntry.ip = reader.GetString(3);
                         serverEntry.port = reader.GetInt32(4);
+                        serverEntry.tick = long.Parse(reader.GetString(5));
 
                         serverList.list.Add(serverEntry);
-                    }
-
-                    reader.Close();
-                    con.Close();
-
+                    });
 
                     var serializedServerList = Newtonsoft.Json.JsonConvert.SerializeObject(serverList, Newtonsoft.Json.Formatting.None);
 
@@ -245,6 +270,80 @@ namespace NetSignal
                     response.Close();
                 }
             }
+        }
+
+        private static void MakeDatabaseReadOp(string sqlCommand, Action<IDataReader> resultReader)
+        {
+            var connectionPath = "data source=netsignal.db";
+            var con = new SqliteConnection(connectionPath);
+            IDataReader reader = null;
+            Logging.Write("open db");
+            try
+            {
+                con.Open();
+            
+                Logging.Write("opened db");
+                IDbCommand dbcmd;
+                
+                dbcmd = con.CreateCommand();
+
+                dbcmd.CommandText = sqlCommand;
+                Logging.Write("execute sql");
+                reader = dbcmd.ExecuteReader();
+                Logging.Write("executed sql");
+
+
+                while (reader.Read())
+                {
+
+                    resultReader(reader);
+                }
+
+                
+            } catch (Exception e)
+            {
+                Logging.Write(e);
+            } finally
+            {
+                reader.Close();
+                con.Close();
+            }
+            
+        }
+
+        private static void MakeDatabaseUpdateOp(string sqlCommand)
+        {
+            Logging.Write(sqlCommand);
+            var connectionPath = "data source=netsignal.db";
+            var con = new SqliteConnection(connectionPath);
+
+            IDbCommand dbcmd = null;
+            Logging.Write("open db");
+            try
+            {
+                con.Open();
+
+                Logging.Write("opened db");
+
+                dbcmd = con.CreateCommand();
+
+                dbcmd.CommandText = sqlCommand;
+                Logging.Write("execute sql");
+                dbcmd.ExecuteNonQuery();
+                Logging.Write("executed sql");
+                
+            }
+            catch (Exception e)
+            {
+                Logging.Write(e);
+            }
+            finally
+            {
+                dbcmd.Dispose();
+                con.Close();
+
+            }
+
         }
     }
 

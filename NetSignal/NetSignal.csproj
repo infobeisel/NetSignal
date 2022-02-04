@@ -75,6 +75,7 @@
     <Compile Include="MatchmakingConnectionUpdater.cs" />
     <Compile Include="MessageDeMultiplexer.cs" />
     <Compile Include="NetSignalStarter.cs" />
+    <Compile Include="NetSignalTests.cs" />
     <Compile Include="OutgoingSignal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReliableSignalUpdater.cs" />

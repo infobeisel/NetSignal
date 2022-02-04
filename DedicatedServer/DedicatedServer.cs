@@ -60,9 +60,13 @@ namespace DedicatedServer
 
             serverData[0].iListenToPort = int.Parse(args[0]);
             serverData[0].myIp = "127.0.0.1";
+            serverData[0].matchmakingServerIp = args[2];
+            serverData[0].matchmakingServerPort = int.Parse(args[3]);
 
-            
-             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
+
+
+
+            NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
 

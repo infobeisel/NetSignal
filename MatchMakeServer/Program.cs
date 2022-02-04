@@ -16,9 +16,10 @@ namespace MatchMakeServer
             var con = new ConnectionAPIs();
             var d = new ConnectionMetaData();
             var s = new ConnectionState();
-            //d.matchmakingServerIp = "http://127.0.0.1";
+
             d.matchmakingServerPort = int.Parse(args[0]);
             
+
             MatchmakingConnectionUpdater.InitializeMatchMakingServer(ref con, ref d, ref s, () => teard);
 
             while (true)
