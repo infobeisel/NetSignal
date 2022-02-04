@@ -39,11 +39,12 @@ namespace NetSignal
                 }
 
                 for (int fromClientI = 0; fromClientI < signals.Length; fromClientI++)
+                {
                     for (int signalI = 0; signalI < signals[fromClientI].Length; signalI++)
                     {
                         if (signals[fromClientI][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                         {
-                            
+
 
                             var toClient = toAllData[toClientI];
                             var udpClientToUse = useOwnUdpClient ? with.udpClient : toAllApis[toClientI].udpClient;
@@ -60,10 +61,6 @@ namespace NetSignal
                                 try
                                 {
                                     await udpClientToUse.SendAsync(usingBytes, usingBytes.Length, toSendTo);
-                                    if (useOwnUdpClient)
-                                        previousState = Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
-                                    else
-                                        previousState = Util.Exchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.ReadyToOperate);
 
                                 }
                                 catch (SocketException e)
@@ -84,14 +81,18 @@ namespace NetSignal
                                 }
                             });
 
-                            
+
                         }
                         //TODO need mechanism to exclude signal from being sent
                         //signals[fromClientI][signalI].dataDirty = false;
                     }
+                }
+                if (useOwnUdpClient)
+                    previousState = Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
+                else
+                    previousState = Util.Exchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.ReadyToOperate);
 
 
-                
 
                 await Task.Delay(30);
             }

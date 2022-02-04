@@ -57,6 +57,7 @@ namespace NetSignal
                     continue;
                 }
                 for (int fromClientI = 0; fromClientI < signals.Length; fromClientI++)
+                {
                     for (int signalI = 0; signalI < signals[fromClientI].Length; signalI++)
                     {
                         if (signals[fromClientI][signalI].dataDirty)
@@ -69,7 +70,7 @@ namespace NetSignal
                                 try
                                 {
                                     await toConnections[toI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
-                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.ReadyToOperate);
+
                                 }
                                 catch (SocketException e)
                                 {
@@ -85,7 +86,8 @@ namespace NetSignal
                             });
                         }
                     }
-
+                }
+                Util.CompareExchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
                 await Task.Delay(60);
             }
         }
@@ -124,7 +126,6 @@ namespace NetSignal
                     var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
 
                     await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
                 catch (ObjectDisposedException e)
                 {
@@ -146,6 +147,7 @@ namespace NetSignal
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
+                Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
             }
         }
     }

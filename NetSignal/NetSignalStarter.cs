@@ -30,7 +30,6 @@ namespace NetSignal
             Logging.Write(serverConnection[0].udpClient.ToString());
 
             Logging.Write("StartServer: start receive signals");
-            //SignalUpdater.StartThreadReceiveSignals(serverConnection, serverData, incomingSignals, cancel, (string s) => Logging.Write(s));
 
             _ = Task.Run(() =>
             {
@@ -182,7 +181,7 @@ namespace NetSignal
             var cancel = false;
             var shouldPrint = false;
 
-            int clientCount = 32;
+            int clientCount = 4;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -198,8 +197,8 @@ namespace NetSignal
             ConnectionMapping mapping = new ConnectionMapping();
 
             serverData[0].iListenToPort = 5000;
-            //serverData[0].myIp = "127.0.0.1";
-            serverData[0].myIp = "85.214.239.45";
+            serverData[0].myIp = "127.0.0.1";
+            //serverData[0].myIp = "85.214.239.45";
 
             //this can and will be array of size N
             ConnectionAPIs [] clients = new ConnectionAPIs[clientCount] ;
@@ -445,8 +444,9 @@ namespace NetSignal
             }
             await Task.Delay(1000);
 
-            
+
             await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
             /*
             var rng = new System.Random(645);
             for (int i = 0; i < 1000; i++)
