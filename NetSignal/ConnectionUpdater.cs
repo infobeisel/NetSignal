@@ -334,9 +334,11 @@ namespace NetSignal
                 {
                     var previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
+                    if (previousState == StateOfConnection.Uninitialized)
+                        await Task.Delay(msKeepAlivePeriod);//pause
+
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
-                        //await Task.Delay(30);
                         continue;
                     }
                     var package = new KeepAlivePackage();

@@ -49,9 +49,11 @@ namespace NetSignal
             {
                 var previousState = Util.CompareExchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
+                if (previousState == StateOfConnection.Uninitialized)
+                    await Task.Delay(2000);//pause
+
                 if (previousState != StateOfConnection.ReadyToOperate)
                 {
-                    await Task.Delay(60);
                     continue;
                 }
                 for (int fromClientI = 0; fromClientI < signals.Length; fromClientI++)
@@ -106,9 +108,11 @@ namespace NetSignal
             {
                 var previousState = Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
+                if (previousState == StateOfConnection.Uninitialized)
+                    await Task.Delay(2000);//pause
+
                 if (previousState != StateOfConnection.ReadyToOperate)
                 {
-                    await Task.Delay(1000);
                     continue;
                 }
 
