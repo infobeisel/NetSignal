@@ -111,7 +111,7 @@ namespace NetSignal
                     var previousState = Util.CompareExchange(ref connectionState.udpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
-                        //await Task.Delay(30);
+                        await Task.Delay(1000); //sth is wrong with this connection
                         continue;
                     }
                     //dont know a better way: receive async does not accept cancellation tokens, so need to let it fail here (because some other disposed the udpclient)

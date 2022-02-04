@@ -83,7 +83,7 @@ namespace NetSignal
                             });
                         }
                     }
-                
+
                 await Task.Delay(60);
             }
         }
@@ -102,54 +102,46 @@ namespace NetSignal
         //uses tcp to sync signals reliably
         private async static void ReceiveSignalsReliablyFrom(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
         {
-            try
+            while (!cancel())
             {
-                while (!cancel())
+                var previousState = Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
+
+                if (previousState != StateOfConnection.ReadyToOperate)
                 {
-                    var previousState = Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
-
-                    if (previousState != StateOfConnection.ReadyToOperate)
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        var usingBytes = fromStates[streamI].tcpReadBytes;
-                        Util.FlushBytes(usingBytes);
-                        //fromStreams[streamI].tcpStream.BeginRead(usingBytes, 0, usingBytes.Length, MakeHandleReceiveReliableSignal(signals, fromStreams[streamI], fromDatas[streamI], fromStates[streamI], report), null);
-                        var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
-
-                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
-                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
-                    }
-                    catch (ObjectDisposedException e)
-                    {
-                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
-                        Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
-                        continue;
-                    }
-                    catch (SocketException e)
-                    {
-                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
-                        Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
-                        continue;
-                    }
-                    catch (FormatException e)
-                    {
-                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
-                        Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
-                    }
-                    catch (System.IO.IOException e)
-                    {
-                        Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
-                        Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving." );
-                    }
+                    await Task.Delay(1000);
+                    continue;
                 }
-            }
-            catch (SocketException e)
-            {
-                Logging.Write(e);
+
+                try
+                {
+                    var usingBytes = fromStates[streamI].tcpReadBytes;
+                    Util.FlushBytes(usingBytes);
+                    //fromStreams[streamI].tcpStream.BeginRead(usingBytes, 0, usingBytes.Length, MakeHandleReceiveReliableSignal(signals, fromStreams[streamI], fromDatas[streamI], fromStates[streamI], report), null);
+                    var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
+
+                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
+                }
+                catch (ObjectDisposedException e)
+                {
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                }
+                catch (SocketException e)
+                {
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                }
+                catch (FormatException e)
+                {
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                }
+                catch (System.IO.IOException e)
+                {
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                }
             }
         }
     }
