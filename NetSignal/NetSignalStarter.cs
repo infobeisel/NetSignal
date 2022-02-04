@@ -182,7 +182,7 @@ namespace NetSignal
             var cancel = false;
             var shouldPrint = false;
 
-            int clientCount = 4;
+            int clientCount = 32;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -198,8 +198,8 @@ namespace NetSignal
             ConnectionMapping mapping = new ConnectionMapping();
 
             serverData[0].iListenToPort = 5000;
-            serverData[0].myIp = "127.0.0.1";
-            //serverData[0].myIp = "85.214.239.45";
+            //serverData[0].myIp = "127.0.0.1";
+            serverData[0].myIp = "85.214.239.45";
 
             //this can and will be array of size N
             ConnectionAPIs [] clients = new ConnectionAPIs[clientCount] ;

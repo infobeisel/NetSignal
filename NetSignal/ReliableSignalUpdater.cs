@@ -131,6 +131,10 @@ namespace NetSignal
                     {
                         Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                     }
+                    catch (System.IO.IOException e)
+                    {
+                        Logging.Write("ReceiveSignalsReliablyFrom: tcp stream has been closed, (unfortunately) this is intended behaviour, stop receiving." );
+                    }
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
             }
