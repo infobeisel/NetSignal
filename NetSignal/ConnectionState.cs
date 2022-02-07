@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace NetSignal
 {
@@ -12,6 +13,8 @@ namespace NetSignal
         public DateTime tcpKeepAlive;//maybe, to keep the tcp connection open.
 
         public int udpWriteStateName;
+        public SemaphoreSlim udpWriteSemaphore;
+
         public int udpReadStateName;
 
         public int httpListenerStateName;
@@ -21,9 +24,13 @@ namespace NetSignal
         public byte [] tcpReadBytes;
         public byte [] udpReadBytes;
 
+        public bool shouldTearDown;
+
         public ConnectionState()
         {
+            shouldTearDown = false;
             udpWriteStateName = (int)StateOfConnection.Uninitialized;
+            udpWriteSemaphore = new SemaphoreSlim(1, 1);
             udpReadStateName = (int)StateOfConnection.Uninitialized;
             tcpWriteStateName = (int)StateOfConnection.Uninitialized;
             tcpReadStateName = (int)StateOfConnection.Uninitialized;

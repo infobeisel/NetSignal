@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Mono.Data.Sqlite;
 
 using System.Data;
+using System.Net.Http;
+using System.Threading;
 
 namespace NetSignal
 {
@@ -115,12 +117,22 @@ namespace NetSignal
 
                 var stringContent = new System.Net.Http.StringContent(content, System.Text.Encoding.UTF8, "application/json");
 
-                await connection.httpClient.PostAsync(uri, stringContent);
-                
+                Logging.Write("make post");
+                CancellationTokenSource source = new CancellationTokenSource();
+                //previouslyProvidedToken = source.Token;
+                _ = connection.httpClient.PostAsync(uri, stringContent, source.Token);
+                await Task.Delay(2000);
+                source.Cancel();
+
+
             }
-            catch (Exception e)
+            catch (HttpRequestException e)
             {
-                Logging.Write(e);
+                Logging.Write("the matchmaking server is not available" ); 
+            }
+            finally
+            {
+
             }
         }
 

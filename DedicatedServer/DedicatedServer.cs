@@ -25,7 +25,7 @@ namespace DedicatedServer
             ConnectionAPIs[] server = new ConnectionAPIs[1] { new ConnectionAPIs() };
             ConnectionMetaData[] serverData = new ConnectionMetaData[1] { new ConnectionMetaData() };
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
-            ConnectionMapping mapping = new ConnectionMapping();
+            
 
             
             //this can and will be array of size N
@@ -65,7 +65,7 @@ namespace DedicatedServer
 
 
 
-            NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, mapping, connectionApisSeenFromServer,
+            NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel,  connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
 

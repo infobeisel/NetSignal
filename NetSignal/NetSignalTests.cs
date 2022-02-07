@@ -14,7 +14,7 @@ namespace NetSignal
             var cancel = false;
             var shouldPrint = false;
 
-            int clientCount = 4;
+            int clientCount = 32;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -27,11 +27,12 @@ namespace NetSignal
             ConnectionAPIs[] server = new ConnectionAPIs[1] { new ConnectionAPIs() };
             ConnectionMetaData[] serverData = new ConnectionMetaData[1] { new ConnectionMetaData() };
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
-            ConnectionMapping mapping = new ConnectionMapping();
 
             serverData[0].iListenToPort = 5000;
-            //serverData[0].myIp = "127.0.0.1";
-            serverData[0].myIp = "85.214.239.45";
+            serverData[0].myIp = "127.0.0.1";
+            //serverData[0].myIp = "85.214.239.45";
+            serverData[0].matchmakingServerIp = "http://127.0.0.1";
+            serverData[0].matchmakingServerPort = 5432;
 
             //this can and will be array of size N
             ConnectionAPIs[] clients = new ConnectionAPIs[clientCount];
@@ -48,15 +49,15 @@ namespace NetSignal
             }
 
 
-            /*await TestDuplex(() => cancel, () => shouldPrint,
+            await TestDuplex(() => cancel, () => shouldPrint,
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState, mapping, clients, clientDatas, clientState);*/
+                server, serverData, serverState,  clients, clientDatas, clientState);
 
 
 
-
+            /*
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);
+                server, serverData, serverState, clients, clientDatas, clientState);*/
             cancel = true;
             //TODOS:
             //implement websocket for matchmaking (to find ip to connect to server), set up with strato !!
@@ -158,7 +159,7 @@ namespace NetSignal
             var rng = new System.Random(645);
 
             var avgPing = 0.0;
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 200; i++)
             {
 
                 wasSame = clientOutgoing[0][0][0].Equals(clientIncoming[1][0][0]);
@@ -200,7 +201,6 @@ namespace NetSignal
         ConnectionAPIs[] serverInstanceAPI,
         ConnectionMetaData[] serverInstanceData,
         ConnectionState[] serverInstanceState,
-        ConnectionMapping mapping,
 
         ConnectionAPIs[] clientInstancesAPI,
         ConnectionMetaData[] clientInstancesData,
@@ -227,13 +227,13 @@ namespace NetSignal
 
             Logging.Write("TestDuplex: start server");
             //TODO server needs to have [clientInstancesAPI.Length, 5] signals!
-            var updatedServerTuple = await NetSignalStarter.StartServer(shouldReport(), serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, mapping, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
+            var updatedServerTuple = await NetSignalStarter.StartServer(shouldReport(), serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 clientConnectionStatesSeenFromServer,
                 unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer);
             serverInstanceAPI[0] = updatedServerTuple.Item1;
             serverInstanceData[0] = updatedServerTuple.Item2;
-            mapping = updatedServerTuple.Item3;
+            
 
             await Task.Delay(1000);
             Logging.Write("TestDuplex: start clients");
@@ -246,6 +246,10 @@ namespace NetSignal
 
             IncomingSignal[][][] clientReliableIncoming = new IncomingSignal[clientInstancesAPI.Length][][];
             OutgoingSignal[][][] clientReliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][];
+
+
+            var cancelClient2 = false;
+            Func<bool> cancelTestClient = () => cancelClient2;
 
             for (int clientI = 0; clientI < clientInstancesAPI.Length; clientI++)
             {
@@ -264,41 +268,41 @@ namespace NetSignal
 
 
 
-                var updatedTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
+                var updatedClientTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, 
+                    clientI == 1 ? cancelTestClient : cancel,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
-                clientInstancesAPI[clientI] = updatedTuple.Item1;
-                clientInstancesData[clientI] = updatedTuple.Item2;
+                clientInstancesAPI[clientI] = updatedClientTuple.Item1;
+                clientInstancesData[clientI] = updatedClientTuple.Item2;
 
             }
             await Task.Delay(1000);
 
 
             await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
-            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
-            /*
-            var rng = new System.Random(645);
-            for (int i = 0; i < 1000; i++)
-            {
-                Console.Clear();
 
-                for (int clientId = 0; clientId < clientInstancesAPI.Length; clientId++)
-                {
-                    LogSignals("client" + 0, "client" + clientId, clientUnreliableOutgoing[0][0], clientUnreliableIncoming[clientId][0]);
+            cancelClient2 = true;
 
-                }
+            await Task.Delay(1000);
 
+            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
 
-                var a = new FloatDataPackage();
-                a.data = (float)rng.NextDouble();
-                a.clientId = 0;
-                a.index = 0;
-                a.timeStamp = DateTime.UtcNow;
-                clientUnreliableOutgoing[0][0][0].data = a;
+            await Task.Delay(1000);
+            cancelClient2 = false ;
+            await Task.Delay(1000);
 
-                
-                await Task.Delay(100);
-            }*/
+            var updatedTuple = await NetSignalStarter.StartClient(shouldReport, 1, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+                    cancelTestClient ,
+                clientUnreliableOutgoing[1], clientUnreliableIncoming[1],
+                clientReliableOutgoing[1], clientReliableIncoming[1]);
+            clientInstancesAPI[1] = updatedTuple.Item1;
+            clientInstancesData[1] = updatedTuple.Item2;
+
+            await Task.Delay(1000);
+
+            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+
+            await Task.Delay(1000);
 
         }
 

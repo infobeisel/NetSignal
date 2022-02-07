@@ -10,8 +10,8 @@ namespace NetSignal
 
     public class NetSignalStarter
     {
-        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData, ConnectionMapping>> StartServer(bool shouldLog,
-            ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionMapping connectionMapping, ConnectionAPIs[] connections,
+        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
+            ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionAPIs[] connections,
             ConnectionMetaData[] connectionDatas, ConnectionState[] connectionStates,
             OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
             OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
@@ -23,9 +23,6 @@ namespace NetSignal
             //serverData.serverIp = null;
             Logging.Write("StartServer: init multi connection");
             ConnectionUpdater.InitializeMultiConnection(ref serverConnection[0], ref serverData[0], serverState[0], connections, connectionDatas, connectionStates);
-
-            connectionMapping.ClientIdentificationToEndpoint = new Dictionary<int, IPEndPoint>();
-            connectionMapping.EndPointToClientIdentification = new Dictionary<IPEndPoint, int>();
 
             Logging.Write(serverConnection[0].udpClient.ToString());
 
@@ -42,7 +39,7 @@ namespace NetSignal
             
 
             Logging.Write("StartServer: start accept tcp connections");
-            ConnectionUpdater.StartProcessTCPConnections(connectionMapping, serverConnection[0], serverState[0], connections, connectionDatas, connectionStates, cancel, () => { });
+            ConnectionUpdater.StartProcessTCPConnections(serverConnection[0], serverState[0], connections, connectionDatas, connectionStates, cancel, () => { });
 
             Logging.Write("StartServer: start sync signals");
             
@@ -52,7 +49,7 @@ namespace NetSignal
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
-            ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas, connectionMapping);
+            ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas);
 
             _ = Task.Run(() =>
             {
@@ -70,7 +67,7 @@ namespace NetSignal
                 MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], cancel, 5000);
             });
 
-            return new Tuple<ConnectionAPIs, ConnectionMetaData, ConnectionMapping>(serverConnection[0], serverData[0], connectionMapping);
+            return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);
         }
 
         //please provide array with one element for server*

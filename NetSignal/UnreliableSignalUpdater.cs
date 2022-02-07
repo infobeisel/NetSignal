@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetSignal
@@ -21,20 +22,27 @@ namespace NetSignal
                 
         }
 
+        
+
         private static async Task SyncSignalsTo(ConnectionAPIs with, ConnectionState connectionState, OutgoingSignal[][] signals, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, bool useOwnUdpClient, int toClientI, Func<bool> cancel)
         {
             Logging.Write("SyncSignalsTo on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
             while (!cancel())
             {
+                
+
                 StateOfConnection previousState = StateOfConnection.Uninitialized;
                 if (useOwnUdpClient)
                     previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
                 else
                     previousState = Util.CompareExchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
+                if (!useOwnUdpClient && previousState == StateOfConnection.Uninitialized)
+                    await Task.Delay(2000);//pause
+
                 if (previousState != StateOfConnection.ReadyToOperate)
                 {
-                    await Task.Delay(30);
+                    await Task.Delay(2000);//pause
                     continue;
                 }
 
@@ -60,6 +68,7 @@ namespace NetSignal
                             {
                                 try
                                 {
+                                    //var lockObj = useOwnUdpClient ? connectionState.udpWriteLock : toAllStates[toClientI].udpWriteLock;
                                     await udpClientToUse.SendAsync(usingBytes, usingBytes.Length, toSendTo);
 
                                 }
@@ -69,7 +78,7 @@ namespace NetSignal
                                         previousState = Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.Uninitialized);
                                     else
                                         previousState = Util.Exchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.Uninitialized);
-                                    Logging.Write("SyncSignalsToAll: udp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Logging.Write("SyncSignalsToAll: udp client socket " + toClientI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (ObjectDisposedException e)
                                 {
@@ -77,7 +86,7 @@ namespace NetSignal
                                         previousState = Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.Uninitialized);
                                     else
                                         previousState = Util.Exchange(ref toAllStates[toClientI].udpWriteStateName, StateOfConnection.Uninitialized);
-                                    Logging.Write("SyncSignalsToAll: udp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Logging.Write("SyncSignalsToAll: udp client socket " + toClientI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                             });
 
@@ -96,7 +105,7 @@ namespace NetSignal
 
                 await Task.Delay(30);
             }
-            Logging.Write("stop SyncSignalsTo on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
+            Logging.Write("stop SyncSignalsTo " + toClientI + " on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
         }
 
         
@@ -116,6 +125,7 @@ namespace NetSignal
 
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
+                        await Task.Delay(2000);
                         continue;
                     }
                     //dont know a better way: receive async does not accept cancellation tokens, so need to let it fail here (because some other disposed the udpclient)
@@ -128,6 +138,11 @@ namespace NetSignal
                         Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     catch (ObjectDisposedException e)
+                    {
+                        Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.Uninitialized);
+                        Logging.Write("ReceiveSignals: udp socket has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                    }
+                    catch (SocketException e)
                     {
                         Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.Uninitialized);
                         Logging.Write("ReceiveSignals: udp socket has been closed, (unfortunately) this is intended behaviour, stop receiving.");

@@ -67,7 +67,7 @@ namespace NetSignal
         }
 
 
-        public async static void AwaitAndPerformTearDownTCPListenerAndUdpToClients(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState, ConnectionAPIs [] clientCons, ConnectionState[] clientStates, ConnectionMetaData [] clientDatas, ConnectionMapping connectionmapping)
+        public async static void AwaitAndPerformTearDownTCPListenerAndUdpToClients(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState, ConnectionAPIs [] clientCons, ConnectionState[] clientStates, ConnectionMetaData [] clientDatas)
         {
             while (!shouldTearDown())
             {
@@ -89,28 +89,30 @@ namespace NetSignal
             
             for (int conI = 0; conI < clientCons.Length; conI++)
             {
-                clientCons[conI].tcpStream?.Close();
-                clientCons[conI].tcpStream = null;
-
-                clientCons[conI].tcpClient?.Close();
-                clientCons[conI].tcpClient = null;
-
-                clientCons[conI].tcpListener = null;
-
-                clientCons[conI].udpClient?.Close();
-                clientCons[conI].udpClient?.Dispose();
-                clientCons[conI].udpClient = null;
-
-
-                clientDatas[conI].clientID = -1;
-
-                Util.Exchange(ref clientStates[conI].tcpWriteStateName, StateOfConnection.Uninitialized);
-                Util.Exchange(ref clientStates[conI].tcpReadStateName, StateOfConnection.Uninitialized);
-                
+                TearDownClientSeenFromServer(clientCons, clientStates, clientDatas, conI);
             }
-            connectionmapping.ClientIdentificationToEndpoint.Clear();
-            connectionmapping.EndPointToClientIdentification.Clear();
 
+        }
+
+        private static void TearDownClientSeenFromServer(ConnectionAPIs[] clientCons, ConnectionState[] clientStates, ConnectionMetaData[] clientDatas, int conI)
+        {
+            Util.Exchange(ref clientStates[conI].tcpWriteStateName, StateOfConnection.Uninitialized);
+            Util.Exchange(ref clientStates[conI].tcpReadStateName, StateOfConnection.Uninitialized);
+
+            clientCons[conI].tcpStream?.Close();
+            clientCons[conI].tcpStream = null;
+
+            clientCons[conI].tcpClient?.Close();
+            clientCons[conI].tcpClient = null;
+
+            clientCons[conI].tcpListener = null;
+
+            clientCons[conI].udpClient?.Close();
+            clientCons[conI].udpClient?.Dispose();
+            clientCons[conI].udpClient = null;
+
+
+            clientDatas[conI].clientID = -1;
         }
 
         public async static void AwaitAndPerformTearDownClientTCP(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
@@ -119,18 +121,14 @@ namespace NetSignal
             {
                 await Task.Delay(1000);
             }
-            /*Logging.Write("going to clean up tcp client");
-            while(currentState.tcpStateName != StateOfConnection.ReadyToOperate)
-            {
-                await Task.Delay(1000);
-            }*/
+            
             Logging.Write("clean up tcp client");
 
             Util.Exchange(ref currentState.tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref currentState.tcpReadStateName, StateOfConnection.Uninitialized);
             
-            connection.tcpStream.Close();
-            connection.tcpClient.Close();
+            connection.tcpStream?.Close();
+            connection.tcpClient?.Close();
 
         }
 
@@ -210,7 +208,7 @@ namespace NetSignal
         }
 
 
-        public static async void StartProcessTCPConnections(ConnectionMapping connectionMapping, ConnectionAPIs by, ConnectionState byState, ConnectionAPIs[] storeToConnections, ConnectionMetaData[] storeToConnectionDatas,ConnectionState[] storeToConnectionStates,  Func<bool> cancel, Action report)
+        public static async void StartProcessTCPConnections( ConnectionAPIs by, ConnectionState byState, ConnectionAPIs[] storeToConnections, ConnectionMetaData[] storeToConnectionDatas,ConnectionState[] storeToConnectionStates,  Func<bool> cancel, Action report)
         {
 
             try
@@ -228,6 +226,7 @@ namespace NetSignal
                     } catch (Exception e)
                     {
                         Logging.Write("StartProcessTCPConnections: tcp listener socket got closed, (unfortunately) this is intended behaviour, stop listening.");
+                        await Task.Delay(5000);
                         continue;
                     }
                     
@@ -245,6 +244,7 @@ namespace NetSignal
                     } catch (Exception e)
                     {
                         Logging.Write("StartProcessTCPConnections: tcp listener stream got closed, (unfortunately) this is intended behaviour, stop reading.");
+                        await Task.Delay(5000);
                         continue;
                     }
 
@@ -253,20 +253,19 @@ namespace NetSignal
                         await MessageDeMultiplexer.Divide(byState.tcpReadBytes,
                             async () => { Logging.Write("tcp float signals not yet implemented and should NOT occur here!?"); },
                             async () => {
-                                //TODO here we need user defined filtering to deserialize into actual IncomingSignals!
-                                //expect ud endpoint
+
                                 data = Encoding.ASCII.GetString(byState.tcpReadBytes, 1, readByteCount-1);
 
                                 //incoming connection, try to identify
                                 IPEndPoint clientEndpoint;
                                 int clientID;
-                                IdentifyClient(data, connectionMapping, storeToConnections, connection, out clientEndpoint, out clientID);
+                                IdentifyClient(data, storeToConnections,storeToConnectionStates,  connection, out clientEndpoint, out clientID);
 
                                 if (clientID == -1)
                                 {
                                     //sth went wrong
                                     connection.Close(); // TODO WHAT TO DO HERE?
-                                    
+                                    Logging.Write("sth went wrong: too many players?");
                                 } else
                                 {
                                     //remember the client
@@ -281,8 +280,7 @@ namespace NetSignal
 
                                     storeToConnectionStates[clientID].tcpKeepAlive = DateTime.UtcNow;
 
-                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpWriteStateName, StateOfConnection.ReadyToOperate);
-                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpReadStateName, StateOfConnection.ReadyToOperate);
+                                    
 
                                     Logging.Write("tcp received: " + data + " , will send back id " + clientID);
 
@@ -302,7 +300,11 @@ namespace NetSignal
                                         }
 
                                     });
-                                    
+
+                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpWriteStateName, StateOfConnection.ReadyToOperate);
+                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpReadStateName, StateOfConnection.ReadyToOperate);
+
+
                                 }
                             },
                             async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); },
@@ -339,6 +341,7 @@ namespace NetSignal
 
                     if (previousState != StateOfConnection.ReadyToOperate)
                     {
+                        await Task.Delay(msKeepAlivePeriod);//pause
                         continue;
                     }
                     var package = new KeepAlivePackage();
@@ -377,7 +380,7 @@ namespace NetSignal
             }
         }
 
-        private static void IdentifyClient(string fromTCPMessage, ConnectionMapping connectionMapping, ConnectionAPIs[] storeToConnections, TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
+        private static void IdentifyClient(string fromTCPMessage, ConnectionAPIs[] storeToConnections,ConnectionState [] storeToConnectionStates,  TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {
             //clientEndpoint = (IPEndPoint)connection.Client.RemoteEndPoint;
             //var splitIPAndPort = fromTCPMessage.Split('|');
@@ -388,23 +391,20 @@ namespace NetSignal
 
             Logging.Write("try to identify client with endpoint " + clientEndpoint);
             clientID = -1;
-            //know this guy already
-            if (connectionMapping.EndPointToClientIdentification.ContainsKey(clientEndpoint))
-                clientID = connectionMapping.EndPointToClientIdentification[clientEndpoint];
-            else  //create new ID
+
+            int firstFreeIndex = int.MaxValue;
+            for(int connectionI = 0; connectionI < storeToConnections.Length; connectionI++)
             {
-                int connectionI;
-                //find a free one
-                for (connectionI = 0; connectionI <= storeToConnections.Length
-                    && connectionMapping.ClientIdentificationToEndpoint.ContainsKey(connectionI); connectionI++)
+                if(StateOfConnection.Uninitialized == (StateOfConnection) storeToConnectionStates[connectionI].tcpReadStateName)
                 {
+                    firstFreeIndex = Math.Min(firstFreeIndex, connectionI);
                 }
-                if (connectionI < storeToConnections.Length) //there was a free slot
-                {
-                    clientID = connectionI;
-                    connectionMapping.ClientIdentificationToEndpoint.Add(connectionI, clientEndpoint);
-                    connectionMapping.EndPointToClientIdentification.Add(clientEndpoint, connectionI);
-                }
+            }
+
+            if(firstFreeIndex != int.MaxValue)
+            {
+                clientID = firstFreeIndex;
+
             }
         }
 

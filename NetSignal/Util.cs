@@ -1,3 +1,5 @@
+using System;
+
 namespace NetSignal
 {
     public class Util
@@ -26,5 +28,6 @@ namespace NetSignal
         {
             return System.Threading.Interlocked.Exchange(ref loc, val ? 1 : 0) == 1;
         }
+
     }
 }
