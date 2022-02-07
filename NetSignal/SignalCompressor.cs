@@ -2,6 +2,22 @@ using System;
 
 namespace NetSignal
 {
+    public class SignalFactory
+    {
+        public static IncomingSignal[] ConstructIncomingSignalArray(int count)
+        {
+            var ret = new IncomingSignal[count];
+
+            return ret;
+        }
+
+        public static OutgoingSignal[] ConstructOutgoingSignalArray(int count)
+        {
+            var ret = new OutgoingSignal[count];
+            return ret;
+        }
+    }
+
     public class SignalCompressor
     {
         public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
@@ -34,7 +50,7 @@ namespace NetSignal
         }
 
 
-        public unsafe static void Compress(FloatDataPackage package, byte[] to, int startFrom)
+        public unsafe static void Compress(DataPackage package, byte[] to, int startFrom)
         {
             byte* cIdPtr = (byte*)&package.clientId;
             for (int i = 0; i < 4; i++)
@@ -49,27 +65,19 @@ namespace NetSignal
             for (int i = 0; i < 8; i++)
                 to[startFrom + 8 + i] = cIdPtr[i];
 
-            cIdPtr = (byte*)&package.data;
-            for (int i = 0; i < 4; i++)
-                to[startFrom + 16 + i] = cIdPtr[i];
+            to[startFrom + 16 + 0] = package.d0;
+            to[startFrom + 16 + 1] = package.d1;
+            to[startFrom + 16 + 2] = package.d2;
+            to[startFrom + 16 + 3] = package.d3;
+
+
         }
 
-        /*
-        public static string Compress(FloatDataPackage package)
+
+        public unsafe static DataPackage DecompressDataPackage(byte[] compressed, int startFrom)
         {
 
-            return package.clientId.ToString("00000000000000000000000000000000") +
-                package.index.ToString("00000000000000000000000000000000") +
-                package.timeStamp.Ticks.ToString("00000000000000000000000000000000") +
-                BitConverter.DoubleToInt64Bits((double)package.data).ToString("00000000000000000000000000000000");
-        
-        }*/
-
-
-        public unsafe static FloatDataPackage DecompressFloatPackage(byte[] compressed, int startFrom)
-        {
-
-            FloatDataPackage p = new FloatDataPackage();
+            DataPackage p = new DataPackage();
             byte* cIdPtr = (byte*)&p.clientId;
             for (int i = 0; i < 4; i++)
                 cIdPtr[i] = compressed[startFrom + 0 + i];
@@ -84,24 +92,16 @@ namespace NetSignal
                 cIdPtr[i] = compressed[startFrom + 8 + i];
             p.timeStamp = new DateTime(ticks);
 
-            cIdPtr = (byte*)&p.data;
-            for (int i = 0; i < 4; i++)
-                cIdPtr[i] = compressed[startFrom + 16 + i];
+            
+            p.signalType = (SignalType)compressed[0];
 
+
+            p.d0 = compressed[startFrom + 16 + 0];
+            p.d1 = compressed[startFrom + 16 + 1];
+            p.d2 = compressed[startFrom + 16 + 2];
+            p.d3 = compressed[startFrom + 16 + 3];
             return p;
         }
 
-        /*
-        public static FloatDataPackage DecompressFloatPackage(string compressed)
-        {
-            
-            //TODO OMG MEMORY
-            FloatDataPackage p = new FloatDataPackage();
-            p.clientId = int.Parse(compressed.Substring(0, 32));
-            p.index = int.Parse(compressed.Substring(32, 32));
-            p.timeStamp = new DateTime(Int64.Parse(compressed.Substring(64, 32)));
-            p.data = (float)BitConverter.Int64BitsToDouble(long.Parse(compressed.Substring(96, 32)));
-            return p;
-        }*/
     }
 }

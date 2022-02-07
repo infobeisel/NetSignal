@@ -4,9 +4,9 @@ namespace NetSignal
 {
     public struct OutgoingSignal
     {
-        private FloatDataPackage dataMember;//TODO WARNING?!
+        private DataPackage dataMember;//TODO WARNING?!
 
-        public FloatDataPackage data
+        public DataPackage data
         {
             set
             {
@@ -27,9 +27,17 @@ namespace NetSignal
             return "D: " + data + ", d: " + dataDirty;
         }
 
+
         public bool Equals(IncomingSignal incoming)
         {
-            return data.data == incoming.data.data;
+            if (data.signalType != incoming.data.signalType)
+                return false;
+
+            return data.d0 == incoming.data.d0 &&
+                data.d1 == incoming.data.d1 &&
+                data.d2 == incoming.data.d2 &&
+                data.d3 == incoming.data.d3;
+
         }
     }
 }

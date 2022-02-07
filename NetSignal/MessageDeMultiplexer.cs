@@ -6,24 +6,27 @@ namespace NetSignal
     //contains the NetSignal protocol rules for identifying the right type of an incoming udp or tcp message
     public class MessageDeMultiplexer
     {
-        public async static Task Divide(byte [] message, Func<Task> handleFloatSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal, Func<Task> handleUdpAliveSignal)
+        public async static Task Divide(byte [] message, Func<Task> handleDataSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal, Func<Task> handleUdpAliveSignal)
         {
-            switch (message[0])
+            switch ((SignalType) message[0])
             {
-                case 0: //normal float signal
-                    await handleFloatSignal();
-                    break;
-                case 1: //tcp connection request
+                case SignalType.TCPConnectionRequest: //tcp connection request
                     await handleTCPConnectionRequest();
                     break;
-                case 2: //tcp alive signal
+                case SignalType.TCPAlive: //tcp alive signal
                     await handleTCPAliveSignal();
                     break;
-                case 3: //udp alive signal
+                case SignalType.UDPAlive: //udp alive signal
                     await handleUdpAliveSignal();
                     break;
-                default:
-                    Logging.Write("found invalid message type: " + message);
+                case SignalType.Float:
+                    await handleDataSignal();
+                    break;
+                case SignalType.Int:
+                    await handleDataSignal();
+                    break;
+                case SignalType.String:
+                    await handleDataSignal();
                     break;
             }
         }
@@ -31,25 +34,36 @@ namespace NetSignal
 
         public async static Task MarkFloatSignal(byte[] message, Func<Task> handleFloatSignal)
         {
-            message[0] = 0;
+            message[0] = (byte)SignalType.Float;
             await handleFloatSignal();
+        }
+
+        public async static Task MarkIntSignal(byte[] message, Func<Task> handleIntSignal)
+        {
+            message[0] = (byte)SignalType.Int;
+            await handleIntSignal();
+        }
+        public async static Task MarkStringSignal(byte[] message, Func<Task> handleStringSignal)
+        {
+            message[0] = (byte)SignalType.String;
+            await handleStringSignal();
         }
 
         public async static Task MarkTCPConnectionRequest(byte[] message, Func<Task> handleRequest)
         {
-            message[0] = 1;
+            message[0] = (byte)SignalType.TCPConnectionRequest;
             await handleRequest();
         }
 
         public async static Task MarkTCPKeepAlive(byte[] message, Func<Task> handleRequest)
         {
-            message[0] = 2;
+            message[0] = (byte)SignalType.TCPAlive;
             await handleRequest();
         }
 
         public async static Task MarkUdpKeepAlive(byte[] message, Func<Task> handleRequest)
         {
-            message[0] = 3;
+            message[0] = (byte)SignalType.UDPAlive;
             await handleRequest();
         }
 

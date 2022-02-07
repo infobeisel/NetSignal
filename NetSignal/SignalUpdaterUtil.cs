@@ -51,7 +51,7 @@ namespace NetSignal
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
 
-                var package = SignalCompressor.DecompressFloatPackage(bytes, 1);
+                var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report(package.ToString());
                 signals[package.clientId][package.index].data = package;
                 signals[package.clientId][package.index].cameIn = DateTime.UtcNow;

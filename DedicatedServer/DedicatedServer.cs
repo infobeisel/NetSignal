@@ -50,10 +50,10 @@ namespace DedicatedServer
 
             for (int i = 0; i < clients.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = new IncomingSignal[5];
-                reliableSignalsSeenFromServer[i] = new IncomingSignal[5];
-                unreliableSignalsSentFromServer[i] = new OutgoingSignal[5];
-                reliableSignalsSentFromServer[i] = new OutgoingSignal[5];
+                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
+                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
 
             }
 

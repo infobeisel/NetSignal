@@ -68,7 +68,7 @@
     <Compile Include="ConnectionMetaData.cs" />
     <Compile Include="ConnectionState.cs" />
     <Compile Include="ConnectionUpdater.cs" />
-    <Compile Include="FloatDataPackage.cs" />
+    <Compile Include="DataPackage.cs" />
     <Compile Include="IncomingSignal.cs" />
     <Compile Include="KeepAlivePackage.cs" />
     <Compile Include="Logging.cs" />
@@ -80,6 +80,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReliableSignalUpdater.cs" />
     <Compile Include="SignalCompressor.cs" />
+    <Compile Include="SignalType.cs" />
     <Compile Include="SignalUpdaterUtil.cs" />
     <Compile Include="StateOfConnection.cs" />
     <Compile Include="UnreliableSignalUpdater.cs" />

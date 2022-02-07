@@ -4,8 +4,8 @@ namespace NetSignal
 {
     public struct IncomingSignal
     {
-        private FloatDataPackage dataMember;
-        public FloatDataPackage data
+        private DataPackage dataMember;
+        public DataPackage data
         {
             internal set
             {

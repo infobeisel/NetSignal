@@ -6,7 +6,7 @@ namespace NetSignal
     //state of a connection, changes during lifetime of a connection
     public class ConnectionState
     {
-        private const int byteCount = 256;
+        public const int byteCount = 256;
 
         public int tcpWriteStateName;
         public int tcpReadStateName;

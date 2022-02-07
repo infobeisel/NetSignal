@@ -58,6 +58,12 @@ namespace NetSignal
                                     isSyncingSuccessfully = false;
                                     Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
+                                catch (NullReferenceException e)
+                                {
+                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    isSyncingSuccessfully = false;
+                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                }
                                 catch (ObjectDisposedException e)
                                 {
                                     Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);

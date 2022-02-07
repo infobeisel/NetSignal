@@ -14,7 +14,7 @@ namespace NetSignal
             var cancel = false;
             var shouldPrint = false;
 
-            int clientCount = 32;
+            int clientCount = 4;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -130,10 +130,10 @@ namespace NetSignal
 
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
-                    clientUnreliableIncoming[clientI][otherClientI] = new IncomingSignal[5];
-                    clientReliableIncoming[clientI][otherClientI] = new IncomingSignal[5];
-                    clientUnreliableOutgoing[clientI][otherClientI] = new OutgoingSignal[5];
-                    clientReliableOutgoing[clientI][otherClientI] = new OutgoingSignal[5];
+                    clientUnreliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientReliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientUnreliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
+                    clientReliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
                 }
 
 
@@ -173,8 +173,8 @@ namespace NetSignal
 
                 if (wasSame)
                 {
-                    var a = new FloatDataPackage();
-                    a.data = (float)rng.NextDouble();
+                    var a = new DataPackage();
+                    a.WriteFloat((float)rng.NextDouble());
                     a.clientId = 0;
                     a.index = 0;
                     a.timeStamp = DateTime.UtcNow;
@@ -217,10 +217,10 @@ namespace NetSignal
 
             for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = new IncomingSignal[5];
-                reliableSignalsSeenFromServer[i] = new IncomingSignal[5];
-                unreliableSignalsSentFromServer[i] = new OutgoingSignal[5];
-                reliableSignalsSentFromServer[i] = new OutgoingSignal[5];
+                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
+                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
 
             }
 
@@ -260,15 +260,23 @@ namespace NetSignal
 
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
-                    clientUnreliableIncoming[clientI][otherClientI] = new IncomingSignal[5];
-                    clientReliableIncoming[clientI][otherClientI] = new IncomingSignal[5];
-                    clientUnreliableOutgoing[clientI][otherClientI] = new OutgoingSignal[5];
-                    clientReliableOutgoing[clientI][otherClientI] = new OutgoingSignal[5];
+                    clientUnreliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientReliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientUnreliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
+                    clientReliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
                 }
 
 
 
-                var updatedClientTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, 
+                
+
+
+            }
+
+
+            for (int clientI = 0; clientI < clientInstancesAPI.Length; clientI++)
+            {
+                var updatedClientTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     clientI == 1 ? cancelTestClient : cancel,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
