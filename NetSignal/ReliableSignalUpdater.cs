@@ -130,9 +130,10 @@ namespace NetSignal
                 {
                     var usingBytes = fromStates[streamI].tcpReadBytes;
                     Util.FlushBytes(usingBytes);
-                    var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
 
-                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+                    var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
+                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
                 catch (ObjectDisposedException e)

@@ -3,12 +3,12 @@ namespace NetSignal
     public enum SignalType
     {
 
-        Float = 0,
-        Int = 1,
-        String = 2,
-        TCPAlive = 3,
-        UDPAlive = 4,
-        TCPConnectionRequest = 5
+        Float = 1,
+        Int = 2,
+        String = 3,
+        TCPAlive = 4,
+        UDPAlive = 5,
+        TCPConnectionRequest = 6
 
 
     }

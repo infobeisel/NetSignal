@@ -12,9 +12,9 @@ namespace NetSignal
         {
 
             var cancel = false;
-            var shouldPrint = false;
+            var shouldPrint = true;
 
-            int clientCount = 4;
+            int clientCount = 2;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -273,11 +273,13 @@ namespace NetSignal
 
             }
 
+            int clientToLeaveAndJoin = 1;
 
             for (int clientI = 0; clientI < clientInstancesAPI.Length; clientI++)
             {
                 var updatedClientTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
-                    clientI == 1 ? cancelTestClient : cancel,
+                    //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
+                    cancelTestClient,
                 clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
                 clientInstancesAPI[clientI] = updatedClientTuple.Item1;
@@ -299,18 +301,20 @@ namespace NetSignal
             cancelClient2 = false ;
             await Task.Delay(1000);
 
-            var updatedTuple = await NetSignalStarter.StartClient(shouldReport, 1, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+            var updatedTuple = await NetSignalStarter.StartClient(shouldReport, clientToLeaveAndJoin, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     cancelTestClient ,
-                clientUnreliableOutgoing[1], clientUnreliableIncoming[1],
-                clientReliableOutgoing[1], clientReliableIncoming[1]);
-            clientInstancesAPI[1] = updatedTuple.Item1;
-            clientInstancesData[1] = updatedTuple.Item2;
+                clientUnreliableOutgoing[clientToLeaveAndJoin], clientUnreliableIncoming[clientToLeaveAndJoin],
+                clientReliableOutgoing[clientToLeaveAndJoin], clientReliableIncoming[clientToLeaveAndJoin]);
+            clientInstancesAPI[clientToLeaveAndJoin] = updatedTuple.Item1;
+            clientInstancesData[clientToLeaveAndJoin] = updatedTuple.Item2;
 
             await Task.Delay(1000);
 
             await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
 
             await Task.Delay(1000);
+
+            cancelClient2 = true;
 
         }
 

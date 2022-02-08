@@ -52,7 +52,7 @@ namespace NetSignal
             {
 
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
-                report(package.ToString());
+                report("data package: " + package.ToString());
                 signals[package.clientId][package.index].data = package;
                 signals[package.clientId][package.index].cameIn = DateTime.UtcNow;
 
@@ -64,7 +64,7 @@ namespace NetSignal
 
                 var package = SignalCompressor.DecompressKeepAlive(bytes, 1);
 
-                report(package.ToString());
+                report("keep alive package: " + package.ToString());
                 if (fromConnectionDatas.Length > package.clientId)
                 {
                 

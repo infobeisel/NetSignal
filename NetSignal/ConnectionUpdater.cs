@@ -59,6 +59,8 @@ namespace NetSignal
 
             Logging.Write("client connected");
             NetworkStream stream = connection.tcpClient.GetStream();
+            stream.ReadTimeout = 3000;
+            stream.WriteTimeout = 3000;
             connection.tcpStream = stream;
             Util.Exchange(ref connectionState.tcpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.tcpReadStateName, StateOfConnection.ReadyToOperate);
