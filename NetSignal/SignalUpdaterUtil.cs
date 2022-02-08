@@ -64,7 +64,7 @@ namespace NetSignal
 
                 var package = SignalCompressor.DecompressKeepAlive(bytes, 1);
 
-                //report(package.ToString());
+                report(package.ToString());
                 if (fromConnectionDatas.Length > package.clientId)
                 {
                 

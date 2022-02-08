@@ -15,7 +15,7 @@ namespace DedicatedServer
             int maxPlayers = int.Parse(args[0]);
 
             var cancel = false;
-            var shouldPrint = false;
+            var shouldPrint = true;
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[maxPlayers];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[maxPlayers];
             ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[maxPlayers];

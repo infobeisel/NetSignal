@@ -2,10 +2,10 @@ using System;
 
 namespace NetSignal
 {
+    [System.Serializable]
     public struct OutgoingSignal
     {
         private DataPackage dataMember;//TODO WARNING?!
-
         public DataPackage data
         {
             set

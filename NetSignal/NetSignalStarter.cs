@@ -34,7 +34,9 @@ namespace NetSignal
                 (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
             });
 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, connections, connectionDatas, connectionStates);
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel,
+                (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); }
+                , connections, connectionDatas, connectionStates);
 
             
 
@@ -64,7 +66,8 @@ namespace NetSignal
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
             _ = Task.Run(() =>
             {
-                MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], cancel, 5000);
+                MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], cancel, 5000,
+                    (string r) => { if (shouldLog) Logging.Write("server keep alive: " + r); });
             });
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);

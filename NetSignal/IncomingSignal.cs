@@ -2,6 +2,7 @@ using System;
 
 namespace NetSignal
 {
+    [Serializable]
     public struct IncomingSignal
     {
         private DataPackage dataMember;

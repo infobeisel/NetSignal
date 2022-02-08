@@ -1,8 +1,10 @@
+using System;
 using System.Net;
 
 namespace NetSignal
 {
     //data necessary to run a connection, does (should!) not change during lifetime
+    [Serializable]
     public struct ConnectionMetaData
     {
 

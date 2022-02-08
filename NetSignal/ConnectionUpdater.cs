@@ -358,7 +358,7 @@ namespace NetSignal
                         {
                             IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(serverData.myIp), serverData.iListenToPort);
                             
-                            //report("keepalive " + package + " to " + toSendTo);
+                            report("keepalive " + package + " to " + toSendTo);
                             try
                             {
                                 await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);

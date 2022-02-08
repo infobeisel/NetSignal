@@ -90,16 +90,16 @@ namespace NetSignal
             return ret;
         }
 
-        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Func<bool> cancel, int periodMs)
+        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Func<bool> cancel, int periodMs, Action<string> report)
         {
             while (!cancel())
             {
-                await UpdateServerEntry(connection, connectionData, connectionState);
+                await UpdateServerEntry(connection, connectionData, connectionState, report);
                 await Task.Delay(periodMs);
             }
         }
 
-        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
+        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Action<string> report)
         {
 
             
@@ -117,7 +117,7 @@ namespace NetSignal
 
                 var stringContent = new System.Net.Http.StringContent(content, System.Text.Encoding.UTF8, "application/json");
 
-                Logging.Write("make post");
+                Logging.Write("make update server entry");
                 CancellationTokenSource source = new CancellationTokenSource();
                 //previouslyProvidedToken = source.Token;
                 _ = connection.httpClient.PostAsync(uri, stringContent, source.Token);
