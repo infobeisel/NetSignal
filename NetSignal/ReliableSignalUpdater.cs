@@ -133,6 +133,7 @@ namespace NetSignal
                     var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
 
                     await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }
                 catch (ObjectDisposedException e)
                 {
@@ -154,7 +155,7 @@ namespace NetSignal
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + "  has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
-                Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
+                
             }
         }
     }
