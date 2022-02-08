@@ -13,38 +13,7 @@ namespace NetSignal
     public class MatchmakingConnectionUpdater
     {
 
-        public struct ServerListElementResponse
-        {
-            public string name;
-            public string ip;
-            public long tick;
-            public int port;
-            public int currentPlayerCount;
-            public int maxPlayerCount;
-
-            public override string ToString()
-            {
-                return name + "," + ip + ":" + port.ToString() + "," + currentPlayerCount.ToString() + "/" + maxPlayerCount.ToString();
-            }
-        }
-
-        public struct ServerList
-        {
-            public List<ServerListElementResponse> list;
-
-            public override string ToString()
-            {
-                string ret = "ServerList:[";
-                foreach(var l in list)
-                {
-                    ret += l.ToString();
-                    ret += ";";
-                }
-                ret += "]";
-                return ret;
-
-            }
-        }
+        
 
         public async static void AwaitAndPerformTearDownHttpListener(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
         {

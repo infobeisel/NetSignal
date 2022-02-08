@@ -79,6 +79,8 @@
     <Compile Include="OutgoingSignal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReliableSignalUpdater.cs" />
+    <Compile Include="ServerList.cs" />
+    <Compile Include="ServerListElementResponse.cs" />
     <Compile Include="SignalCompressor.cs" />
     <Compile Include="SignalType.cs" />
     <Compile Include="SignalUpdaterUtil.cs" />

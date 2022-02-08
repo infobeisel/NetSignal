@@ -124,6 +124,8 @@ namespace NetSignal
                     (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " send: " + r); }, cancel);
                 });
 
+                
+
                 ConnectionUpdater.AwaitAndPerformTearDownClientTCP(clientCon[clientIndex], cancel, clientState[clientIndex]);
                 ConnectionUpdater.AwaitAndPerformTearDownClientUDP(clientCon[clientIndex], cancel, clientState[clientIndex]);
             }

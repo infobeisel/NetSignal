@@ -86,8 +86,8 @@ namespace NetSignal
             var clientS = new ConnectionState();
             clientD.matchmakingServerPort = 5432;
             clientD.matchmakingServerIp = "http://85.214.239.45";
-            MatchmakingConnectionUpdater.ServerList l = new MatchmakingConnectionUpdater.ServerList();
-            l.list = new List<MatchmakingConnectionUpdater.ServerListElementResponse>();
+            ServerList l = new ServerList();
+            l.list = new List<ServerListElementResponse>();
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref clientCon, ref clientD, ref clientS, () => teard);
 
             l = await MatchmakingConnectionUpdater.GatherServerList(clientCon, clientD, clientS);
@@ -378,8 +378,8 @@ namespace NetSignal
             var clientS = new ConnectionState();
             clientD.matchmakingServerPort = 5432;
             clientD.matchmakingServerIp = "http://127.0.0.1";
-            MatchmakingConnectionUpdater.ServerList l = new MatchmakingConnectionUpdater.ServerList();
-            l.list = new List<MatchmakingConnectionUpdater.ServerListElementResponse>();
+            ServerList l = new ServerList();
+            l.list = new List<ServerListElementResponse>();
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref clientCon, ref clientD, ref clientS, () => teard);
 
             l = await MatchmakingConnectionUpdater.GatherServerList(clientCon, clientD, clientS);
