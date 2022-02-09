@@ -40,13 +40,19 @@ namespace NetSignal
                 {
                     for (int signalI = 0; signalI < signals[fromClientI].Length && isSyncingSuccessfully; signalI++)
                     {
+                        
+                        
                         if (signals[fromClientI][signalI].dataDirty)
                         {
+                            var dataToSend = signals[fromClientI][signalI].data;
+                            dataToSend.clientId = fromClientI; //make sure client id is correct;
+
+
                             var usingBytes = toConnectionStates[toI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);
                             await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
                             {
-                                SignalCompressor.Compress(signals[fromClientI][signalI].data, usingBytes, 1);
+                                SignalCompressor.Compress(dataToSend, usingBytes, 1);
                                 try
                                 {
                                     await toConnections[toI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);

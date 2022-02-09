@@ -52,18 +52,20 @@ namespace NetSignal
                     {
                         if (signals[fromClientI][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                         {
-
+                            var dataToSend = signals[fromClientI][signalI].data;
+                            dataToSend.clientId = fromClientI; //make sure client id is correct;
+                            signals[fromClientI][signalI].data = dataToSend;
 
                             var toClient = toAllData[toClientI];
                             var udpClientToUse = useOwnUdpClient ? with.udpClient : toAllApis[toClientI].udpClient;
 
                             IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toClient.myIp), toClient.iListenToPort);
 
-                            report("send data to " + toSendTo + " : " + signals[fromClientI][signalI].data);
+                            report("send data to " + toSendTo + " : " + dataToSend);
 
                             var usingBytes = useOwnUdpClient ? connectionState.udpWriteBytes : toAllStates[toClientI].udpWriteBytes;
                             Util.FlushBytes(usingBytes);
-                            SignalCompressor.Compress(signals[fromClientI][signalI].data, usingBytes, 1);
+                            SignalCompressor.Compress(dataToSend, usingBytes, 1);
                             await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
                             {
                                 try
