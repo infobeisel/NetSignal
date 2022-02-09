@@ -49,15 +49,15 @@ namespace NetSignal
             }
 
 
-            await TestDuplex(() => cancel, () => shouldPrint,
+            /*await TestDuplex(() => cancel, () => shouldPrint,
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState,  clients, clientDatas, clientState);
+                server, serverData, serverState,  clients, clientDatas, clientState);*/
 
 
 
-            /*
+            
             await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);*/
+                server, serverData, serverState, clients, clientDatas, clientState);
             cancel = true;
             //TODOS:
             //implement websocket for matchmaking (to find ip to connect to server), set up with strato !!

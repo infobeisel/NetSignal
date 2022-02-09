@@ -39,6 +39,10 @@ namespace NetSignal
                 for (int fromConnectionI = 0; fromConnectionI < signals.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
                     int fromClientId = toConnectionsDatas[fromConnectionI].clientID;
+                    Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
+
+                    if (fromClientId == -1)
+                        continue;
 
                     for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
                     {
