@@ -19,11 +19,11 @@ namespace NetSignal
             }
         }
 
-        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, Func<bool> cancel, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toI)
+        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, Func<bool> cancel, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
         {
             while (!cancel())
             {
-                var previousState = Util.CompareExchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
+                var previousState = Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
                 if (previousState == StateOfConnection.Uninitialized)
                     await Task.Delay(2000);//pause
@@ -36,51 +36,54 @@ namespace NetSignal
 
                 bool isSyncingSuccessfully = true;
 
-                for (int fromClientI = 0; fromClientI < signals.Length && isSyncingSuccessfully; fromClientI++)
+                for (int fromConnectionI = 0; fromConnectionI < signals.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
-                    for (int signalI = 0; signalI < signals[fromClientI].Length && isSyncingSuccessfully; signalI++)
+                    int fromClientId = toConnectionsDatas[fromConnectionI].clientID;
+
+                    for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
                     {
                         
                         
-                        if (signals[fromClientI][signalI].dataDirty)
+                        if (signals[fromClientId][signalI].dataDirty)
                         {
-                            var dataToSend = signals[fromClientI][signalI].data;
-                            dataToSend.clientId = fromClientI; //make sure client id is correct;
+                            var dataToSend = signals[fromClientId][signalI].data;
+                            dataToSend.clientId = fromClientId; //make sure client id is correct;
+                            signals[fromClientId][signalI].data = dataToSend;
 
 
-                            var usingBytes = toConnectionStates[toI].tcpWriteBytes;
+                            var usingBytes = toConnectionStates[toConnectionI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);
                             await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
                             {
                                 SignalCompressor.Compress(dataToSend, usingBytes, 1);
                                 try
                                 {
-                                    await toConnections[toI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
+                                    await toConnections[toConnectionI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
 
                                 }
                                 catch (SocketException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
                                     isSyncingSuccessfully = false;
-                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (NullReferenceException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
                                     isSyncingSuccessfully = false;
-                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (ObjectDisposedException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
                                     isSyncingSuccessfully = false;
-                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                                    Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (System.IO.IOException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
                                     isSyncingSuccessfully = false;
-                                    Logging.Write("SyncSignalsToAllReliably: tcp stream " + toI + " has been closed, (unfortunately) this is intended behaviour, stop receiving.");
+                                    Logging.Write("SyncSignalsToAllReliably: tcp stream " + toConnectionI + " has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                                 }
                                 //signals[fromClientI][signalI].dataDirty = false; TODO need proper mechanism to sync this across threads
                             });
@@ -100,7 +103,7 @@ namespace NetSignal
                 }*/
                 
 
-                Util.CompareExchange(ref toConnectionStates[toI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
+                Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
                 await Task.Delay(60);
             }
         }

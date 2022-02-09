@@ -121,40 +121,41 @@ namespace NetSignal
             IncomingSignal[][][] clientReliableIncoming = new IncomingSignal[clientInstancesAPI.Length][][];
             OutgoingSignal[][][] clientReliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][];
 
-            for (int clientI = 0; clientI < clientInstancesAPI.Length; clientI++)
+            for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                clientUnreliableIncoming[clientI] = new IncomingSignal[clientInstancesAPI.Length][];
-                clientReliableIncoming[clientI] = new IncomingSignal[clientInstancesAPI.Length][];
-                clientUnreliableOutgoing[clientI] = new OutgoingSignal[clientInstancesAPI.Length][];
-                clientReliableOutgoing[clientI] = new OutgoingSignal[clientInstancesAPI.Length][];
+                clientUnreliableIncoming[i] = new IncomingSignal[clientInstancesAPI.Length][];
+                clientReliableIncoming[i] = new IncomingSignal[clientInstancesAPI.Length][];
+                clientUnreliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][];
+                clientReliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][];
 
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
-                    clientUnreliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
-                    clientReliableIncoming[clientI][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
-                    clientUnreliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
-                    clientReliableOutgoing[clientI][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
+                    clientUnreliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientReliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
+                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(5);
                 }
 
 
 
-                var updatedTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel,
-                clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
-                clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
-                clientInstancesAPI[clientI] = updatedTuple.Item1;
-                clientInstancesData[clientI] = updatedTuple.Item2;
+                var clientId = await NetSignalStarter.StartClient(5001 + i, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel);
+                NetSignalStarter.StartClientSignalSyncing(clientId, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
+                    clientUnreliableOutgoing[clientId], clientUnreliableIncoming[clientId],
+                clientReliableOutgoing[clientId], clientReliableIncoming[clientId], cancel, serverInstanceData);
 
             }
             await Task.Delay(1000);
             //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+            await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
 
         }
 
-        private static async Task SyncLogCheckWithPlayer0And1(IncomingSignal[][][] clientIncoming, OutgoingSignal[][][] clientOutgoing)
+        private static async Task SyncLogCheckWithPlayer0And1(ConnectionMetaData [] connections, IncomingSignal[][][] clientIncoming, OutgoingSignal[][][] clientOutgoing)
         {
             bool wasSame = false;
 
+            int clientIdOfClient0 = connections[0].clientID;
+            int clientIdOfClient1 = connections[1].clientID;
 
             var rng = new System.Random(645);
 
@@ -162,12 +163,11 @@ namespace NetSignal
             for (int i = 0; i < 200; i++)
             {
 
-                wasSame = clientOutgoing[0][0][0].Equals(clientIncoming[1][0][0]);
+                wasSame = clientOutgoing[clientIdOfClient0][clientIdOfClient0][0].Equals(clientIncoming[clientIdOfClient1][clientIdOfClient0][0]);
 
                 if (wasSame)
                 {
-                    //Logging.Write(clientUnreliableOutgoing[0][0][0] + " vs " + clientUnreliableIncoming[1][0][0].ToString());
-                    avgPing += (clientIncoming[1][0][0].cameIn - clientIncoming[1][0][0].data.timeStamp).TotalMilliseconds;
+                    avgPing += (clientIncoming[clientIdOfClient1][clientIdOfClient0][0].cameIn - clientIncoming[clientIdOfClient0][clientIdOfClient0][0].data.timeStamp).TotalMilliseconds;
                 }
 
 
@@ -175,10 +175,10 @@ namespace NetSignal
                 {
                     var a = new DataPackage();
                     a.WriteFloat((float)rng.NextDouble());
-                    a.clientId = 0;
+                    a.clientId = clientIdOfClient0;
                     a.index = 0;
                     a.timeStamp = DateTime.UtcNow;
-                    clientOutgoing[0][0][0].data = a;
+                    clientOutgoing[clientIdOfClient0][clientIdOfClient0][0].data = a;
                 }
 
                 await Task.Delay(40);
@@ -273,44 +273,53 @@ namespace NetSignal
 
             }
 
-            int clientToLeaveAndJoin = 1;
 
-            for (int clientI = 0; clientI < clientInstancesAPI.Length; clientI++)
+            for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                var updatedClientTuple = await NetSignalStarter.StartClient(shouldReport, clientI, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+                int clientI = await NetSignalStarter.StartClient(5001 + i, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
-                    cancelTestClient,
-                clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
-                clientReliableOutgoing[clientI], clientReliableIncoming[clientI]);
-                clientInstancesAPI[clientI] = updatedClientTuple.Item1;
-                clientInstancesData[clientI] = updatedClientTuple.Item2;
+                    cancelTestClient);
+                NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
+                    clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
+                clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancelTestClient, serverInstanceData);
+                //clientUnreliableOutgoing, clientUnreliableIncoming,
+                //clientReliableOutgoing, clientReliableIncoming);
+                //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
+                // clientInstancesData[clientI] = updatedClientTuple.Item2;
 
             }
             await Task.Delay(1000);
 
 
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+            await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
 
             cancelClient2 = true;
 
             await Task.Delay(1000);
 
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+            await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
 
             await Task.Delay(1000);
             cancelClient2 = false ;
             await Task.Delay(1000);
 
-            var updatedTuple = await NetSignalStarter.StartClient(shouldReport, clientToLeaveAndJoin, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
-                    cancelTestClient ,
-                clientUnreliableOutgoing[clientToLeaveAndJoin], clientUnreliableIncoming[clientToLeaveAndJoin],
-                clientReliableOutgoing[clientToLeaveAndJoin], clientReliableIncoming[clientToLeaveAndJoin]);
-            clientInstancesAPI[clientToLeaveAndJoin] = updatedTuple.Item1;
-            clientInstancesData[clientToLeaveAndJoin] = updatedTuple.Item2;
+            for (int i = 0; i < clientInstancesAPI.Length; i++)
+            {
+                int clientI = await NetSignalStarter.StartClient(5001 + i, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+                    //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
+                    cancelTestClient);
+                //clientUnreliableOutgoing, clientUnreliableIncoming,
+                //clientReliableOutgoing, clientReliableIncoming);
+                //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
+                // clientInstancesData[clientI] = updatedClientTuple.Item2;
+                NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
+                    clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
+                clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancelTestClient, serverInstanceData);
+            }
 
             await Task.Delay(1000);
 
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing);
+            await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
 
             await Task.Delay(1000);
 

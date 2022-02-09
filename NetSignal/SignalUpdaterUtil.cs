@@ -18,18 +18,18 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
-                    for (int fromClientI = 0; fromClientI < clientCount; fromClientI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[fromClientI].Length, outgoingSignals[fromClientI].Length); signalI++)
+                    for (int fromConnectionI = 0; fromConnectionI < clientCount; fromConnectionI++)
+                        for (int signalI = 0; signalI < Math.Min(incomingSignals[fromConnectionI].Length, outgoingSignals[fromConnectionI].Length); signalI++)
                         {
-                            if (incomingSignals[fromClientI][signalI].dataHasBeenUpdated)
+                            if (incomingSignals[fromConnectionI][signalI].dataHasBeenUpdated)
                             {
-                                for (int toClientI = 0; toClientI < clientCount; toClientI++)
+                                for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
                                 {
-                                    if (toClientI != fromClientI) //dont send to self
+                                    //if (toClientI != fromClientI) //dont send to self
                                     {
                                         //outgoingSignals[toClientI][signalI].WriteFloat( incomingSignals[fromClientI][signalI].data.AsFloat());
-                                        outgoingSignals[toClientI][signalI].data = incomingSignals[fromClientI][signalI].data;
-                                        incomingSignals[toClientI][signalI].dataHasBeenUpdated = false;
+                                        outgoingSignals[toConnectionI][signalI].data = incomingSignals[fromConnectionI][signalI].data;
+                                        incomingSignals[toConnectionI][signalI].dataHasBeenUpdated = false;
                                     }
                                 }
                             }

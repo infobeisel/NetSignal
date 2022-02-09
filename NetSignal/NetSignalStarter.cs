@@ -74,63 +74,70 @@ namespace NetSignal
         }
 
         //please provide array with one element for server*
-        public async static Task<Tuple<ConnectionAPIs,ConnectionMetaData>> StartClient(Func<bool> shouldReport,  int clientIndex, ConnectionAPIs [] clientCon, ConnectionMetaData [] clientData, ConnectionState [] clientState, 
-             ConnectionMetaData [] serverData, 
-            Func<bool> cancel,
-            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
-            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
+        public async static Task<int> StartClient(int udpPort, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState,
+             ConnectionMetaData[] serverData,
+            Func<bool> cancel)
         {
 
-            
-            
+
+            int clientI = -1;
             try
             {
+                ConnectionAPIs connectionApi = new ConnectionAPIs();
+                ConnectionMetaData connectionMetaData = new ConnectionMetaData();
+                connectionMetaData.iListenToPort = udpPort;
+                ConnectionState connectionState = new ConnectionState();
                 Logging.Write("StartClient: init single connection");
-                var returnTuple = await ConnectionUpdater.InitializeSingleConnection(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData[0]);
-                clientCon[clientIndex] = returnTuple.Item1;
-                clientData[clientIndex] = returnTuple.Item2;
+                var returnTuple = await ConnectionUpdater.InitializeSingleConnection(connectionApi, connectionMetaData, connectionState, serverData[0]);
+                clientI = returnTuple.Item2.clientID;
+                if (clientI >= 0 && clientI < storeToClientCon.Length)
+                {
+                    storeToClientCon[clientI] = returnTuple.Item1;
+                    storeToClientData[clientI] = returnTuple.Item2;
+                    storeToClientState[clientI] = connectionState;
+                }
 
             } catch (SocketException e)
             {
                 Logging.Write("couldnt establish connection: " + e.Message);
             }
+            return clientI;
+        }
+        public static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
+            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
+            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData)
+        { 
+            
+            Logging.Write("StartClient: start receive signals");
 
-            //successfully connected
-            if (StateOfConnection.Uninitialized != (StateOfConnection)clientState[clientIndex].tcpReadStateName)
+            _ = Task.Run(() =>
             {
-                Logging.Write("StartClient: start receive signals");
-
-
-                _ = Task.Run(() =>
-                {
-                    UnreliableSignalUpdater.ReceiveSignals(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableIncomingSignals, cancel,
-                    (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " receive: " + r); });
-                });
+                UnreliableSignalUpdater.ReceiveSignals(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], unreliableIncomingSignals, cancel,
+                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
+            });
                 
-                ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, 
-                    new[] { clientCon[clientIndex] }, new[] { clientData[clientIndex] }, new[] { clientState[clientIndex] });
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, 
+                new[] { storeToClientCon[clientI] }, new[] { storeToClientData[clientI] }, new[] { storeToClientState[clientI] });
 
-                Logging.Write("StartClient: start sync signals to server");
+            Logging.Write("StartClient: start sync signals to server");
 
                 
-                UnreliableSignalUpdater.SyncSignalsToAll(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], unreliableOutgoingSignals,
-                (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " send: " + r); }, cancel, null, serverData, null);
+            UnreliableSignalUpdater.SyncSignalsToAll(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], unreliableOutgoingSignals,
+            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel, null, serverData, null);
 
-                ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, clientCon, clientData, clientState);
+            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, storeToClientCon, storeToClientData, storeToClientState);
 
-                _ = Task.Run(() =>
-                {
-                    ConnectionUpdater.PeriodicallySendKeepAlive(clientCon[clientIndex], clientData[clientIndex], clientState[clientIndex], serverData,
-                    (string r) => { if (shouldReport()) Logging.Write("client " + clientIndex + " send: " + r); }, cancel);
-                });
+            _ = Task.Run(() =>
+            {
+                ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
+                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
+            });
 
                 
 
-                ConnectionUpdater.AwaitAndPerformTearDownClientTCP(clientCon[clientIndex], cancel, clientState[clientIndex]);
-                ConnectionUpdater.AwaitAndPerformTearDownClientUDP(clientCon[clientIndex], cancel, clientState[clientIndex]);
-            }
-
-            return new Tuple<ConnectionAPIs, ConnectionMetaData>(clientCon[clientIndex], clientData[clientIndex]);
+            ConnectionUpdater.AwaitAndPerformTearDownClientTCP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
+            ConnectionUpdater.AwaitAndPerformTearDownClientUDP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
+            
         }
 
 

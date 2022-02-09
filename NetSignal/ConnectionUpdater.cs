@@ -45,7 +45,7 @@ namespace NetSignal
         }
 
 
-        public async static Task<ConnectionAPIs> SetupClientTCP(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData connectTo)
+        public async static Task<ConnectionAPIs> SetupClientTCP(ConnectionAPIs connection, ConnectionState connectionState, ConnectionMetaData connectTo)
         {
             Util.Exchange(ref connectionState.tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref connectionState.tcpReadStateName, StateOfConnection.Uninitialized);
@@ -168,7 +168,7 @@ namespace NetSignal
 
             connectors.tcpListener = null;
 
-            connectors = await SetupClientTCP(connectors, connectionData, connectionState, toServer);
+            connectors = await SetupClientTCP(connectors, connectionState, toServer);
 
             connectionData = await ExchangeConnectionInitials(connectors, connectionData, connectionState);
 
