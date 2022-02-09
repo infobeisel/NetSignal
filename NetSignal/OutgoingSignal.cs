@@ -48,21 +48,21 @@ namespace NetSignal
         public void WriteFloat(float f)
         {
             
-            data.WriteFloat(0.0f);
+            dataMember.WriteFloat(0.0f);
             makeDirty();
         }
 
         public void WriteInt(int i)
         {
-            
-            data.WriteInt(i);
+
+            dataMember.WriteInt(i);
             makeDirty();
         }
 
         public void WriteString(string str)
         {
-            
-            data.WriteString(str);
+
+            dataMember.WriteString(str);
             makeDirty();
         }
 
@@ -71,7 +71,7 @@ namespace NetSignal
             unsafe
             {
                 byte* longBytes = (byte*)&value;
-                var toD = to0.data;
+                var toD = to0.dataMember;
                 toD.d0 = longBytes[0];
                 toD.d1 = longBytes[1];
                 toD.d2 = longBytes[2];
@@ -79,7 +79,7 @@ namespace NetSignal
                 to0.data = toD;
 
 
-                toD = to1.data;
+                toD = to1.dataMember;
                 toD.d0 = longBytes[4];
                 toD.d1 = longBytes[5];
                 toD.d2 = longBytes[6];
