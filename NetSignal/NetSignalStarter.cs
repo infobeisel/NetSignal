@@ -46,9 +46,10 @@ namespace NetSignal
             Logging.Write("StartServer: start sync signals");
             
             UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,
-            (string r) => { if (shouldLog) Logging.Write("server send: " + r); }, cancel, connections, connectionDatas, connectionStates);
+            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates);
             
-            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,connections, connectionDatas, connectionStates);
+            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
+             (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
             ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas);
@@ -123,14 +124,17 @@ namespace NetSignal
 
                 
             UnreliableSignalUpdater.SyncSignalsToAll(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], unreliableOutgoingSignals,
-            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel, null, serverData, null);
+            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, null, serverData, null);
 
-            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel, storeToClientCon, storeToClientData, storeToClientState);
+            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
+                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); },
+                               new[] { storeToClientCon[clientI] }, new[] { storeToClientData[clientI] }, new[] { storeToClientState[clientI] });
+  //storeToClientCon, storeToClientData, storeToClientState);
 
             _ = Task.Run(() =>
             {
-                ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
-                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
+               // ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
+              //  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
             });
 
                 

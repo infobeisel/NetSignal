@@ -49,15 +49,15 @@ namespace NetSignal
             }
 
 
-            /*await TestDuplex(() => cancel, () => shouldPrint,
+            await TestDuplex(() => cancel, () => shouldPrint,
                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                server, serverData, serverState,  clients, clientDatas, clientState);*/
+                server, serverData, serverState,  clients, clientDatas, clientState);
 
 
 
-            
-            await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);
+
+            /* await TestClientsToRemoteDedicatedServer(() => cancel, () => shouldPrint,
+                 server, serverData, serverState, clients, clientDatas, clientState);*/
             cancel = true;
             //TODOS:
             //implement websocket for matchmaking (to find ip to connect to server), set up with strato !!
@@ -70,7 +70,7 @@ namespace NetSignal
              * - client ask for server list (paged subset) (partial check)
              * 
             */
-            
+
             //battletest: make scriptable objects that have Incoming- and Outgoing Signals, write Mono Updaters that assign Signals to specific game objects (mainly: Bird slots, state enums for UI)
 
         }
@@ -154,8 +154,8 @@ namespace NetSignal
         {
             bool wasSame = false;
 
-            int clientIdOfClient0 = connections[0].clientID;
-            int clientIdOfClient1 = connections[1].clientID;
+            int clientIdOfCon0 = connections[0].clientID;
+            int clientIdOfCon1 = connections[1].clientID;
 
             var rng = new System.Random(645);
 
@@ -163,11 +163,11 @@ namespace NetSignal
             for (int i = 0; i < 200; i++)
             {
 
-                wasSame = clientOutgoing[clientIdOfClient0][clientIdOfClient0][0].Equals(clientIncoming[clientIdOfClient1][clientIdOfClient0][0]);
+                wasSame = clientOutgoing[clientIdOfCon0][clientIdOfCon0][0].Equals(clientIncoming[clientIdOfCon1][clientIdOfCon0][0]);
 
                 if (wasSame)
                 {
-                    avgPing += (clientIncoming[clientIdOfClient1][clientIdOfClient0][0].cameIn - clientIncoming[clientIdOfClient0][clientIdOfClient0][0].data.timeStamp).TotalMilliseconds;
+                    avgPing += (clientIncoming[clientIdOfCon1][clientIdOfCon0][0].cameIn - clientIncoming[clientIdOfCon0][clientIdOfCon0][0].data.timeStamp).TotalMilliseconds;
                 }
 
 
@@ -175,10 +175,10 @@ namespace NetSignal
                 {
                     var a = new DataPackage();
                     a.WriteFloat((float)rng.NextDouble());
-                    a.clientId = clientIdOfClient0;
+                    a.clientId = clientIdOfCon0;
                     a.index = 0;
                     a.timeStamp = DateTime.UtcNow;
-                    clientOutgoing[clientIdOfClient0][clientIdOfClient0][0].data = a;
+                    clientOutgoing[clientIdOfCon0][clientIdOfCon0][0].data = a;
                 }
 
                 await Task.Delay(40);

@@ -307,6 +307,14 @@ namespace NetSignal
                                     Util.Exchange(ref storeToConnectionStates[clientID].tcpReadStateName, StateOfConnection.ReadyToOperate);
 
 
+                                    Logging.Write("connections: ");
+                                    foreach(var c in storeToConnectionDatas)
+                                    {
+                                        Logging.Write(c.ToString());
+                                    }
+
+
+
                                 }
                             },
                             async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); },

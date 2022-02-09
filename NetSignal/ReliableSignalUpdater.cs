@@ -8,18 +8,18 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliably(OutgoingSignal[][] signals, Func<bool> cancel, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
             for (var connectionI = 0; connectionI < toConnections.Length; connectionI++)
             {
                 await Task.Run(() =>
                 {
-                    SyncSignalsToReliably(signals, cancel, toConnections, toConnectionsDatas, toConnectionStates, connectionI);
+                    SyncSignalsToReliably(signals, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, connectionI);
                 });
             }
         }
 
-        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, Func<bool> cancel, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
+        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
         {
             while (!cancel())
             {
@@ -36,10 +36,10 @@ namespace NetSignal
 
                 bool isSyncingSuccessfully = true;
 
-                for (int fromConnectionI = 0; fromConnectionI < signals.Length && isSyncingSuccessfully; fromConnectionI++)
+                for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
                     int fromClientId = toConnectionsDatas[fromConnectionI].clientID;
-                    Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
+                   // Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
 
                     if (fromClientId == -1)
                         continue;
@@ -54,6 +54,8 @@ namespace NetSignal
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             signals[fromClientId][signalI].data = dataToSend;
 
+
+                            report("send data to " + toConnectionI + " : " + dataToSend);
 
                             var usingBytes = toConnectionStates[toConnectionI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);

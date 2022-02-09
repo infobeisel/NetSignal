@@ -18,12 +18,12 @@ namespace NetSignal
         public IPEndPoint thisListensTo;
 
         public IPEndPoint toSendToServer;
-
+        */
         public override string ToString()
         {
-            return "server IP : " + serverIpToSendTo + " server port " + thisListensToPort + " sendtoendpoint " + toSendToThis + " listentoendpoint " + thisListensTo + " clientID " + clientID;
+            return " clientID " + clientID;
         }
-        */
+        
 
         public string myIp;
         public int iListenToPort;

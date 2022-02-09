@@ -25,11 +25,11 @@ namespace NetSignal
                             {
                                 for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
                                 {
-                                    //if (toClientI != fromClientI) //dont send to self
+                                    //if (fromConnectionI != toConnectionI) //dont send to self
                                     {
-                                        //outgoingSignals[toClientI][signalI].WriteFloat( incomingSignals[fromClientI][signalI].data.AsFloat());
-                                        outgoingSignals[toConnectionI][signalI].data = incomingSignals[fromConnectionI][signalI].data;
-                                        incomingSignals[toConnectionI][signalI].dataHasBeenUpdated = false;
+                                        outgoingSignals[toConnectionI][signalI].WriteFloat( incomingSignals[fromConnectionI][signalI].data.AsFloat());
+                                        //outgoingSignals[toConnectionI][signalI].data = incomingSignals[fromConnectionI][signalI].data;
+                                        //incomingSignals[toConnectionI][signalI].dataHasBeenUpdated = false;
                                     }
                                 }
                             }
