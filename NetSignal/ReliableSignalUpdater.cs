@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -35,11 +36,10 @@ namespace NetSignal
                 }
 
                 bool isSyncingSuccessfully = true;
-
+               // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
                 for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
                     int fromClientId = toConnectionsDatas[fromConnectionI].clientID;
-                   // Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
 
                     if (fromClientId == -1)
                         continue;
@@ -52,6 +52,7 @@ namespace NetSignal
                         {
                             var dataToSend = signals[fromClientId][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
+                            dataToSend.index = signalI;
                             signals[fromClientId][signalI].data = dataToSend;
 
 
@@ -96,31 +97,20 @@ namespace NetSignal
                         }
                     }
                 }
-                /*
-                if(!isSyncingSuccessfully) //failed syncing, need to delete saved connection info
-                {
-                    var shouldDeleteKey = mapping.ClientIdentificationToEndpoint?.ContainsKey(toI);
-                    if (shouldDeleteKey.HasValue && shouldDeleteKey.Value)
-                    {
-                        var endp = mapping.ClientIdentificationToEndpoint[toI];
-                        mapping.ClientIdentificationToEndpoint.Remove(toI);
-                        mapping.EndPointToClientIdentification.Remove(endp);
-                    }
-                }*/
-                
+            
 
                 Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
                 await Task.Delay(60);
             }
         }
 
-        public async static void ReceiveSignalsReliablyFromAll(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
+        public async static void ReceiveSignalsReliablyFromAll(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
         {
-            for (int streamI = 0; streamI < fromStreams.Length; streamI++)
+            foreach(var index in fromIndices)
             {
                 await Task.Run(() =>
                 {
-                    ReceiveSignalsReliablyFrom(signals, cancel, report, fromStreams, fromDatas, fromStates, streamI);
+                    ReceiveSignalsReliablyFrom(signals, cancel, report, fromStreams, fromDatas, fromStates, index);
                 });
             }
         }

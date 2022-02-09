@@ -35,8 +35,9 @@ namespace NetSignal
             });
 
             ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel,
-                (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); }
-                , connections, connectionDatas, connectionStates);
+                (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); },
+                System.Linq.Enumerable.Range(0,connectionDatas.Length),
+                connections, connectionDatas, connectionStates);
 
             
 
@@ -117,8 +118,8 @@ namespace NetSignal
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
             });
                 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, 
-                new[] { storeToClientCon[clientI] }, new[] { storeToClientData[clientI] }, new[] { storeToClientState[clientI] });
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, new [] {clientI},
+                 storeToClientCon , storeToClientData , storeToClientState );
 
             Logging.Write("StartClient: start sync signals to server");
 
@@ -133,8 +134,8 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-               // ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
-              //  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
+                ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
+                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
             });
 
                 

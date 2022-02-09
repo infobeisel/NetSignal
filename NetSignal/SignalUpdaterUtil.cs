@@ -18,20 +18,21 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
-                    for (int fromConnectionI = 0; fromConnectionI < clientCount; fromConnectionI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[fromConnectionI].Length, outgoingSignals[fromConnectionI].Length); signalI++)
+                    for (int connectionI = 0; connectionI < clientCount; connectionI++)
+                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI].Length, outgoingSignals[connectionI].Length); signalI++)
                         {
-                            if (incomingSignals[fromConnectionI][signalI].dataHasBeenUpdated)
+                            if (incomingSignals[connectionI][signalI].dataHasBeenUpdated)
                             {
-                                for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
+                                outgoingSignals[connectionI][signalI].WriteFloat(incomingSignals[connectionI][signalI].data.AsFloat());
+                                /*for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
                                 {
-                                    //if (fromConnectionI != toConnectionI) //dont send to self
+                                    if (fromConnectionI != toConnectionI) //dont send to self
                                     {
                                         outgoingSignals[toConnectionI][signalI].WriteFloat( incomingSignals[fromConnectionI][signalI].data.AsFloat());
                                         //outgoingSignals[toConnectionI][signalI].data = incomingSignals[fromConnectionI][signalI].data;
                                         //incomingSignals[toConnectionI][signalI].dataHasBeenUpdated = false;
                                     }
-                                }
+                                }*/
                             }
                         }
                     await Task.Delay(30);

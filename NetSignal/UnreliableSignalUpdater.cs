@@ -60,6 +60,7 @@ namespace NetSignal
                         {
                             var dataToSend = signals[fromClientId][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
+                            dataToSend.index = signalI;
                             signals[fromClientId][signalI].data = dataToSend;
 
                             var toClient = toAllData[toConnectionI];
