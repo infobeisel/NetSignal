@@ -48,12 +48,14 @@ namespace DedicatedServer
             IncomingSignal[][] reliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
             OutgoingSignal[][] reliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
 
+
+            
             for (int i = 0; i < clients.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
-                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(5);
-                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
-                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
+                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(7);
+                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(1);
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(7);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(1);
 
             }
 
