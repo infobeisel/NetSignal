@@ -48,7 +48,7 @@ namespace NetSignal
         public void WriteFloat(float f)
         {
             
-            dataMember.WriteFloat(0.0f);
+            dataMember.WriteFloat(f);
             makeDirty();
         }
 

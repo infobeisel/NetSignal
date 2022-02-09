@@ -27,6 +27,7 @@ namespace NetSignal
                                 {
                                     if (toClientI != fromClientI) //dont send to self
                                     {
+                                        //outgoingSignals[toClientI][signalI].WriteFloat( incomingSignals[fromClientI][signalI].data.AsFloat());
                                         outgoingSignals[toClientI][signalI].data = incomingSignals[fromClientI][signalI].data;
                                         incomingSignals[toClientI][signalI].dataHasBeenUpdated = false;
                                     }
