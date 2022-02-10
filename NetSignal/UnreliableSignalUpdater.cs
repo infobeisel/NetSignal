@@ -31,7 +31,7 @@ namespace NetSignal
                 Logging.Write("SyncSignalsTo on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
                 while (!cancel())
                 {
-                    report("try to send ur lock");
+                   //report("try to send ur lock");
 
 
                     StateOfConnection previousState = StateOfConnection.Uninitialized;
@@ -48,7 +48,7 @@ namespace NetSignal
                         await Task.Delay(2000);//pause
                         continue;
                     }
-                    report("try to send ur to " + toConnectionI);
+                    //report("try to send ur to " + toConnectionI);
 
                     for (int fromConnectionI = 0; fromConnectionI < signals.Length; fromConnectionI++)
                     {
@@ -57,17 +57,17 @@ namespace NetSignal
                             toAllData[fromConnectionI].clientID;
                         // Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
 
-                        report("try to send ur to A" + toConnectionI);
+                        //report("try to send ur to A" + toConnectionI);
                         if (fromClientId == -1)
                             continue;
-                        report("try to send ur to B" + toConnectionI);
+                        //report("try to send ur to B" + toConnectionI);
 
                         for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
                         {
-                            report("try to send ur to C" + signals[fromClientId][signalI] + " contnue? " + !cancel());
+                            //report("try to send ur to C" + signals[fromClientId][signalI] + " contnue? " + !cancel());
                             if (signals[fromClientId][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                             {
-                                report("try to send ur to D" + toConnectionI);
+                                //report("try to send ur to D" + toConnectionI);
                                 var dataToSend = signals[fromClientId][signalI].data;
                                 dataToSend.clientId = fromClientId; //make sure client id is correct;
                                 dataToSend.index = signalI;
@@ -111,22 +111,22 @@ namespace NetSignal
 
 
                             }
-                            report("try to send ur to E" + signals);
+                            //report("try to send ur to E" + signals);
 
                             //TODO need mechanism to exclude signal from being sent
                             //signals[fromClientI][signalI].dataDirty = false;
                         }
                     }
-                    report("try to send ur to F");
+                    //report("try to send ur to F");
                     if (useOwnUdpClient)
                         previousState = Util.Exchange(ref connectionState[withInd].udpWriteStateName, StateOfConnection.ReadyToOperate);
                     else
                         previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
 
-                    report("try to send ur to G");
+                    //report("try to send ur to G");
 
                     await Task.Delay(30);
-                    report("try to send ur to H");
+                    //report("try to send ur to H");
                 }
                 Logging.Write("stop SyncSignalsTo " + toConnectionI + " on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
             } catch (Exception e)
