@@ -360,7 +360,8 @@ namespace NetSignal
 
                     var usingBytes = connectionState.udpWriteBytes;
                     Util.FlushBytes(usingBytes);
-                    
+
+
                     await MessageDeMultiplexer.MarkUdpKeepAlive(usingBytes, async () =>
                     {
                         SignalCompressor.Compress(package, usingBytes, 1);

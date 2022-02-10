@@ -9,13 +9,13 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
-            for (var connectionI = 0; connectionI < toConnections.Length; connectionI++)
+            foreach(var ind in toAllIndices)
             {
                 await Task.Run(() =>
                 {
-                    SyncSignalsToReliably(signals, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, connectionI);
+                    SyncSignalsToReliably(signals, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, ind);
                 });
             }
         }
@@ -34,6 +34,7 @@ namespace NetSignal
                     await Task.Delay(2000);
                     continue;
                 }
+                report("try to send r to " + toConnectionI);
 
                 bool isSyncingSuccessfully = true;
                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);

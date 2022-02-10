@@ -274,7 +274,7 @@ namespace NetSignal
             }
 
 
-            for (int i = 0; i < clientInstancesAPI.Length; i++)
+            for (int i = 0; i < clientInstancesAPI.Length - 1; i++)
             {
                 int clientI = await NetSignalStarter.StartClient(5001 + i, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,

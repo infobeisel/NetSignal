@@ -30,7 +30,7 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                UnreliableSignalUpdater.ReceiveSignals(serverConnection[0], serverData[0], serverState[0], unreliableIncomingSignals, cancel,
+                UnreliableSignalUpdater.ReceiveSignals(0, serverConnection, serverData, serverState, unreliableIncomingSignals, cancel,
                 (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
             });
 
@@ -46,11 +46,11 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             
-            UnreliableSignalUpdater.SyncSignalsToAll(serverConnection[0], serverData[0], serverState[0], unreliableOutgoingSignals,
+            UnreliableSignalUpdater.SyncSignalsToAll(0, serverConnection, serverData, serverState, unreliableOutgoingSignals,
             (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates);
             
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
-             (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, connections, connectionDatas, connectionStates);
+             (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
             ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas);
@@ -105,7 +105,7 @@ namespace NetSignal
             }
             return clientI;
         }
-        public static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
+        public async static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
             OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
             OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData)
         { 
@@ -114,7 +114,7 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                UnreliableSignalUpdater.ReceiveSignals(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], unreliableIncomingSignals, cancel,
+                UnreliableSignalUpdater.ReceiveSignals(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableIncomingSignals, cancel,
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
             });
                 
@@ -124,19 +124,19 @@ namespace NetSignal
             Logging.Write("StartClient: start sync signals to server");
 
                 
-            UnreliableSignalUpdater.SyncSignalsToAll(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], unreliableOutgoingSignals,
+            UnreliableSignalUpdater.SyncSignalsToAll(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableOutgoingSignals,
             (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, null, serverData, null);
 
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
-                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); },
-                               new[] { storeToClientCon[clientI] }, new[] { storeToClientData[clientI] }, new[] { storeToClientState[clientI] });
+                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },
+                               storeToClientCon, storeToClientData, storeToClientState);
   //storeToClientCon, storeToClientData, storeToClientState);
 
-            _ = Task.Run(() =>
+            /*_ = Task.Run(() =>
             {
                 ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
-            });
+            });*/
 
                 
 
