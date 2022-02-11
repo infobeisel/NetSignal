@@ -35,7 +35,15 @@ namespace FlyByIslandDedicatedServer
         {
             while(true)
             {
-                                
+                //TODO: 
+                /* move shared datatypes (used in flybyisland unity and this flybyisland dedicated server project) to a separate project that is built into a .dll
+                 * program simple game loop here:
+                 *  - choose terrain and track hashes
+                 *  - ~1 minute pre launch countdown (clients can fly around freely)
+                 *  - ~5 minutes match where new highscores are accepted
+                 *  - ~ minute finish and highscore table view
+                 *  - repeat
+                 */
 
                 await Task.Delay(10000);
             }
