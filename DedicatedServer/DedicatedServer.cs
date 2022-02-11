@@ -52,9 +52,9 @@ namespace DedicatedServer
             
             for (int i = 0; i < clients.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(7);
+                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(8);
                 reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(2);
-                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(7);
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(8);
                 reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(2);
 
             }

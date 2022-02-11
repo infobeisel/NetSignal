@@ -129,9 +129,9 @@ namespace NetSignal
 
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
-                    clientUnreliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(7);
+                    clientUnreliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(8);
                     clientReliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(2);
-                    clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(7);
+                    clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(8);
                     clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(2);
                 }
 
