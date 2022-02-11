@@ -7,27 +7,49 @@ using System.Threading.Tasks;
 using NetSignal;
 namespace DedicatedServer
 {
-    class DedicatedServer
+    public class DedicatedServer
     {
         static void Main(string[] args)
         {
+            bool cancel, shouldPrint;
+            cancel = false;
+            shouldPrint = true;
+            ConnectionMetaData[] connectionMetaDatasSeenFromServer, serverData;
+            ConnectionAPIs[] connectionApisSeenFromServer, server;
+            ConnectionState[] connectionStatesSeenFromServer, serverState;
+            IncomingSignal[][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
+            OutgoingSignal[][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
+            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer);
 
+            NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
+                connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
+                reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
+
+            while (true)
+            {
+                Task.Delay(1000).Wait();
+            }
+
+
+        }
+
+        public  static void Initialize(string[] args, bool cancel, bool shouldPrint, out ConnectionMetaData[] connectionMetaDatasSeenFromServer, out ConnectionAPIs[] connectionApisSeenFromServer, out ConnectionState[] connectionStatesSeenFromServer, out ConnectionAPIs[] server, out ConnectionMetaData[] serverData, out ConnectionState[] serverState, out IncomingSignal[][] unreliableSignalsSeenFromServer, out OutgoingSignal[][] unreliableSignalsSentFromServer, out IncomingSignal[][] reliableSignalsSeenFromServer, out OutgoingSignal[][] reliableSignalsSentFromServer)
+        {
             int maxPlayers = int.Parse(args[0]);
 
-            var cancel = false;
-            var shouldPrint = true;
-            ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[maxPlayers];
-            ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[maxPlayers];
-            ConnectionState[] connectionStatesSeenFromServer = new ConnectionState[maxPlayers];
+           
+            connectionMetaDatasSeenFromServer = new ConnectionMetaData[maxPlayers];
+            connectionApisSeenFromServer = new ConnectionAPIs[maxPlayers];
+            connectionStatesSeenFromServer = new ConnectionState[maxPlayers];
 
 
             //only for symmetry, this is always supposed to be an array of size one, 
-            ConnectionAPIs[] server = new ConnectionAPIs[1] { new ConnectionAPIs() };
-            ConnectionMetaData[] serverData = new ConnectionMetaData[1] { new ConnectionMetaData() };
-            ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
-            
+            server = new ConnectionAPIs[1] { new ConnectionAPIs() };
+            serverData = new ConnectionMetaData[1] { new ConnectionMetaData() };
+            serverState = new ConnectionState[1] { new ConnectionState() };
 
-            
+
+
             //this can and will be array of size N
             ConnectionAPIs[] clients = new ConnectionAPIs[maxPlayers];
             ConnectionMetaData[] clientDatas = new ConnectionMetaData[maxPlayers];
@@ -42,14 +64,12 @@ namespace DedicatedServer
 
 
 
-            IncomingSignal[][] unreliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
-            OutgoingSignal[][] unreliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
+            unreliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
+            unreliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
+            reliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
+            reliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
 
-            IncomingSignal[][] reliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
-            OutgoingSignal[][] reliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
 
-
-            
             for (int i = 0; i < clients.Length; i++)
             {
                 unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(8);
@@ -63,20 +83,7 @@ namespace DedicatedServer
             serverData[0].iListenToPort = int.Parse(args[2]);
             serverData[0].matchmakingServerIp = args[3];
             serverData[0].matchmakingServerPort = int.Parse(args[4]);
-
-
-
-
-            NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel,  connectionApisSeenFromServer,
-                connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
-                reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
-
-            while (true)
-            {
-                Task.Delay(1000).Wait();
-            }
-            
-
         }
+
     }
 }
