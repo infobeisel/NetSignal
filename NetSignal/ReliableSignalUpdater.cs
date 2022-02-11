@@ -9,7 +9,7 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
             foreach(var ind in toAllIndices)
             {
@@ -24,6 +24,17 @@ namespace NetSignal
         {
             while (!cancel())
             {
+
+                
+
+                var isConActive = toConnections[toConnectionI].tcpClient == null ? false : toConnections[toConnectionI].tcpClient.Connected;
+                if (!isConActive)
+                {
+                    ConnectionUpdater.TearDownTcpOfClient(toConnections, toConnectionStates, toConnectionI);
+                    await Task.Delay(2000);
+                    continue;
+                }
+
                 var previousState = Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
                 if (previousState == StateOfConnection.Uninitialized)
@@ -34,15 +45,15 @@ namespace NetSignal
                     await Task.Delay(2000);
                     continue;
                 }
-                report("try to send r to " + toConnectionI);
+                report("try to send r to " + toConnectionI + " , " + toConnections[toConnectionI].tcpClient.Connected);
 
                 bool isSyncingSuccessfully = true;
                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
                 for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
-                    int fromClientId = toConnectionStates[fromConnectionI].clientID;
+                    int fromClientId = fromConnectionI;
 
-                    if (fromClientId == -1)
+                    if (!toConnectionStates[fromConnectionI].isConnectionActive) //inactive connection
                         continue;
 
                     for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
@@ -105,22 +116,32 @@ namespace NetSignal
             }
         }
 
-        public async static void ReceiveSignalsReliablyFromAll(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
+        public async static void ReceiveSignalsReliablyFromAllAndTrackIsConnected(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
         {
             foreach(var index in fromIndices)
             {
                 await Task.Run(() =>
                 {
-                    ReceiveSignalsReliablyFrom(signals, cancel, report, fromStreams, fromDatas, fromStates, index);
+                    ReceiveSignalsReliablyFromAndTrackIsConnected(signals, cancel, report, fromStreams, fromDatas, fromStates, index);
                 });
             }
         }
 
         //uses tcp to sync signals reliably
-        private async static void ReceiveSignalsReliablyFrom(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
+        private async static void ReceiveSignalsReliablyFromAndTrackIsConnected(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
         {
             while (!cancel())
             {
+
+                var isConActive = fromStreams[streamI].tcpClient == null ? false : fromStreams[streamI].tcpClient.Connected;
+                if (!isConActive)
+                {
+                    ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
+
+                    await Task.Delay(2000);
+                    continue;
+                }
+
                 var previousState = Util.CompareExchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
                 if (previousState == StateOfConnection.Uninitialized)
@@ -165,5 +186,7 @@ namespace NetSignal
                 
             }
         }
+
+        
     }
 }

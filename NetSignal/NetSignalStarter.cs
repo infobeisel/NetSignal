@@ -34,7 +34,7 @@ namespace NetSignal
                 (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
             });
 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel,
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, cancel,
                 (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); },
                 System.Linq.Enumerable.Range(0,connectionDatas.Length),
                 connections, connectionDatas, connectionStates);
@@ -50,7 +50,7 @@ namespace NetSignal
             UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
             (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
             
-            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
+            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, cancel,
              (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
@@ -118,7 +118,7 @@ namespace NetSignal
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
             });
                 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAll(reliableIncomingSignals, cancel, (string s) => { }, new [] {clientI},
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, cancel, (string s) => { }, new [] {clientI},
                  storeToClientCon , storeToClientData , storeToClientState );
 
             Logging.Write("StartClient: start sync signals to server");
@@ -128,7 +128,7 @@ namespace NetSignal
             UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
             (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, storeToClientCon, replicatedServerDatas, storeToClientState, new int[] {clientI });
 
-            ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
+            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, cancel,
                  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },
                                storeToClientCon, storeToClientData, storeToClientState);
   //storeToClientCon, storeToClientData, storeToClientState);

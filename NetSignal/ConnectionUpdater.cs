@@ -96,7 +96,7 @@ namespace NetSignal
 
         }
 
-        private static void TearDownClientSeenFromServer(ConnectionAPIs[] clientCons, ConnectionState[] clientStates, ConnectionMetaData[] clientDatas, int conI)
+        public static void TearDownClientSeenFromServer(ConnectionAPIs[] clientCons, ConnectionState[] clientStates, ConnectionMetaData[] clientDatas, int conI)
         {
             clientStates[conI].isConnectionActive = false;
             Util.Exchange(ref clientStates[conI].tcpWriteStateName, StateOfConnection.Uninitialized);
@@ -117,6 +117,18 @@ namespace NetSignal
 
 
             
+        }
+
+        public static void TearDownTcpOfClient(ConnectionAPIs[] fromStreams, ConnectionState[] fromStates, int streamI)
+        {
+            Util.Exchange(ref fromStates[streamI].tcpWriteStateName, StateOfConnection.Uninitialized);
+            Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+
+            fromStreams[streamI].tcpStream?.Close();
+            fromStreams[streamI].tcpStream = null;
+
+            fromStreams[streamI].tcpClient?.Close();
+            fromStreams[streamI].tcpClient = null;
         }
 
         public async static void AwaitAndPerformTearDownClientTCP(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
