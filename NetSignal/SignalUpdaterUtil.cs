@@ -59,8 +59,12 @@ namespace NetSignal
                 signals[package.clientId][package.index].cameIn = DateTime.UtcNow;
 
             },
-                                    async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
-                                    async () => { Logging.Write("ReceiveSignals: unexpected package tcp keepalive!?"); },
+            async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
+            async () => {
+                var package = SignalCompressor.DecompressDataPackage(bytes, 1);
+                report("keep alive package: " + package.ToString());
+                
+            },
             async () => {
                 
 

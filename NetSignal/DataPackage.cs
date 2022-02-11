@@ -84,6 +84,13 @@ namespace NetSignal
             }
         }
 
+
+        public void WriteConnectionRequest(int fromPort)
+        {
+            WriteInt(fromPort);
+            signalType = SignalType.TCPConnectionRequest;
+        }
+
         public void WriteString(string str)
         {
             signalType = SignalType.String;

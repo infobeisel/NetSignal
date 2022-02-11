@@ -203,30 +203,41 @@ namespace NetSignal
             await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, connectionState.tcpWriteBytes,
                 async () =>
                 {
-                    var portString = connectionData.iListenToPort.ToString();
-                    
-                    Encoding.ASCII.GetBytes(portString, 0, portString.Length, connectionState.tcpWriteBytes, 1);
+                    DataPackage containingPort = new DataPackage();
+                    containingPort.WriteConnectionRequest(connectionData.iListenToPort);
 
-                    Logging.Write("client write my port");
-                    await connectors.tcpStream.WriteAsync(connectionState.tcpWriteBytes, 0, connectionState.tcpWriteBytes.Length);
-                    Logging.Write("client written");
+                    var usingBytes = connectionState.tcpWriteBytes;
+                    Util.FlushBytes(usingBytes);
+                    await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, usingBytes, async () =>
+                    {
+                        SignalCompressor.Compress(containingPort, usingBytes, 1);
 
-                    string response = null;
-                    Util.FlushBytes(connectionState.tcpReadBytes);
-                    var byteCount = await connectors.tcpStream.ReadAsync(connectionState.tcpReadBytes, 0, connectionState.tcpReadBytes.Length);
 
-                    await MessageDeMultiplexer.Divide(connectionState.tcpReadBytes, async () => { Logging.Write("handle float!? unexpected reply to client's tcp connection request"); },
-                        async () =>
-                        {
-                            Logging.Write("client read client id from "+ Encoding.ASCII.GetString(connectionState.tcpReadBytes, 0, byteCount ));
-                            response = Encoding.ASCII.GetString(connectionState.tcpReadBytes, 1, byteCount - 1);
-                            var myClientID = int.Parse(response);
-                            connectionState.clientID = myClientID;
-                            connectionState.isConnectionActive = true;
-                            Logging.Write("i am client " + myClientID);
-                        },
-                        async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
-                        async () => { Logging.Write("handle udp keepalive!? unexpected reply to client's tcp connection request"); });
+
+                        Logging.Write("client write my port");
+                        await connectors.tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
+                        Logging.Write("client written");
+
+                        string response = null;
+                        Util.FlushBytes(connectionState.tcpReadBytes);
+                        var byteCount = await connectors.tcpStream.ReadAsync(connectionState.tcpReadBytes, 0, connectionState.tcpReadBytes.Length);
+
+                        await MessageDeMultiplexer.Divide(connectionState.tcpReadBytes, async () => { Logging.Write("handle float!? unexpected reply to client's tcp connection request"); },
+                            async () =>
+                            {
+                                /*Logging.Write("client read client id from " + Encoding.ASCII.GetString(connectionState.tcpReadBytes, 0, byteCount));
+                                response = Encoding.ASCII.GetString(connectionState.tcpReadBytes, 1, byteCount - 1);
+                                var myClientID = int.Parse(response);*/
+
+                                var containingClientId = SignalCompressor.DecompressDataPackage(connectionState.tcpReadBytes, 1);
+
+                                connectionState.clientID = containingClientId.AsInt();
+                                connectionState.isConnectionActive = true;
+                                Logging.Write("i am client " + containingClientId.AsInt());
+                            },
+                            async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
+                            async () => { Logging.Write("handle udp keepalive!? unexpected reply to client's tcp connection request"); });
+                    });
                 });
         }
 
@@ -237,7 +248,6 @@ namespace NetSignal
             try
             {
                 by.tcpListener.Start();
-                string data = null;
                 while (!cancel())
                 {
                     //waiting for connection
@@ -253,7 +263,6 @@ namespace NetSignal
                         continue;
                     }
                     
-                    data = null;
                     NetworkStream stream = connection.GetStream();
                     stream.ReadTimeout = 3000;
                     stream.WriteTimeout = 3000;
@@ -279,12 +288,12 @@ namespace NetSignal
                             async () => { Logging.Write("tcp float signals not yet implemented and should NOT occur here!?"); },
                             async () => {
 
-                                data = Encoding.ASCII.GetString(byState.tcpReadBytes, 1, readByteCount-1);
+                                var package = SignalCompressor.DecompressDataPackage(byState.tcpReadBytes, 1);
 
                                 //incoming connection, try to identify
                                 IPEndPoint clientEndpoint;
                                 int clientID;
-                                IdentifyClient(data, storeToConnections,storeToConnectionStates,  connection, out clientEndpoint, out clientID);
+                                IdentifyClient(package.AsInt(), storeToConnections,storeToConnectionStates,  connection, out clientEndpoint, out clientID);
 
                                 if (clientID == -1)
                                 {
@@ -307,17 +316,26 @@ namespace NetSignal
                                     storeToConnectionStates[clientID].clientID = clientID;
 
 
-                                    Logging.Write("tcp received: " + data + " , will send back id " + clientID);
+                                    Logging.Write("tcp received: " + package + " , will send back id " + clientID);
 
-                                    Util.FlushBytes(byState.tcpWriteBytes);
-                                    await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, byState.tcpWriteBytes, async () =>
+                                    
+
+                                    DataPackage containingClientId = new DataPackage();
+                                    containingClientId.WriteConnectionRequest(clientID);
+
+                                    var usingBytes = byState.tcpWriteBytes;
+                                    Util.FlushBytes(usingBytes);
+                                    await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, usingBytes, async () =>
                                     {
-                                        var clientIdStr = clientID.ToString();
+                                        SignalCompressor.Compress(containingClientId, usingBytes, 1);
+
+
+                                        //var clientIdStr = clientID.ToString();
                                         
-                                        Encoding.ASCII.GetBytes(clientIdStr, 0, clientIdStr.Length, byState.tcpWriteBytes, 1);
+                                        //Encoding.ASCII.GetBytes(clientIdStr, 0, clientIdStr.Length, byState.tcpWriteBytes, 1);
                                         try
                                         {
-                                            await stream.WriteAsync(byState.tcpWriteBytes, 0, byState.tcpWriteBytes.Length);
+                                            await stream.WriteAsync(usingBytes, 0, usingBytes.Length);
                                             storeToConnectionStates[clientID].isConnectionActive = true;
                                         }
                                         catch (Exception e)
@@ -376,15 +394,15 @@ namespace NetSignal
         }
         
 
-        private static void IdentifyClient(string fromTCPMessage, ConnectionAPIs[] storeToConnections,ConnectionState [] storeToConnectionStates,  TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
+        private static void IdentifyClient(int clientHintsUdpPort, ConnectionAPIs[] storeToConnections,ConnectionState [] storeToConnectionStates,  TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {
             //clientEndpoint = (IPEndPoint)connection.Client.RemoteEndPoint;
             //var splitIPAndPort = fromTCPMessage.Split('|');
             var connnectedToIPAddress = ((IPEndPoint)connection.Client.RemoteEndPoint).Address;
             //var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port;
-            var dataContainingListenPort = int.Parse(fromTCPMessage);
+            var clientListensToUdpPort = clientHintsUdpPort;
             
-            clientEndpoint = new IPEndPoint(connnectedToIPAddress, dataContainingListenPort);
+            clientEndpoint = new IPEndPoint(connnectedToIPAddress, clientListensToUdpPort);
 
             Logging.Write("try to identify client with endpoint " + clientEndpoint);
             clientID = -1;

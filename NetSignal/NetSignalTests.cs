@@ -29,8 +29,8 @@ namespace NetSignal
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
 
             serverData[0].iListenToPort = 5000;
-            //serverData[0].myIp = "127.0.0.1";
-            serverData[0].myIp = "85.214.239.45";
+            serverData[0].myIp = "127.0.0.1";
+            //serverData[0].myIp = "85.214.239.45";
             serverData[0].matchmakingServerIp = "http://127.0.0.1";
             serverData[0].matchmakingServerPort = 5432;
 
