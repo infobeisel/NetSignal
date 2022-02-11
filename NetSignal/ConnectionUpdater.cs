@@ -16,7 +16,14 @@ namespace NetSignal
             
             
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            connectors.udpClient.AllowNatTraversal(true);
+            try
+            {
+                connectors.udpClient.AllowNatTraversal(true);
+            } catch(Exception e)
+            {
+                Logging.Write("server: server udp client " + e.Message);
+            }
+            
             Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             connectionState.isConnectionActive = true;
@@ -33,8 +40,14 @@ namespace NetSignal
                 connections[connectionI].tcpListener = null;
                 connections[connectionI].tcpStream = null;
                 connections[connectionI].udpClient = new UdpClient();
-                connections[connectionI].udpClient.AllowNatTraversal(true);
 
+                try { 
+                    connections[connectionI].udpClient.AllowNatTraversal(true);
+                }
+                catch (Exception e)
+                {
+                    Logging.Write("server: " + connectionI + " udp client " + e.Message);
+                }
 
 
 
