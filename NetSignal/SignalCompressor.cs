@@ -20,7 +20,7 @@ namespace NetSignal
 
     public class SignalCompressor
     {
-        public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
+      /*  public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
         {
             byte* cIdPtr = (byte*) & package.clientId;
             for (int i = 0; i < 4; i++)
@@ -47,7 +47,7 @@ namespace NetSignal
                 cIdPtr[i] = compressed[startFrom + 4 + i];
             p.timeStamp = new DateTime(ticks);
             return p;
-        }
+        }*/
 
 
         public unsafe static void Compress(DataPackage package, byte[] to, int startFrom)

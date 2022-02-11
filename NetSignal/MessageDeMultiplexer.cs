@@ -31,12 +31,19 @@ namespace NetSignal
             }
         }
 
+        public async static Task MarkSignal(SignalType signalType, byte[] message, Func<Task> handleSignal)
+        {
+            message[0] = (byte)signalType;
+            await handleSignal();
+        }
+        /*
 
         public async static Task MarkFloatSignal(byte[] message, Func<Task> handleFloatSignal)
         {
             message[0] = (byte)SignalType.Float;
             await handleFloatSignal();
         }
+
 
         public async static Task MarkIntSignal(byte[] message, Func<Task> handleIntSignal)
         {
@@ -66,6 +73,6 @@ namespace NetSignal
             message[0] = (byte)SignalType.UDPAlive;
             await handleRequest();
         }
-
+        */
     }
 }

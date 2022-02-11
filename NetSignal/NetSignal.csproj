@@ -70,7 +70,6 @@
     <Compile Include="ConnectionUpdater.cs" />
     <Compile Include="DataPackage.cs" />
     <Compile Include="IncomingSignal.cs" />
-    <Compile Include="KeepAlivePackage.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="MatchmakingConnectionUpdater.cs" />
     <Compile Include="MessageDeMultiplexer.cs" />

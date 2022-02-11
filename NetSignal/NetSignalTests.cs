@@ -29,8 +29,8 @@ namespace NetSignal
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
 
             serverData[0].iListenToPort = 5000;
-            //serverData[0].myIp = "127.0.0.1";
-            serverData[0].myIp = "85.214.239.45";
+            serverData[0].myIp = "127.0.0.1";
+            //serverData[0].myIp = "85.214.239.45";
             serverData[0].matchmakingServerIp = "http://127.0.0.1";
             serverData[0].matchmakingServerPort = 5432;
 
@@ -212,7 +212,7 @@ namespace NetSignal
             for (int i = 0; i < 2000; i++)
             {
 
-                wasSame = clientOutgoing[outgoingClientId][outgoingClientId][0].Equals(clientIncoming[incomingClientId][outgoingClientId][0]);
+                wasSame = clientOutgoing[outgoingClientId][outgoingClientId][1].Equals(clientIncoming[incomingClientId][outgoingClientId][1]);
 
                 /*if (wasSame)
                 {
@@ -227,9 +227,9 @@ namespace NetSignal
                     var a = new DataPackage();
                     a.WriteFloat((float)rng.NextDouble());
                     a.clientId = outgoingClientId;
-                    a.index = 0;
+                    a.index = 1;
                     a.timeStamp = DateTime.UtcNow;
-                    clientOutgoing[outgoingClientId][outgoingClientId][0].data = a;
+                    clientOutgoing[outgoingClientId][outgoingClientId][1].data = a;
                 }
                 //}
 

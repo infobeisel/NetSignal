@@ -133,11 +133,10 @@ namespace NetSignal
                                storeToClientCon, storeToClientData, storeToClientState);
   //storeToClientCon, storeToClientData, storeToClientState);
 
-            /*_ = Task.Run(() =>
+            _ = Task.Run(() =>
             {
-                ConnectionUpdater.PeriodicallySendKeepAlive(storeToClientCon[clientI], storeToClientData[clientI], storeToClientState[clientI], serverData,
-                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send: " + r); }, cancel);
-            });*/
+                ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals, new[] { clientI }, cancel);
+            });
 
                 
 

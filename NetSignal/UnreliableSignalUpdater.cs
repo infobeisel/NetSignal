@@ -81,6 +81,12 @@ namespace NetSignal
                                 var dataToSend = signals[fromClientId][signalI].data;
                                 dataToSend.clientId = fromClientId; //make sure client id is correct;
                                 dataToSend.index = signalI;
+                                
+                                if(signalI == 0 && dataToSend.signalType != SignalType.UDPAlive)
+                                {
+                                    Logging.Write("the signal with index 0 is reserved for udp keepalive, please dont use it for game specific data");
+                                    dataToSend.signalType = SignalType.UDPAlive;
+                                }
                                 signals[fromClientId][signalI].data = dataToSend;
 
                                 var toAddressData = toAllData[toConnectionI];
@@ -93,7 +99,7 @@ namespace NetSignal
                                 var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
                                 Util.FlushBytes(usingBytes);
                                 SignalCompressor.Compress(dataToSend, usingBytes, 1);
-                                await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
+                                await MessageDeMultiplexer.MarkSignal(dataToSend.signalType, usingBytes, async () =>
                                 {
                                     try
                                     {

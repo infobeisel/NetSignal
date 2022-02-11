@@ -24,14 +24,24 @@ namespace NetSignal
             switch (signalType)
             {
                 case SignalType.Float:
-                    ret = "ci: " + clientId + ", si: " + index + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsFloat().ToString("0000.000");
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType  + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsFloat().ToString("0000.000");
                     break;
                 case SignalType.Int:
-                    ret = "ci: " + clientId + ", si: " + index + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsInt();
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsInt();
                     break;
                 case SignalType.String:
-                    ret = "ci: " + clientId + ", si: " + index + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsString();
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsString();
                     break;
+                case SignalType.TCPAlive:
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p: tcpalive";
+                    break;
+                case SignalType.UDPAlive:
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p: udpalive";
+                    break;
+                case SignalType.TCPConnectionRequest:
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p: connectionrequest";
+                    break;
+
             }
             return ret;
         }
@@ -47,6 +57,18 @@ namespace NetSignal
                 d2 = b[2];
                 d3 = b[3];
             }
+        }
+
+
+
+        public void WriteUdpAlive()
+        {
+            signalType = SignalType.UDPAlive;
+        }
+
+        public void WriteTcpAlive()
+        {
+            signalType = SignalType.TCPAlive;
         }
 
         public void WriteInt(int i)

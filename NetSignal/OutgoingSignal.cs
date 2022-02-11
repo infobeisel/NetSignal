@@ -59,6 +59,20 @@ namespace NetSignal
             makeDirty();
         }
 
+        public void WriteUdpAlive()
+        {
+
+            dataMember.WriteUdpAlive();
+            makeDirty();
+        }
+
+        public void WriteTcpAlive()
+        {
+
+            dataMember.WriteTcpAlive();
+            makeDirty();
+        }
+
         public void WriteString(string str)
         {
 

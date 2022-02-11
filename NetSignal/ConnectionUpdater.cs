@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -211,7 +212,7 @@ namespace NetSignal
         {
             //byte[] data = Encoding.ASCII.GetBytes(connectionData.listenPort.ToString());//only send the port we are listening to over udp
             Util.FlushBytes(connectionState.tcpWriteBytes);
-            await MessageDeMultiplexer.MarkTCPConnectionRequest(connectionState.tcpWriteBytes,
+            await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, connectionState.tcpWriteBytes,
                 async () =>
                 {
                     var portString = connectionData.iListenToPort.ToString();
@@ -321,7 +322,7 @@ namespace NetSignal
                                     Logging.Write("tcp received: " + data + " , will send back id " + clientID);
 
                                     Util.FlushBytes(byState.tcpWriteBytes);
-                                    await MessageDeMultiplexer.MarkTCPConnectionRequest(byState.tcpWriteBytes, async () =>
+                                    await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, byState.tcpWriteBytes, async () =>
                                     {
                                         var clientIdStr = clientID.ToString();
                                         
@@ -372,59 +373,20 @@ namespace NetSignal
 
 
 
-        public async static void PeriodicallySendKeepAlive(ConnectionAPIs with, ConnectionMetaData connection, ConnectionState connectionState, ConnectionMetaData [] toServers, Action<string> report, Func<bool> cancel, int msKeepAlivePeriod = 1000)
+        public async static void PeriodicallySendKeepAlive(OutgoingSignal [][] reliable, OutgoingSignal [][] unreliable, IEnumerable<int> indices, Func<bool> cancel, int periodMs = 1000)
         {
-            Logging.Write("PeriodicallySendKeepAlive on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
-            try
+            while(!cancel())
             {
-                while (!cancel())
+                foreach (var ind in indices)
                 {
-                    var previousState = Util.CompareExchange(ref connectionState.udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
-
-                    if (previousState == StateOfConnection.Uninitialized)
-                        await Task.Delay(msKeepAlivePeriod);//pause
-
-                    if (previousState != StateOfConnection.ReadyToOperate)
-                    {
-                        await Task.Delay(msKeepAlivePeriod);//pause
-                        continue;
-                    }
-                    var package = new KeepAlivePackage();
-                    package.clientId = connectionState.clientID;
-                    package.timeStamp = DateTime.UtcNow;
-
-                    var usingBytes = connectionState.udpWriteBytes;
-                    Util.FlushBytes(usingBytes);
-
-
-                    await MessageDeMultiplexer.MarkUdpKeepAlive(usingBytes, async () =>
-                    {
-                        SignalCompressor.Compress(package, usingBytes, 1);
-                        foreach (var serverData in toServers)
-                        {
-                            IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(serverData.myIp), serverData.iListenToPort);
-                            
-                            report("keepalive " + package + " to " + toSendTo);
-                            try
-                            {
-                                await with.udpClient.SendAsync(usingBytes, usingBytes.Length, toSendTo);
-                            }
-                            catch (SocketException e)
-                            {
-                                Logging.Write("PeriodicallySendKeepAlive: udp client socket got closed, (unfortunately) this is intended behaviour, stop sending.");
-                            }
-                        }
-                    });
-                    Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
-
-                    await Task.Delay(msKeepAlivePeriod);
+                    reliable[ind][0].WriteTcpAlive();
+                    unreliable[ind][0].WriteUdpAlive();
                 }
+                await Task.Delay(periodMs);
             }
-            catch (SocketException e)
-            {
-                Logging.Write(e);
-            }
+            
         }
+        
 
         private static void IdentifyClient(string fromTCPMessage, ConnectionAPIs[] storeToConnections,ConnectionState [] storeToConnectionStates,  TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {

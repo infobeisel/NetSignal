@@ -45,7 +45,7 @@ namespace NetSignal
                     await Task.Delay(2000);
                     continue;
                 }
-                report("try to send r to " + toConnectionI + " , " + toConnections[toConnectionI].tcpClient.Connected);
+                //report("try to send r to " + toConnectionI + " , " + toConnections[toConnectionI].tcpClient.Connected);
 
                 bool isSyncingSuccessfully = true;
                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
@@ -65,14 +65,18 @@ namespace NetSignal
                             var dataToSend = signals[fromClientId][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
+                            if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
+                            {
+                                Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");
+                                dataToSend.signalType = SignalType.TCPAlive;
+                            }
                             signals[fromClientId][signalI].data = dataToSend;
-
 
                             report("send data to " + toConnectionI + " : " + dataToSend);
 
                             var usingBytes = toConnectionStates[toConnectionI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);
-                            await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
+                            await MessageDeMultiplexer.MarkSignal(dataToSend.signalType, usingBytes, async () =>
                             {
                                 SignalCompressor.Compress(dataToSend, usingBytes, 1);
                                 try
