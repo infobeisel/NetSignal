@@ -121,6 +121,8 @@ namespace NetSignal
 
         public static void TearDownTcpOfClient(ConnectionAPIs[] fromStreams, ConnectionState[] fromStates, int streamI)
         {
+            fromStates[streamI].isConnectionActive = false;
+
             Util.Exchange(ref fromStates[streamI].tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
 
