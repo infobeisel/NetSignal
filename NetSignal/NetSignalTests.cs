@@ -29,8 +29,8 @@ namespace NetSignal
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
 
             serverData[0].iListenToPort = 5000;
-            serverData[0].myIp = "127.0.0.1";
-            //serverData[0].myIp = "85.214.239.45";
+            //serverData[0].myIp = "127.0.0.1";
+            serverData[0].myIp = "85.214.239.45";
             serverData[0].matchmakingServerIp = "http://127.0.0.1";
             serverData[0].matchmakingServerPort = 5432;
 
@@ -130,9 +130,9 @@ namespace NetSignal
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
                     clientUnreliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(7);
-                    clientReliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(1);
+                    clientReliableIncoming[i][otherClientI] = SignalFactory.ConstructIncomingSignalArray(2);
                     clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(7);
-                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(1);
+                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(2);
                 }
 
 
