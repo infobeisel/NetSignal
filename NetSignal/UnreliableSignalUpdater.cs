@@ -88,7 +88,7 @@ namespace NetSignal
 
                                 IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
 
-                                //report("send data to " + toSendTo + " : " + dataToSend);
+                                report("send data to " + toSendTo + " : " + dataToSend);
 
                                 var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
                                 Util.FlushBytes(usingBytes);
