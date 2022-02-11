@@ -431,8 +431,8 @@ namespace NetSignal
             //clientEndpoint = (IPEndPoint)connection.Client.RemoteEndPoint;
             //var splitIPAndPort = fromTCPMessage.Split('|');
             var connnectedToIPAddress = ((IPEndPoint)connection.Client.RemoteEndPoint).Address;
-            var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port;
-            //var dataContainingListenPort = int.Parse(fromTCPMessage);
+            //var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port;
+            var dataContainingListenPort = int.Parse(fromTCPMessage);
             
             clientEndpoint = new IPEndPoint(connnectedToIPAddress, dataContainingListenPort);
 
