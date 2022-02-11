@@ -33,9 +33,9 @@ namespace NetSignal
                 connections[connectionI].tcpStream = null;
                 connections[connectionI].udpClient = new UdpClient();
 
-                
 
-                connectionDatas[connectionI].clientID = -1;
+
+                
 
                 toConnections[connectionI] = new ConnectionState();
                 Util.Exchange(ref toConnections[connectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
@@ -98,8 +98,10 @@ namespace NetSignal
 
         private static void TearDownClientSeenFromServer(ConnectionAPIs[] clientCons, ConnectionState[] clientStates, ConnectionMetaData[] clientDatas, int conI)
         {
+            clientStates[conI].isConnectionActive = false;
             Util.Exchange(ref clientStates[conI].tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref clientStates[conI].tcpReadStateName, StateOfConnection.Uninitialized);
+            clientStates[conI].clientID = -1;
 
             clientCons[conI].tcpStream?.Close();
             clientCons[conI].tcpStream = null;
@@ -114,7 +116,7 @@ namespace NetSignal
             clientCons[conI].udpClient = null;
 
 
-            clientDatas[conI].clientID = -1;
+            
         }
 
         public async static void AwaitAndPerformTearDownClientTCP(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
@@ -125,7 +127,7 @@ namespace NetSignal
             }
             
             Logging.Write("clean up tcp client");
-
+            currentState.isConnectionActive = false;
             Util.Exchange(ref currentState.tcpWriteStateName, StateOfConnection.Uninitialized);
             Util.Exchange(ref currentState.tcpReadStateName, StateOfConnection.Uninitialized);
             
@@ -156,7 +158,7 @@ namespace NetSignal
             connection.udpClient.Close();
         }
 
-        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
+        public async static Task<ConnectionAPIs> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
         {
             connectors = new ConnectionAPIs();
                 
@@ -170,12 +172,12 @@ namespace NetSignal
 
             connectors = await SetupClientTCP(connectors, connectionState, toServer);
 
-            connectionData = await ExchangeConnectionInitials(connectors, connectionData, connectionState);
+            await ExchangeConnectionInitials(connectors, connectionData, connectionState);
 
-            return new Tuple<ConnectionAPIs, ConnectionMetaData>(connectors, connectionData);
+            return connectors;
         }
 
-        private static async Task<ConnectionMetaData> ExchangeConnectionInitials(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState)
+        private static async Task ExchangeConnectionInitials(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState)
         {
             //byte[] data = Encoding.ASCII.GetBytes(connectionData.listenPort.ToString());//only send the port we are listening to over udp
             Util.FlushBytes(connectionState.tcpWriteBytes);
@@ -200,13 +202,13 @@ namespace NetSignal
                             Logging.Write("client read client id from "+ Encoding.ASCII.GetString(connectionState.tcpReadBytes, 0, byteCount ));
                             response = Encoding.ASCII.GetString(connectionState.tcpReadBytes, 1, byteCount - 1);
                             var myClientID = int.Parse(response);
-                            connectionData.clientID = myClientID;
+                            connectionState.clientID = myClientID;
+                            connectionState.isConnectionActive = true;
                             Logging.Write("i am client " + myClientID);
                         },
                         async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
                         async () => { Logging.Write("handle udp keepalive!? unexpected reply to client's tcp connection request"); });
                 });
-            return connectionData;
         }
 
 
@@ -274,15 +276,15 @@ namespace NetSignal
                                     storeToConnections[clientID].tcpClient = connection;
                                     storeToConnections[clientID].tcpStream = stream;
 
-                                    storeToConnectionDatas[clientID].clientID = clientID;
+                                    
                                     Logging.Write("client told me he is " + (clientEndpoint).Address + " " + (clientEndpoint).Port);
                                     storeToConnectionDatas[clientID].iListenToPort = clientEndpoint.Port;
                                     storeToConnectionDatas[clientID].myIp =
                                     clientEndpoint.Address.ToString();
 
                                     storeToConnectionStates[clientID].tcpKeepAlive = DateTime.UtcNow;
+                                    storeToConnectionStates[clientID].clientID = clientID;
 
-                                    
 
                                     Logging.Write("tcp received: " + data + " , will send back id " + clientID);
 
@@ -295,6 +297,7 @@ namespace NetSignal
                                         try
                                         {
                                             await stream.WriteAsync(byState.tcpWriteBytes, 0, byState.tcpWriteBytes.Length);
+                                            storeToConnectionStates[clientID].isConnectionActive = true;
                                         }
                                         catch (Exception e)
                                         {
@@ -355,7 +358,7 @@ namespace NetSignal
                         continue;
                     }
                     var package = new KeepAlivePackage();
-                    package.clientId = connection.clientID;
+                    package.clientId = connectionState.clientID;
                     package.timeStamp = DateTime.UtcNow;
 
                     var usingBytes = connectionState.udpWriteBytes;

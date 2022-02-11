@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -9,14 +10,13 @@ namespace NetSignal
     public class UnreliableSignalUpdater
     {
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(int withInd, ConnectionAPIs [] with, ConnectionMetaData [] connectionMetaData, ConnectionState [] connectionState, OutgoingSignal[][] signals, Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates)
+        public async static void SyncSignalsToAll(OutgoingSignal[][] signals, Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
         {
-            bool useOwnUdpClient = toAllApis == null; // whether to use the udp client relying in with, or the udp client that has been set up for each connection
-            for (int toConnectionI = 0; toConnectionI < toAllData.Length; toConnectionI++)
+            foreach(var toConnectionI in toIndices)
             {
                   await Task.Run(() =>
                    {
-                    _ = SyncSignalsTo(withInd, with, connectionMetaData, connectionState, signals, report, toAllApis, toAllData, toAllStates, useOwnUdpClient, toConnectionI, cancel);
+                    _ = SyncSignalsTo(signals, report, toAllApis, toAllData, toAllStates, toConnectionI, cancel);
                   });
             }
                 
@@ -24,41 +24,51 @@ namespace NetSignal
 
         
 
-        private static async Task SyncSignalsTo(int withInd, ConnectionAPIs [] with, ConnectionMetaData[] connectionMetaData, ConnectionState [] connectionState, OutgoingSignal[][] signals, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, bool useOwnUdpClient, int toConnectionI, Func<bool> cancel)
+        private static async Task SyncSignalsTo(OutgoingSignal[][] signals, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, int toConnectionI, Func<bool> cancel)
         {
             try
             {
                 Logging.Write("SyncSignalsTo on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
                 while (!cancel())
                 {
-                   //report("try to send ur lock");
+                   
 
 
                     StateOfConnection previousState = StateOfConnection.Uninitialized;
-                    if (useOwnUdpClient)
-                        previousState = Util.CompareExchange(ref connectionState[withInd].udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
-                    else
-                        previousState = Util.CompareExchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
+                    bool isConActive = false;
+                    isConActive = toAllStates[toConnectionI].isConnectionActive;
+                    if (!isConActive)
+                    {
+                        await Task.Delay(2000);
+                        continue;
+                    }
+                        
+                        
 
-                    if (!useOwnUdpClient && previousState == StateOfConnection.Uninitialized)
+                    previousState = Util.CompareExchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
+
+                    //report("try to send ur lock test " + toConnectionI + " , " + isConActive + " , " + previousState);
+
+                    if (previousState == StateOfConnection.Uninitialized)
                         await Task.Delay(2000);//pause
 
-                    if (previousState != StateOfConnection.ReadyToOperate)
+                    if (previousState != StateOfConnection.ReadyToOperate || !isConActive)
                     {
                         await Task.Delay(2000);//pause
                         continue;
                     }
                     //report("try to send ur to " + toConnectionI);
 
-                    for (int fromConnectionI = 0; fromConnectionI < signals.Length; fromConnectionI++)
+                    //responsible for sending everything to one connection
+                    //for each signal connection
+
+
+                    for (int fromConnectionI = 0; fromConnectionI < toAllData.Length; fromConnectionI++)
                     {
-                        int fromClientId = useOwnUdpClient ? 
-                            (fromConnectionI == toConnectionI ? connectionMetaData[fromConnectionI].clientID : -1) :
-                            toAllData[fromConnectionI].clientID;
-                        // Logging.Write("SyncSignalsToReliably: will try to sync to clientId " + fromClientId);
+                        int fromClientId = fromConnectionI;//the clientId corresponds to the index in the connection array //toAllStates[fromConnectionI].clientID;
 
                         //report("try to send ur to A" + toConnectionI);
-                        if (fromClientId == -1)
+                        if (!toAllStates[fromConnectionI].isConnectionActive) //inactive connection
                             continue;
                         //report("try to send ur to B" + toConnectionI);
 
@@ -73,14 +83,14 @@ namespace NetSignal
                                 dataToSend.index = signalI;
                                 signals[fromClientId][signalI].data = dataToSend;
 
-                                var toClient = toAllData[toConnectionI];
-                                var udpClientToUse = useOwnUdpClient ? with[withInd].udpClient : toAllApis[toConnectionI].udpClient;
+                                var toAddressData = toAllData[toConnectionI];
+                                var udpClientToUse = toAllApis[toConnectionI].udpClient;
 
-                                IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toClient.myIp), toClient.iListenToPort);
+                                IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
 
-                                report("send data to " + toSendTo + " : " + dataToSend);
+                                //report("send data to " + toSendTo + " : " + dataToSend);
 
-                                var usingBytes = useOwnUdpClient ? connectionState[withInd].udpWriteBytes : toAllStates[toConnectionI].udpWriteBytes;
+                                var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
                                 Util.FlushBytes(usingBytes);
                                 SignalCompressor.Compress(dataToSend, usingBytes, 1);
                                 await MessageDeMultiplexer.MarkFloatSignal(usingBytes, async () =>
@@ -93,18 +103,13 @@ namespace NetSignal
                                     }
                                     catch (SocketException e)
                                     {
-                                        if (useOwnUdpClient)
-                                            previousState = Util.Exchange(ref connectionState[withInd].udpWriteStateName, StateOfConnection.Uninitialized);
-                                        else
-                                            previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
+                                        
+                                        previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
                                         report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                     }
                                     catch (ObjectDisposedException e)
                                     {
-                                        if (useOwnUdpClient)
-                                            previousState = Util.Exchange(ref connectionState[withInd].udpWriteStateName, StateOfConnection.Uninitialized);
-                                        else
-                                            previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
+                                        previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
                                         report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                     }
                                 });
@@ -118,10 +123,7 @@ namespace NetSignal
                         }
                     }
                     //report("try to send ur to F");
-                    if (useOwnUdpClient)
-                        previousState = Util.Exchange(ref connectionState[withInd].udpWriteStateName, StateOfConnection.ReadyToOperate);
-                    else
-                        previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
+                    previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
 
                     //report("try to send ur to G");
 
@@ -131,7 +133,9 @@ namespace NetSignal
                 Logging.Write("stop SyncSignalsTo " + toConnectionI + " on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
             } catch (Exception e)
             {
-                report(e.Message);
+                Console.Write("-------------------------------------------------------------------------------------");
+                Console.Write(e.Message);
+                Console.Write("-------------------------------------------------------------------------------------");
             }
         }
 

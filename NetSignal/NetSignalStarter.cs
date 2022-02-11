@@ -46,8 +46,9 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             
-            UnreliableSignalUpdater.SyncSignalsToAll(0, serverConnection, serverData, serverState, unreliableOutgoingSignals,
-            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates);
+            //TODO REFACTOR THOSE SYNC METHODS AND SEPARATE THEM INTO one for 1-n (server) and one for 1-1 (client) ?
+            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
+            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
             
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
              (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
@@ -91,11 +92,10 @@ namespace NetSignal
                 ConnectionState connectionState = new ConnectionState();
                 Logging.Write("StartClient: init single connection");
                 var returnTuple = await ConnectionUpdater.InitializeSingleConnection(connectionApi, connectionMetaData, connectionState, serverData[0]);
-                clientI = returnTuple.Item2.clientID;
+                clientI = connectionState.clientID;
                 if (clientI >= 0 && clientI < storeToClientCon.Length)
                 {
-                    storeToClientCon[clientI] = returnTuple.Item1;
-                    storeToClientData[clientI] = returnTuple.Item2;
+                    storeToClientCon[clientI] = returnTuple;
                     storeToClientState[clientI] = connectionState;
                 }
 
@@ -123,9 +123,10 @@ namespace NetSignal
 
             Logging.Write("StartClient: start sync signals to server");
 
-                
-            UnreliableSignalUpdater.SyncSignalsToAll(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableOutgoingSignals,
-            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, null, serverData, null);
+            var replicatedServerDatas = new ConnectionMetaData[storeToClientCon.Length];
+            for (int i = 0; i < replicatedServerDatas.Length; i++) replicatedServerDatas[i] = serverData[0];
+            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
+            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, storeToClientCon, replicatedServerDatas, storeToClientState, new int[] {clientI });
 
             ReliableSignalUpdater.SyncSignalsToAllReliably(reliableOutgoingSignals, cancel,
                  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },

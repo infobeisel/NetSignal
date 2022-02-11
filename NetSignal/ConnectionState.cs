@@ -25,6 +25,9 @@ namespace NetSignal
         public byte [] udpReadBytes;
 
         public bool shouldTearDown;
+        public bool isConnectionActive;
+
+        public int clientID;
 
         public ConnectionState()
         {
@@ -36,6 +39,9 @@ namespace NetSignal
             tcpReadStateName = (int)StateOfConnection.Uninitialized;
             httpListenerStateName = (int)StateOfConnection.Uninitialized;
             tcpKeepAlive = new DateTime(0);
+
+            isConnectionActive = false;
+            clientID = -1;
 
             tcpWriteBytes = new byte[byteCount];
             udpWriteBytes = new byte[byteCount];

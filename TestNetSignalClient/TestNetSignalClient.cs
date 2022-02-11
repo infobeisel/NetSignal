@@ -17,7 +17,7 @@ namespace TestNetSignalClient
 
             System.Threading.ThreadPool.SetMaxThreads(40, 40);
             Logging.Write("max threads " + avWThreads + " , " + avIOThreads);
-            NetSignalTests.Test().Wait();
+            NetSignalTests.Test(args).Wait();
 
             string key = Console.ReadLine();
         }

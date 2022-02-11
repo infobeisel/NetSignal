@@ -19,16 +19,12 @@ namespace NetSignal
 
         public IPEndPoint toSendToServer;
         */
-        public override string ToString()
-        {
-            return " clientID " + clientID;
-        }
         
 
         public string myIp;
         public int iListenToPort;
 
-        public int clientID;
+        
 
     }
 }

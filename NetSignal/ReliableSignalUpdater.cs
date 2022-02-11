@@ -40,7 +40,7 @@ namespace NetSignal
                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
                 for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
-                    int fromClientId = toConnectionsDatas[fromConnectionI].clientID;
+                    int fromClientId = toConnectionStates[fromConnectionI].clientID;
 
                     if (fromClientId == -1)
                         continue;
