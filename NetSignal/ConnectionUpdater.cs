@@ -16,6 +16,7 @@ namespace NetSignal
             
             
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
+            connectors.udpClient.AllowNatTraversal(true);
             Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             connectionState.isConnectionActive = true;
@@ -32,10 +33,11 @@ namespace NetSignal
                 connections[connectionI].tcpListener = null;
                 connections[connectionI].tcpStream = null;
                 connections[connectionI].udpClient = new UdpClient();
+                connections[connectionI].udpClient.AllowNatTraversal(true);
 
 
 
-                
+
 
                 toConnections[connectionI] = new ConnectionState();
                 Util.Exchange(ref toConnections[connectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
@@ -178,6 +180,7 @@ namespace NetSignal
                 
 
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
+            connectors.udpClient.AllowNatTraversal(true);
             Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
@@ -415,7 +418,8 @@ namespace NetSignal
             //clientEndpoint = (IPEndPoint)connection.Client.RemoteEndPoint;
             //var splitIPAndPort = fromTCPMessage.Split('|');
             var connnectedToIPAddress = ((IPEndPoint)connection.Client.RemoteEndPoint).Address;
-            var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port;// int.Parse(fromTCPMessage);
+            //var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port
+            var dataContainingListenPort = int.Parse(fromTCPMessage);
             //clientEndpoint = new IPEndPoint(IPAddress.Parse(splitIPAndPort[0]), int.Parse(splitIPAndPort[1]));
             clientEndpoint = new IPEndPoint(connnectedToIPAddress, dataContainingListenPort);
 
