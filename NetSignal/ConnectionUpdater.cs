@@ -9,7 +9,9 @@ namespace NetSignal
 {
     public class ConnectionUpdater
     {
-        
+        public const int ReservedUnreliableSignalCount = 1;
+        public const int ReservedReliableSignalCount = 1;
+
         public static void InitializeMultiConnection(ref ConnectionAPIs connectors, ref ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionAPIs [] connections, ConnectionMetaData [] connectionDatas, ConnectionState [] toConnections)
         {
             connectors = new ConnectionAPIs();
@@ -17,13 +19,7 @@ namespace NetSignal
             
             
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            try
-            {
-                connectors.udpClient.AllowNatTraversal(true);
-            } catch(Exception e)
-            {
-                Logging.Write("server: server udp client " + e.Message);
-            }
+          
             
             Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
@@ -42,14 +38,7 @@ namespace NetSignal
                 connections[connectionI].tcpStream = null;
                 connections[connectionI].udpClient = new UdpClient();
 
-                try { 
-                    connections[connectionI].udpClient.AllowNatTraversal(true);
-                }
-                catch (Exception e)
-                {
-                    Logging.Write("server: " + connectionI + " udp client " + e.Message);
-                }
-
+           
 
 
 
@@ -194,7 +183,6 @@ namespace NetSignal
                 
 
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
-            connectors.udpClient.AllowNatTraversal(true);
             Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
