@@ -61,18 +61,23 @@ namespace NetSignal
 
             cancel = true;
             //TODOS:
-            //implement websocket for matchmaking (to find ip to connect to server), set up with strato !!
-            // - partial check, set up matchmaking server on strato and test initial server list request
+            //implement websocket for matchmaking (to find ip to connect to server), set up with strato !! (CHECK)
+            // - partial check, set up matchmaking server on strato and test initial server list request(CHECK)
             // - implement security features (https) IMPORTANT
             /*
              * matchmaking server listens to http, following endpoints:
              * x dedicated server register (will be done manually)
-             * - dedicated server update free slots and keepalive
+             * - dedicated server update free slots and keepalive (partial check, misses free slots)
              * - client ask for server list (paged subset) (partial check)
              * 
+             * discretized timestamp for signals
+             * better compression: take multiple signals that have same timestamp 
+             * delta compression: stop syncing signals when they dont change
+             * protocol for player tries to join already full server
+             * 
+             *battletest: make scriptable objects that have Incoming- and Outgoing Signals, write Mono Updaters that assign Signals to specific game objects (mainly: Bird slots, state enums for UI) 
             */
 
-            //battletest: make scriptable objects that have Incoming- and Outgoing Signals, write Mono Updaters that assign Signals to specific game objects (mainly: Bird slots, state enums for UI)
 
         }
 
@@ -278,7 +283,7 @@ namespace NetSignal
 
 
             Logging.Write("TestDuplex: start server");
-            //TODO server needs to have [clientInstancesAPI.Length, 5] signals!
+
             var updatedServerTuple = await NetSignalStarter.StartServer(shouldReport(), serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 clientConnectionStatesSeenFromServer,
                 unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,

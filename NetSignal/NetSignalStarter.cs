@@ -46,7 +46,6 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             
-            //TODO REFACTOR THOSE SYNC METHODS AND SEPARATE THEM INTO one for 1-n (server) and one for 1-1 (client) ?
             UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
             (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
             
