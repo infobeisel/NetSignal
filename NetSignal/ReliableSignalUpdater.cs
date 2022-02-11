@@ -82,25 +82,25 @@ namespace NetSignal
                                 }
                                 catch (SocketException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    ConnectionUpdater.TearDownTcpOfClient(toConnections, toConnectionStates, toConnectionI);
                                     isSyncingSuccessfully = false;
                                     Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (NullReferenceException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    ConnectionUpdater.TearDownTcpOfClient(toConnections, toConnectionStates, toConnectionI);
                                     isSyncingSuccessfully = false;
                                     Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (ObjectDisposedException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    ConnectionUpdater.TearDownTcpOfClient(toConnections, toConnectionStates, toConnectionI);
                                     isSyncingSuccessfully = false;
                                     Logging.Write("SyncSignalsToAllReliably: tcp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
                                 }
                                 catch (System.IO.IOException e)
                                 {
-                                    Util.Exchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.Uninitialized);
+                                    ConnectionUpdater.TearDownTcpOfClient(toConnections, toConnectionStates, toConnectionI);
                                     isSyncingSuccessfully = false;
                                     Logging.Write("SyncSignalsToAllReliably: tcp stream " + toConnectionI + " has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                                 }
@@ -165,22 +165,22 @@ namespace NetSignal
                 }
                 catch (ObjectDisposedException e)
                 {
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + " has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
                 catch (SocketException e)
                 {
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + "  has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
                 catch (FormatException e)
                 {
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + "  has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
                 catch (System.IO.IOException e)
                 {
-                    Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.Uninitialized);
+                    ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + "  has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
                 

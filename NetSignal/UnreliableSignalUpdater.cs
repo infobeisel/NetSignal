@@ -148,7 +148,15 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
-                    
+
+                    bool isConActive = false;
+                    isConActive = connectionState[withInd].isConnectionActive;
+                    if (!isConActive)
+                    {
+                        await Task.Delay(2000);
+                        continue;
+                    }
+
                     var previousState = Util.CompareExchange(ref connectionState[withInd].udpReadStateName, StateOfConnection.BeingOperated, StateOfConnection.ReadyToOperate);
 
                     if (previousState == StateOfConnection.Uninitialized)

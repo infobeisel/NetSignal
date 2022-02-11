@@ -18,7 +18,7 @@ namespace NetSignal
             connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
             Util.Exchange(ref  connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
-
+            connectionState.isConnectionActive = true;
 
             Logging.Write("server: udpclient local: " + (IPEndPoint)connectors.udpClient.Client.LocalEndPoint);
             
