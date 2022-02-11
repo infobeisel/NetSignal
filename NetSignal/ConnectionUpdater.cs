@@ -248,6 +248,8 @@ namespace NetSignal
                     
                     data = null;
                     NetworkStream stream = connection.GetStream();
+                    stream.ReadTimeout = 3000;
+                    stream.WriteTimeout = 3000;
 
                     //so far is an anonymous client, need to identify!
 
