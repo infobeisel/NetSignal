@@ -19,7 +19,7 @@ namespace DedicatedServer
             ConnectionState[] connectionStatesSeenFromServer, serverState;
             IncomingSignal[][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
             OutgoingSignal[][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
-            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer);
+            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 8 , 2);
 
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
@@ -33,7 +33,7 @@ namespace DedicatedServer
 
         }
 
-        public  static void Initialize(string[] args, bool cancel, bool shouldPrint, out ConnectionMetaData[] connectionMetaDatasSeenFromServer, out ConnectionAPIs[] connectionApisSeenFromServer, out ConnectionState[] connectionStatesSeenFromServer, out ConnectionAPIs[] server, out ConnectionMetaData[] serverData, out ConnectionState[] serverState, out IncomingSignal[][] unreliableSignalsSeenFromServer, out OutgoingSignal[][] unreliableSignalsSentFromServer, out IncomingSignal[][] reliableSignalsSeenFromServer, out OutgoingSignal[][] reliableSignalsSentFromServer)
+        public  static void Initialize(string[] args, bool cancel, bool shouldPrint, out ConnectionMetaData[] connectionMetaDatasSeenFromServer, out ConnectionAPIs[] connectionApisSeenFromServer, out ConnectionState[] connectionStatesSeenFromServer, out ConnectionAPIs[] server, out ConnectionMetaData[] serverData, out ConnectionState[] serverState, out IncomingSignal[][] unreliableSignalsSeenFromServer, out OutgoingSignal[][] unreliableSignalsSentFromServer, out IncomingSignal[][] reliableSignalsSeenFromServer, out OutgoingSignal[][] reliableSignalsSentFromServer, int unreliableCount, int reliableCount)
         {
             int maxPlayers = int.Parse(args[0]);
 
@@ -72,10 +72,10 @@ namespace DedicatedServer
 
             for (int i = 0; i < clients.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(8);
-                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(2);
-                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(8);
-                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(2);
+                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(unreliableCount);
+                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(reliableCount);
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(reliableCount);
 
             }
 
