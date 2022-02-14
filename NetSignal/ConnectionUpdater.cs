@@ -177,18 +177,20 @@ namespace NetSignal
             connection.udpClient.Close();
         }
 
-        public async static Task<ConnectionAPIs> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
+        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
         {
             connectors = new ConnectionAPIs();
 
 
             bool managedToOpen = false;
             int portTrials = 100;
-            for(int i = 0; i < portTrials && !managedToOpen; i++)
+            int startPort = connectionData.iListenToPort;
+            for (int i = 0; i < portTrials && !managedToOpen; i++)
             {
                 try
                 {
-                    connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort + i));
+                    connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, startPort + i));
+                    connectionData.iListenToPort = startPort + i;
                     managedToOpen = true;
                 } catch( SocketException e)
                 {
@@ -209,7 +211,7 @@ namespace NetSignal
 
             await ExchangeConnectionInitials(connectors, connectionData, connectionState);
 
-            return connectors;
+            return new Tuple<ConnectionAPIs, ConnectionMetaData>(connectors, connectionData);
         }
 
         private static async Task ExchangeConnectionInitials(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState)

@@ -12,7 +12,7 @@ namespace NetSignal
         {
 
             var cancel = false;
-            var shouldPrint = true;
+            var shouldPrint = false;
 
             int clientCount = 2;
 
@@ -55,8 +55,15 @@ namespace NetSignal
 
             /*await TestClientsToRemoteDedicatedServer(args.Length > 0 ? int.Parse(args[0])   : 5001, () => cancel, () => shouldPrint,
                   server, serverData, serverState, clients, clientDatas, clientState);*/
-            await TestOneOfClientsToRemoteDedicatedServer(  args.Length > 0 ? int.Parse(args[0]) : 5001, () => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);
+            /*await TestOneOfClientsToRemoteDedicatedServer(  args.Length > 0 ? int.Parse(args[0]) : 5001, () => cancel, () => shouldPrint,
+                server, serverData, serverState, clients, clientDatas, clientState);*/
+            /*await TestClientsToRemoteDedicatedServer(args.Length > 0 ? int.Parse(args[0]) : 5001, () => cancel, () => shouldPrint,
+            server, serverData, serverState, clients, clientDatas, clientState);*/
+
+            //args.Length > 0 ? int.Parse(args[0]) : 5001, 
+            await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
+            server, serverData, serverState, clients, clientDatas, clientState);
+
             await Task.Delay(20000);
 
             cancel = true;
@@ -331,9 +338,9 @@ namespace NetSignal
             }
 
 
-            for (int i = 0; i < clientInstancesAPI.Length - 1; i++)
+            for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                int clientI = await NetSignalStarter.StartClient(5001 + i, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+                int clientI = await NetSignalStarter.StartClient(5001, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
                     cancelTestClient);
                 NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,

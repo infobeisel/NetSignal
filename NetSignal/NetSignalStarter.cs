@@ -94,8 +94,9 @@ namespace NetSignal
                 clientI = connectionState.clientID;
                 if (clientI >= 0 && clientI < storeToClientCon.Length)
                 {
-                    storeToClientCon[clientI] = returnTuple;
+                    storeToClientCon[clientI] = returnTuple.Item1;
                     storeToClientState[clientI] = connectionState;
+                    storeToClientData[clientI] = returnTuple.Item2;
                 }
 
             } catch (SocketException e)

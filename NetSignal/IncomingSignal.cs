@@ -2,6 +2,13 @@ using System;
 
 namespace NetSignal
 {
+    public struct TimeControl
+    {
+        public bool HandleTimeManually;
+        public long CurrentTimeTicks;
+    }
+
+
     [Serializable]
     public struct IncomingSignal
     {
