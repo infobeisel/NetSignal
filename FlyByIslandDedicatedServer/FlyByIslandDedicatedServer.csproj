@@ -81,6 +81,10 @@
       <Project>{19975dc4-40dd-4678-ad6a-ffae99796d01}</Project>
       <Name>DedicatedServer</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FlyByIslandMultiplayerShared\FlyByIslandMultiplayerShared.csproj">
+      <Project>{115e1bef-c085-4101-a745-dd2e833c33c9}</Project>
+      <Name>FlyByIslandMultiplayerShared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetSignal\NetSignal.csproj">
       <Project>{622516d1-ea49-4d24-b398-8d61d4adf30d}</Project>
       <Name>NetSignal</Name>

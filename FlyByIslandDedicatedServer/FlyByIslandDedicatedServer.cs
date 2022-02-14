@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using FlyByIslandMultiplayerShared;
 namespace FlyByIslandDedicatedServer
 {
     class FlyByIslandDedicatedServer
@@ -44,18 +44,42 @@ namespace FlyByIslandDedicatedServer
                  *  - ~ minute finish and highscore table view
                  *  - repeat
                  */
-
-                await Task.Delay(10000);
+                await Countdown();
+                await Match();
+                await HighScoreView();
+                await Task.Delay(1000);
             }
 
         }
 
-        private static void StartCountdownUntilRoundStarts()
+        private async static Task Countdown()
         {
             foreach(var toClient in reliableSignalsSentFromServer)
             {
-                //toClient[]
+                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.WaitForPlayers);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromMinutes(1)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
             }
+            await Task.Delay(60000);
+        }
+
+        private async static Task Match()
+        {
+            foreach (var toClient in reliableSignalsSentFromServer)
+            {
+                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.Started);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(300)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
+            }
+            await Task.Delay(300000);
+        }
+
+        private async static Task HighScoreView()
+        {
+            foreach (var toClient in reliableSignalsSentFromServer)
+            {
+                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.HighScoreView);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(60)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
+            }
+            await Task.Delay(60000);
         }
     }
 }

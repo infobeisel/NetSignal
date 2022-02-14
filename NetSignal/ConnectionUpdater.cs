@@ -180,9 +180,25 @@ namespace NetSignal
         public async static Task<ConnectionAPIs> InitializeSingleConnection(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionMetaData toServer)
         {
             connectors = new ConnectionAPIs();
-                
 
-            connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
+
+            bool managedToOpen = false;
+            int portTrials = 100;
+            for(int i = 0; i < portTrials && !managedToOpen; i++)
+            {
+                try
+                {
+                    connectors.udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, connectionData.iListenToPort + i));
+                    managedToOpen = true;
+                } catch( SocketException e)
+                {
+                    Logging.Write("port not free or other error: " + e.Message);
+                }
+                
+            }
+            
+
+
             Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
             Util.Exchange(ref connectionState.udpReadStateName, StateOfConnection.ReadyToOperate);
             Logging.Write("client connects to udp" + new IPEndPoint(IPAddress.Any, connectionData.iListenToPort));
