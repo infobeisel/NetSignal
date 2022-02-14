@@ -1,1 +1,1 @@
-mono MatchMakeServer/bin/Debug/MatchMakeServer.exe 5432
+mono MatchMakeServer/bin/Release/MatchMakeServer.exe 5432
