@@ -397,14 +397,14 @@ namespace NetSignal
 
 
 
-        public async static void PeriodicallySendKeepAlive(OutgoingSignal [][] reliable, OutgoingSignal [][] unreliable, IEnumerable<int> indices, Func<bool> cancel, int periodMs = 1000)
+        public async static void PeriodicallySendKeepAlive(OutgoingSignal[][][] reliable, OutgoingSignal[][][] unreliable, IEnumerable<int> indices, Func<bool> cancel, TimeControl timeControl, int periodMs = 1000)
         {
             while(!cancel())
             {
                 foreach (var ind in indices)
                 {
-                    reliable[ind][0].WriteTcpAlive();
-                    unreliable[ind][0].WriteUdpAlive();
+                    reliable[ind][SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][0].WriteTcpAlive();
+                    unreliable[ind][SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][0].WriteUdpAlive();
                 }
                 await Task.Delay(periodMs);
             }

@@ -9,6 +9,8 @@ namespace DedicatedServer
 {
     public class DedicatedServer
     {
+        private const int historySize = 10;
+
         static void Main(string[] args)
         {
             bool cancel, shouldPrint;
@@ -17,13 +19,16 @@ namespace DedicatedServer
             ConnectionMetaData[] connectionMetaDatasSeenFromServer, serverData;
             ConnectionAPIs[] connectionApisSeenFromServer, server;
             ConnectionState[] connectionStatesSeenFromServer, serverState;
-            IncomingSignal[][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
-            OutgoingSignal[][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
-            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 8 , 2);
-
+            IncomingSignal[][][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
+            OutgoingSignal[][][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
+            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 8 , 2, historySize);
+            TimeControl timeControl = new TimeControl();
+            timeControl.CurrentTimeTicks = DateTime.UtcNow.Ticks;
+            timeControl.historySize = historySize;
+            timeControl.updateTimeStepMs = 60;
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
-                reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
+                reliableSignalsSentFromServer, reliableSignalsSeenFromServer, timeControl).Wait();
 
             while (true)
             {
@@ -33,7 +38,7 @@ namespace DedicatedServer
 
         }
 
-        public  static void Initialize(string[] args, bool cancel, bool shouldPrint, out ConnectionMetaData[] connectionMetaDatasSeenFromServer, out ConnectionAPIs[] connectionApisSeenFromServer, out ConnectionState[] connectionStatesSeenFromServer, out ConnectionAPIs[] server, out ConnectionMetaData[] serverData, out ConnectionState[] serverState, out IncomingSignal[][] unreliableSignalsSeenFromServer, out OutgoingSignal[][] unreliableSignalsSentFromServer, out IncomingSignal[][] reliableSignalsSeenFromServer, out OutgoingSignal[][] reliableSignalsSentFromServer, int unreliableCount, int reliableCount)
+        public  static void Initialize(string[] args, bool cancel, bool shouldPrint, out ConnectionMetaData[] connectionMetaDatasSeenFromServer, out ConnectionAPIs[] connectionApisSeenFromServer, out ConnectionState[] connectionStatesSeenFromServer, out ConnectionAPIs[] server, out ConnectionMetaData[] serverData, out ConnectionState[] serverState, out IncomingSignal[][][] unreliableSignalsSeenFromServer, out OutgoingSignal[][][] unreliableSignalsSentFromServer, out IncomingSignal[][][] reliableSignalsSeenFromServer, out OutgoingSignal[][][] reliableSignalsSentFromServer, int unreliableCount, int reliableCount, int historyCount)
         {
             int maxPlayers = int.Parse(args[0]);
 
@@ -64,18 +69,25 @@ namespace DedicatedServer
 
 
 
-            unreliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
-            unreliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
-            reliableSignalsSeenFromServer = new IncomingSignal[clients.Length][];
-            reliableSignalsSentFromServer = new OutgoingSignal[clients.Length][];
+            unreliableSignalsSeenFromServer = new IncomingSignal[clients.Length][][];
+            unreliableSignalsSentFromServer = new OutgoingSignal[clients.Length][][];
+            reliableSignalsSeenFromServer = new IncomingSignal[clients.Length][][];
+            reliableSignalsSentFromServer = new OutgoingSignal[clients.Length][][];
 
 
             for (int i = 0; i < clients.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(unreliableCount);
-                reliableSignalsSeenFromServer[i] = SignalFactory.ConstructIncomingSignalArray(reliableCount);
-                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
-                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(reliableCount);
+                unreliableSignalsSeenFromServer[i] = new IncomingSignal[historyCount][]; 
+                reliableSignalsSeenFromServer[i] = new IncomingSignal[historyCount][]; 
+                unreliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][]; 
+                reliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][]; 
+                for(int j = 0; j < historyCount; j++)
+                {
+                    unreliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(unreliableCount);
+                    reliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(reliableCount);
+                    unreliableSignalsSentFromServer[i][j] = SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
+                    reliableSignalsSentFromServer[i][j] = SignalFactory.ConstructOutgoingSignalArray(reliableCount);
+                }
 
             }
 

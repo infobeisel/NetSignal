@@ -9,18 +9,18 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
             foreach(var ind in toAllIndices)
             {
                 await Task.Run(() =>
                 {
-                    SyncSignalsToReliably(signals, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, ind);
+                    SyncSignalsToReliably(signals, timeControl, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, ind);
                 });
             }
         }
 
-        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
+        private async static void SyncSignalsToReliably(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
         {
             while (!cancel())
             {
@@ -48,6 +48,7 @@ namespace NetSignal
                 //report("try to send r to " + toConnectionI + " , " + toConnections[toConnectionI].tcpClient.Connected);
 
                 bool isSyncingSuccessfully = true;
+                var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
                 for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
@@ -56,13 +57,13 @@ namespace NetSignal
                     if (!toConnectionStates[fromConnectionI].isConnectionActive) //inactive connection
                         continue;
 
-                    for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
+                    for (int signalI = 0; signalI < signals[fromClientId][historyIndex].Length && isSyncingSuccessfully; signalI++)
                     {
                         
                         
-                        if (signals[fromClientId][signalI].dataDirty)
+                        if (signals[fromClientId][historyIndex][signalI].dataDirty)
                         {
-                            var dataToSend = signals[fromClientId][signalI].data;
+                            var dataToSend = signals[fromClientId][historyIndex][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
                             if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
@@ -70,7 +71,7 @@ namespace NetSignal
                                 Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");
                                 dataToSend.signalType = SignalType.TCPAlive;
                             }
-                            signals[fromClientId][signalI].data = dataToSend;
+                            signals[fromClientId][historyIndex][signalI].data = dataToSend;
 
                             report("send data to " + toConnectionI + " : " + dataToSend);
 
@@ -120,19 +121,19 @@ namespace NetSignal
             }
         }
 
-        public async static void ReceiveSignalsReliablyFromAllAndTrackIsConnected(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
+        public async static void ReceiveSignalsReliablyFromAllAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
         {
             foreach(var index in fromIndices)
             {
                 await Task.Run(() =>
                 {
-                    ReceiveSignalsReliablyFromAndTrackIsConnected(signals, cancel, report, fromStreams, fromDatas, fromStates, index);
+                    ReceiveSignalsReliablyFromAndTrackIsConnected(signals, timeControl, cancel, report, fromStreams, fromDatas, fromStates, index);
                 });
             }
         }
 
         //uses tcp to sync signals reliably
-        private async static void ReceiveSignalsReliablyFromAndTrackIsConnected(IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
+        private async static void ReceiveSignalsReliablyFromAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
         {
             while (!cancel())
             {
@@ -161,9 +162,8 @@ namespace NetSignal
                 {
                     var usingBytes = fromStates[streamI].tcpReadBytes;
                     Util.FlushBytes(usingBytes);
-
                     var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
-                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
+                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), fromDatas[streamI]);
 
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }

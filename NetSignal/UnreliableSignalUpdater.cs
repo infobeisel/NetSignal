@@ -10,13 +10,13 @@ namespace NetSignal
     public class UnreliableSignalUpdater
     {
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(OutgoingSignal[][] signals, Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
+        public async static void SyncSignalsToAll(OutgoingSignal[][][] signals,TimeControl timeControl,  Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
         {
             foreach(var toConnectionI in toIndices)
             {
                   await Task.Run(() =>
                    {
-                    _ = SyncSignalsTo(signals, report, toAllApis, toAllData, toAllStates, toConnectionI, cancel);
+                    _ = SyncSignalsTo(signals, timeControl,  report, toAllApis, toAllData, toAllStates, toConnectionI, cancel);
                   });
             }
                 
@@ -24,7 +24,7 @@ namespace NetSignal
 
         
 
-        private static async Task SyncSignalsTo(OutgoingSignal[][] signals, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, int toConnectionI, Func<bool> cancel)
+        private static async Task SyncSignalsTo(OutgoingSignal[][][] signals, TimeControl timeControl, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, int toConnectionI, Func<bool> cancel)
         {
             try
             {
@@ -62,6 +62,7 @@ namespace NetSignal
                     //responsible for sending everything to one connection
                     //for each signal connection
 
+                    var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
 
                     for (int fromConnectionI = 0; fromConnectionI < toAllData.Length; fromConnectionI++)
                     {
@@ -72,13 +73,13 @@ namespace NetSignal
                             continue;
                         //report("try to send ur to B" + toConnectionI);
 
-                        for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
+                        for (int signalI = 0; signalI < signals[fromClientId][historyIndex].Length; signalI++)
                         {
                             //report("try to send ur to C" + signals[fromClientId][signalI] + " contnue? " + !cancel());
-                            if (signals[fromClientId][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
+                            if (signals[fromClientId][historyIndex][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                             {
                                 //report("try to send ur to D" + toConnectionI);
-                                var dataToSend = signals[fromClientId][signalI].data;
+                                var dataToSend = signals[fromClientId][historyIndex][signalI].data;
                                 dataToSend.clientId = fromClientId; //make sure client id is correct;
                                 dataToSend.index = signalI;
                                 
@@ -87,7 +88,7 @@ namespace NetSignal
                                     Logging.Write("the signal with index 0 is reserved for udp keepalive, please dont use it for game specific data");
                                     dataToSend.signalType = SignalType.UDPAlive;
                                 }
-                                signals[fromClientId][signalI].data = dataToSend;
+                                signals[fromClientId][historyIndex][signalI].data = dataToSend;
 
                                 var toAddressData = toAllData[toConnectionI];
                                 var udpClientToUse = toAllApis[toConnectionI].udpClient;
@@ -146,7 +147,7 @@ namespace NetSignal
         }
 
         
-        public async static void ReceiveSignals(int withInd, ConnectionAPIs [] connection, ConnectionMetaData [] connectionData, ConnectionState [] connectionState, IncomingSignal[][] signals, Func<bool> cancel, Action<string> report, params ConnectionMetaData[] from)
+        public async static void ReceiveSignals(int withInd, ConnectionAPIs [] connection, ConnectionMetaData [] connectionData, ConnectionState [] connectionState, IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, params ConnectionMetaData[] from)
         {
             var usingBytes = connectionState[withInd].udpReadBytes;
             Logging.Write("ReceiveSignals on thread " + System.Threading.Thread.CurrentThread.ManagedThreadId);
@@ -179,7 +180,7 @@ namespace NetSignal
                     {
                         receiveResult = await connection[withInd].udpClient.ReceiveAsync();
                         var bytes = receiveResult.Buffer;
-                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, report, bytes, receiveResult, from);
+                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, report, bytes, receiveResult, from);
                         Util.Exchange(ref connectionState[withInd].udpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     catch (ObjectDisposedException e)

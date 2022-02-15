@@ -8,7 +8,7 @@ namespace NetSignal
     public class SignalUpdaterUtil
     {
 
-        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][] incomingSignals, OutgoingSignal[][] outgoingSignals, Func<bool> cancel)
+        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
             if (incomingSignals.Length != outgoingSignals.Length)
                 throw new Exception("incoming and outgoing array length unequal");
@@ -18,12 +18,13 @@ namespace NetSignal
             {
                 while (!cancel())
                 {
+                    var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI].Length, outgoingSignals[connectionI].Length); signalI++)
+                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI][historyIndex].Length, outgoingSignals[connectionI][historyIndex].Length); signalI++)
                         {
-                            if (incomingSignals[connectionI][signalI].dataHasBeenUpdated)
+                            if (incomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                outgoingSignals[connectionI][signalI].WriteFloat(incomingSignals[connectionI][signalI].data.AsFloat());
+                                outgoingSignals[connectionI][historyIndex][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
                                 /*for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
                                 {
                                     if (fromConnectionI != toConnectionI) //dont send to self
@@ -48,15 +49,16 @@ namespace NetSignal
         }
 
 
-        public static async Task WriteToIncomingSignals(IncomingSignal[][] signals, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, params ConnectionMetaData[] fromConnectionDatas)
+        public static async Task WriteToIncomingSignals(IncomingSignal[][][] signals, TimeControl timeControl, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, params ConnectionMetaData[] fromConnectionDatas)
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
 
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("data package: " + package.ToString());
-                signals[package.clientId][package.index].data = package;
-                signals[package.clientId][package.index].cameIn = DateTime.UtcNow;
+                long historyIndex = CurrentHistoryIndex(timeControl);
+                signals[package.clientId][historyIndex][package.index].data = package;
+                signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
 
             },
             async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
@@ -78,6 +80,11 @@ namespace NetSignal
                     fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
                 }
             });
+        }
+
+        public static long CurrentHistoryIndex(TimeControl timeControl)
+        {
+            return (timeControl.CurrentTimeTicks / TimeSpan.TicksPerMillisecond / timeControl.updateTimeStepMs) % timeControl.historySize;
         }
     }
 }

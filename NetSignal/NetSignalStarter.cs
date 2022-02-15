@@ -13,8 +13,8 @@ namespace NetSignal
         public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
             ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionAPIs[] connections,
             ConnectionMetaData[] connectionDatas, ConnectionState[] connectionStates,
-            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
-            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals)
+            OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
+            OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, TimeControl timeControl)
         {
 
             
@@ -30,11 +30,11 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                UnreliableSignalUpdater.ReceiveSignals(0, serverConnection, serverData, serverState, unreliableIncomingSignals, cancel,
+                UnreliableSignalUpdater.ReceiveSignals(0, serverConnection, serverData, serverState, unreliableIncomingSignals, timeControl, cancel,
                 (string r) => { if (shouldLog) Logging.Write("server receive: " + r); }, connectionDatas);
             });
 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, cancel,
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel,
                 (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); },
                 System.Linq.Enumerable.Range(0,connectionDatas.Length),
                 connections, connectionDatas, connectionStates);
@@ -46,10 +46,10 @@ namespace NetSignal
 
             Logging.Write("StartServer: start sync signals");
             
-            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
+            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl, 
             (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
             
-            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, cancel,
+            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
              (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
@@ -57,12 +57,12 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                SignalUpdaterUtil.SyncIncomingToOutgoingSignals(unreliableIncomingSignals, unreliableOutgoingSignals, cancel);
+                SignalUpdaterUtil.SyncIncomingToOutgoingSignals(unreliableIncomingSignals, unreliableOutgoingSignals, timeControl, cancel);
             });
 
             _ = Task.Run(() =>
             {
-                SignalUpdaterUtil.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, cancel);
+                SignalUpdaterUtil.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
             });
 
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
@@ -70,6 +70,15 @@ namespace NetSignal
             {
                 MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], cancel, 5000,
                     (string r) => { if (shouldLog) Logging.Write("server keep alive: " + r); });
+            });
+
+            _ = Task.Run(async () => {
+                while(!cancel())
+                {
+                    System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                    await Task.Delay(timeControl.updateTimeStepMs);
+                }
+
             });
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);
@@ -106,39 +115,45 @@ namespace NetSignal
             return clientI;
         }
         public async static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
-            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][] unreliableIncomingSignals,
-            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData)
+            OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
+            OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData, TimeControl timeControl)
         { 
             
             Logging.Write("StartClient: start receive signals");
 
             _ = Task.Run(() =>
             {
-                UnreliableSignalUpdater.ReceiveSignals(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableIncomingSignals, cancel,
+                UnreliableSignalUpdater.ReceiveSignals(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableIncomingSignals, timeControl, cancel,
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
             });
                 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, cancel, (string s) => { }, new [] {clientI},
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel, (string s) => { }, new [] {clientI},
                  storeToClientCon , storeToClientData , storeToClientState );
 
             Logging.Write("StartClient: start sync signals to server");
 
             var replicatedServerDatas = new ConnectionMetaData[storeToClientCon.Length];
             for (int i = 0; i < replicatedServerDatas.Length; i++) replicatedServerDatas[i] = serverData[0];
-            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals,
+            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl,
             (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, storeToClientCon, replicatedServerDatas, storeToClientState, new int[] {clientI });
 
-            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, cancel,
+            ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
                  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },
                                storeToClientCon, storeToClientData, storeToClientState);
   //storeToClientCon, storeToClientData, storeToClientState);
 
             _ = Task.Run(() =>
             {
-                ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals, new[] { clientI }, cancel);
+                ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals,new[] { clientI }, cancel, timeControl);
             });
 
-                
+            _ = Task.Run(async () => {
+                while (!cancel())
+                {
+                    System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                    await Task.Delay(timeControl.updateTimeStepMs);
+                }
+            });
 
             ConnectionUpdater.AwaitAndPerformTearDownClientTCP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);

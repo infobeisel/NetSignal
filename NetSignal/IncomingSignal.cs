@@ -2,10 +2,12 @@ using System;
 
 namespace NetSignal
 {
-    public struct TimeControl
+    public class TimeControl
     {
         public bool HandleTimeManually;
         public long CurrentTimeTicks;
+        public int updateTimeStepMs;
+        public int historySize;
     }
 
 

@@ -10,23 +10,28 @@ namespace FlyByIslandDedicatedServer
 {
     class FlyByIslandDedicatedServer
     {
+        private const int historySize = 10;
         private static bool cancel;
         private static bool shouldPrint;
         private static ConnectionMetaData[] connectionMetaDatasSeenFromServer, serverData;
         private static ConnectionAPIs[] connectionApisSeenFromServer, server;
         private static ConnectionState[] connectionStatesSeenFromServer, serverState;
-        private static IncomingSignal[][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
-        private static OutgoingSignal[][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
+        private static IncomingSignal[][][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
+        private static OutgoingSignal[][][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
+        private static TimeControl timeControl;
         static void Main(string[] args)
         {
             cancel = false;
             shouldPrint = true;
-
-            DedicatedServer.DedicatedServer.Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, FlyByIslandConnectionConsts.UnreliableSignalCountPerClient, FlyByIslandConnectionConsts.ReliableSignalCountPerClient);
-
+            
+            DedicatedServer.DedicatedServer.Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, FlyByIslandConnectionConsts.UnreliableSignalCountPerClient, FlyByIslandConnectionConsts.ReliableSignalCountPerClient, historySize);
+            timeControl = new TimeControl();
+            timeControl.CurrentTimeTicks = DateTime.UtcNow.Ticks;
+            timeControl.historySize = historySize;
+            timeControl.updateTimeStepMs = 60;
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
-                reliableSignalsSentFromServer, reliableSignalsSeenFromServer).Wait();
+                reliableSignalsSentFromServer, reliableSignalsSeenFromServer, timeControl).Wait();
 
             LoopFlyByIslandMatch().Wait();
         }
@@ -36,48 +41,45 @@ namespace FlyByIslandDedicatedServer
             while(true)
             {
                 //TODO: 
-                /* move shared datatypes (used in flybyisland unity and this flybyisland dedicated server project) to a separate project that is built into a .dll
-                 * program simple game loop here:
-                 *  - choose terrain and track hashes
-                 *  - ~1 minute pre launch countdown (clients can fly around freely)
-                 *  - ~5 minutes match where new highscores are accepted
-                 *  - ~ minute finish and highscore table view
-                 *  - repeat
+                /* 
+                 * 
+                 * choose terrain and track id and sync it!
+                 * time series: make incoming and outgoing signals 3D: [Time][Client][Signal] instead of [Client][Signal]
                  */
-                await Countdown();
-                await Match();
-                await HighScoreView();
+                await Countdown(timeControl);
+                await Match(timeControl);
+                await HighScoreView(timeControl);
                 await Task.Delay(1000);
             }
 
         }
 
-        private async static Task Countdown()
+        private async static Task Countdown(TimeControl timeControl)
         {
             foreach(var toClient in reliableSignalsSentFromServer)
             {
-                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.WaitForPlayers);
-                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromMinutes(1)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
+                toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.WaitForPlayers);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromMinutes(1)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
             await Task.Delay(60000);
         }
 
-        private async static Task Match()
+        private async static Task Match(TimeControl timeControl)
         {
             foreach (var toClient in reliableSignalsSentFromServer)
             {
-                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.Started);
-                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(300)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
+                toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.Started);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(300)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
             await Task.Delay(300000);
         }
 
-        private async static Task HighScoreView()
+        private async static Task HighScoreView(TimeControl timeControl)
         {
             foreach (var toClient in reliableSignalsSentFromServer)
             {
-                toClient[ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.HighScoreView);
-                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(60)).Ticks, ref toClient[ReliableSignalIndices.TIMESTAMP_0], ref toClient[ReliableSignalIndices.TIMESTAMP_1]);
+                toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.HighScoreView);
+                OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(60)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
             await Task.Delay(60000);
         }
