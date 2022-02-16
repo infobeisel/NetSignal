@@ -1,6 +1,7 @@
 using System;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetSignal
@@ -65,17 +66,17 @@ namespace NetSignal
             async () => {
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("keep alive package: " + package.ToString());
-                
+
             },
             async () => {
-                
+
 
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
 
                 report("keep alive package: " + package.ToString());
                 if (fromConnectionDatas.Length > package.clientId)
                 {
-                
+
                     fromConnectionDatas[package.clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
                     fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
                 }
@@ -86,5 +87,32 @@ namespace NetSignal
         {
             return (timeControl.CurrentTimeTicks / TimeSpan.TicksPerMillisecond / timeControl.updateTimeStepMs) % timeControl.historySize;
         }
+
+        public static float Regress(IncomingSignal[][][] signals, int clientId, int signalI, TimeControl timeControl, long toTicks)
+        {
+            ThreadLocal<double[]> xs = new ThreadLocal<double[]>();
+            if (xs.Value == null || xs.Value.Length != timeControl.historySize)
+                xs.Value = new double[timeControl.historySize];
+            ThreadLocal<double[]> ys = new ThreadLocal<double[]>();
+            if (ys.Value == null || ys.Value.Length != timeControl.historySize)
+                ys.Value = new double[timeControl.historySize];
+
+            
+            var historyI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+            var fromTimeStamp = toTicks;
+            
+
+            for (int i = 0; i < timeControl.historySize; i++)
+            {
+                double x = (signals[clientId][(historyI - i) % timeControl.historySize][signalI].data.timeStamp.Ticks - fromTimeStamp) / TimeSpan.TicksPerMillisecond;
+                double y = signals[clientId][(historyI - i) % timeControl.historySize][signalI].data.AsFloat();
+
+                xs.Value[timeControl.historySize - 1 - i] = x;
+                ys.Value[timeControl.historySize - 1 - i] = y;
+            }
+            var poly = MathNet.Numerics.Polynomial.Fit(xs.Value, ys.Value, 2);
+            return (float)poly.Evaluate(0.0);
+        }
+
     }
 }

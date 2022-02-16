@@ -22,10 +22,8 @@ namespace DedicatedServer
             IncomingSignal[][][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
             OutgoingSignal[][][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
             Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 8 , 2, historySize);
-            TimeControl timeControl = new TimeControl();
-            timeControl.CurrentTimeTicks = DateTime.UtcNow.Ticks;
-            timeControl.historySize = historySize;
-            timeControl.updateTimeStepMs = 60;
+            TimeControl timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, historySize);
+            
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
                 connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer, unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
                 reliableSignalsSentFromServer, reliableSignalsSeenFromServer, timeControl).Wait();

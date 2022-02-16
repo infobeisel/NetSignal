@@ -72,14 +72,18 @@ namespace NetSignal
                     (string r) => { if (shouldLog) Logging.Write("server keep alive: " + r); });
             });
 
-            _ = Task.Run(async () => {
-                while(!cancel())
-                {
-                    System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
-                    await Task.Delay(timeControl.updateTimeStepMs);
-                }
+            if(!timeControl.HandleTimeManually)
+            {
+                _ = Task.Run(async () => {
+                    while (!cancel())
+                    {
+                        System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                        await Task.Delay(timeControl.updateTimeStepMs);
+                    }
 
-            });
+                });
+            }
+            
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);
         }
@@ -142,11 +146,15 @@ namespace NetSignal
                                storeToClientCon, storeToClientData, storeToClientState);
   //storeToClientCon, storeToClientData, storeToClientState);
 
-            _ = Task.Run(() =>
+            
+                _ = Task.Run(() =>
+                {
+                    ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals, new[] { clientI }, cancel, timeControl);
+                });
+        
+            
+        if(!timeControl.HandleTimeManually)
             {
-                ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals,new[] { clientI }, cancel, timeControl);
-            });
-
             _ = Task.Run(async () => {
                 while (!cancel())
                 {
@@ -154,7 +162,7 @@ namespace NetSignal
                     await Task.Delay(timeControl.updateTimeStepMs);
                 }
             });
-
+            }
             ConnectionUpdater.AwaitAndPerformTearDownClientTCP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
             

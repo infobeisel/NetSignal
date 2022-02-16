@@ -47,10 +47,8 @@ namespace NetSignal
             }
 
 
-            var timeControl = new TimeControl();
-            timeControl.updateTimeStepMs = 60;
-            timeControl.CurrentTimeTicks = DateTime.UtcNow.Ticks;
-            timeControl.historySize = 10;
+            TimeControl timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 10);
+            
 
             /*await TestDuplex(() => cancel, () => shouldPrint,
                  connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
