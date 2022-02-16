@@ -1,4 +1,4 @@
-namespace FlyByIslandMultiplayerShared
+namespace NetSignal2Unity
 {
     public struct ReliableSignalIndices
     {

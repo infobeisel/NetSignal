@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlyByIslandMultiplayerShared
+namespace NetSignal2Unity
 {
     public enum MatchState
     {

@@ -5,7 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FlyByIslandMultiplayerShared;
+
+using NetSignal2Unity;
+
 namespace FlyByIslandDedicatedServer
 {
     class FlyByIslandDedicatedServer
@@ -22,9 +24,9 @@ namespace FlyByIslandDedicatedServer
         static void Main(string[] args)
         {
             cancel = false;
-            shouldPrint = true;
+            shouldPrint = false;
             
-            DedicatedServer.DedicatedServer.Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, FlyByIslandConnectionConsts.UnreliableSignalCountPerClient, FlyByIslandConnectionConsts.ReliableSignalCountPerClient, historySize);
+            DedicatedServer.DedicatedServer.Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, NetSignalProjectSpecific.UnreliableSignalCountPerClient, NetSignalProjectSpecific.ReliableSignalCountPerClient, historySize);
             timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, historySize );
             
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
