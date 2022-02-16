@@ -36,20 +36,27 @@ namespace FlyByIslandDedicatedServer
 
         private static async Task LoopFlyByIslandMatch()
         {
-            while(true)
+            var rng = new System.Random();
+            while (true)
             {
-                //TODO: 
-                /* 
-                 * 
-                 * choose terrain and track id and sync it!
-                 * time series: make incoming and outgoing signals 3D: [Time][Client][Signal] instead of [Client][Signal]
-                 */
+                await ChooseTerrainAndTrack(timeControl, rng);
                 await Countdown(timeControl);
                 await Match(timeControl);
                 await HighScoreView(timeControl);
                 await Task.Delay(1000);
             }
 
+        }
+        private async static Task ChooseTerrainAndTrack(TimeControl timeControl, System.Random rng)
+        {
+            var terrainId = rng.Next();
+            var trackId = rng.Next();
+            foreach (var toClient in reliableSignalsSentFromServer)
+            {
+                toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TERRAIN_ID].WriteInt(terrainId);
+                toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TRACK_ID].WriteInt(trackId);
+            }
+            await Task.Delay(5000);
         }
 
         private async static Task Countdown(TimeControl timeControl)
