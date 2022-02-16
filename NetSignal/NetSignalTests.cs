@@ -185,38 +185,46 @@ namespace NetSignal
             var rng = new System.Random(645);
 
             var avgPing = 0.0;
-            for (int i = 0; i < 2000; i++)
+
+            float trueVal = 0.0f;
+            float sent = 0.0f;
+            float incoming = 0.0f;
+            for (int i = 0; i < 100000; i++)
             {
 
                 var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
-                wasSame = clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].Equals(clientIncoming[incomingClientId][outgoingClientId][histIndex][1]);
+                //wasSame = clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].Equals(clientIncoming[incomingClientId][outgoingClientId][histIndex][1]);
 
-                /*if (wasSame)
+                trueVal = 100.0f *  (float)Math.Sin(((float)i / 1000.0f) * Math.PI);
+
+                if (i % 1 == 0)
                 {
-                    avgPing += (clientIncoming[clientIdOfCon1][clientIdOfCon0][0].cameIn - clientIncoming[clientIdOfCon0][clientIdOfCon0][0].data.timeStamp).TotalMilliseconds;
-                }*/
-
-
-                /*if (wasSame)
-                {*/
-                if (i % 10 == 0)
-                {
+                    sent = trueVal;
                     var a = new DataPackage();
-                    a.WriteFloat((float)rng.NextDouble());
+                    a.WriteFloat(sent);
                     a.clientId = outgoingClientId;
                     a.index = 1;
-                    a.timeStamp = DateTime.UtcNow;
+                    a.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
                     clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].data = a;
                 }
-                //}
 
-                await Task.Delay(40);
-
-                /*if (i % 10 == 0)
+                if (i % 1 == 0)
                 {
-                    Logging.Write("avg ping: " + (avgPing / 10.0).ToString("000.000") + " ms");
-                    avgPing = 0.0;
-                }*/
+                    var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], outgoingClientId, 1, timeControl, DateTime.UtcNow.Ticks);
+                    
+                    if(timeControl.CurrentTimeTicks == clientIncoming[incomingClientId][outgoingClientId][histIndex][1].data.timeStamp.Ticks)
+                    {
+                         incoming = clientIncoming[incomingClientId][outgoingClientId][histIndex][1].data.AsFloat();
+                    }
+
+                    
+                    Console.WriteLine((regressed-trueVal).ToString("0.000"));
+                    
+                }
+
+                
+                await Task.Delay(5);
+
             }
         }
 

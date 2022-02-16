@@ -66,6 +66,8 @@ namespace NetSignal
                             var dataToSend = signals[fromClientId][historyIndex][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
+                            dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
+
                             if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
                             {
                                 Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");

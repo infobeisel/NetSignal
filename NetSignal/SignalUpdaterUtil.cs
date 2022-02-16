@@ -102,13 +102,13 @@ namespace NetSignal
             var fromTimeStamp = toTicks;
             
 
-            for (int i = 0; i < timeControl.historySize; i++)
+            for (int i = 1; i <= timeControl.historySize; i++)
             {
-                double x = (signals[clientId][(historyI - i) % timeControl.historySize][signalI].data.timeStamp.Ticks - fromTimeStamp) / TimeSpan.TicksPerMillisecond;
-                double y = signals[clientId][(historyI - i) % timeControl.historySize][signalI].data.AsFloat();
+                double x = (signals[clientId][(historyI + i) % timeControl.historySize][signalI].data.timeStamp.Ticks - fromTimeStamp) / TimeSpan.TicksPerMillisecond;
+                double y = signals[clientId][(historyI + i) % timeControl.historySize][signalI].data.AsFloat();
 
-                xs.Value[timeControl.historySize - 1 - i] = x;
-                ys.Value[timeControl.historySize - 1 - i] = y;
+                xs.Value[i - 1] = x;
+                ys.Value[i - 1] = y;
             }
             var poly = MathNet.Numerics.Polynomial.Fit(xs.Value, ys.Value, 2);
             return (float)poly.Evaluate(0.0);
