@@ -56,6 +56,7 @@ namespace FlyByIslandDedicatedServer
                 toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TERRAIN_ID].WriteInt(terrainId);
                 toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TRACK_ID].WriteInt(trackId);
             }
+            Logging.Write("chose terrain " + terrainId + " and track " + trackId);
             await Task.Delay(5000);
         }
 
@@ -66,7 +67,8 @@ namespace FlyByIslandDedicatedServer
                 toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.WaitForPlayers);
                 OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromMinutes(1)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
-            await Task.Delay(60000);
+            Logging.Write("countdown");
+            await Task.Delay(10000);
         }
 
         private async static Task Match(TimeControl timeControl)
@@ -76,7 +78,8 @@ namespace FlyByIslandDedicatedServer
                 toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.Started);
                 OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(300)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
-            await Task.Delay(300000);
+            Logging.Write("match start");
+            await Task.Delay(60000);
         }
 
         private async static Task HighScoreView(TimeControl timeControl)
@@ -86,7 +89,8 @@ namespace FlyByIslandDedicatedServer
                 toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.MATCH_STATE].WriteInt((int)MatchState.HighScoreView);
                 OutgoingSignal.WriteLong((DateTime.UtcNow + TimeSpan.FromSeconds(60)).Ticks, ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_0], ref toClient[SignalUpdaterUtil.CurrentHistoryIndex(timeControl)][ReliableSignalIndices.TIMESTAMP_1]);
             }
-            await Task.Delay(60000);
+            Logging.Write("highScoreView");
+            await Task.Delay(10000);
         }
     }
 }
