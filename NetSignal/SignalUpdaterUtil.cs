@@ -94,13 +94,16 @@ namespace NetSignal
             //int regressSize = timeControl.historySize;
             int regressSize = 4;
 
-            ThreadLocal<double[]> xs = new ThreadLocal<double[]>();
+            /*ThreadLocal<double[]> xs = new ThreadLocal<double[]>();
             if (xs.Value == null || xs.Value.Length != regressSize )
                 xs.Value = new double[regressSize ];
             ThreadLocal<double[]> ys = new ThreadLocal<double[]>();
             if (ys.Value == null || ys.Value.Length != regressSize )
                 ys.Value = new double[regressSize ];
+            */
 
+            double[] xs = new double[regressSize];
+            double[] ys = new double[regressSize];
             
             var historyI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
             var histSize = timeControl.historySize;
@@ -117,11 +120,13 @@ namespace NetSignal
                 double x = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
                 double y = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.AsFloat();
 
-                xs.Value[i] = x;
-                ys.Value[i] = y;
+                /*xs.Value[i] = x;
+                ys.Value[i] = y;*/
+                xs[i] = x;
+                ys[i] = y;
                 //Console.WriteLine("at x " + x.ToString("0.000") +  "  or ticks " + ticks + " , y: " + y.ToString("0.000")); 
             }
-            var poly = MathNet.Numerics.Polynomial.Fit(xs.Value, ys.Value, 2);
+            var poly = MathNet.Numerics.Polynomial.Fit(xs, ys, 2);
             //Console.WriteLine("params " + poly.Coefficients[0].ToString("0.000") +  " , " + 
             // poly.Coefficients[1].ToString("0.000") +  " , " 
             // +              poly.Coefficients[2].ToString("0.000") +  " , hist index " + historyI);
