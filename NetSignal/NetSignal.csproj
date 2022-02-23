@@ -68,6 +68,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TimeControl.cs" />
     <Compile Include="ConnectionAPIs.cs" />
     <Compile Include="ConnectionMapping.cs" />
     <Compile Include="ConnectionMetaData.cs" />

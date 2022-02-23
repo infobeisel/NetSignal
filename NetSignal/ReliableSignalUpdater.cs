@@ -66,7 +66,7 @@ namespace NetSignal
                             var dataToSend = signals[fromClientId][historyIndex][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
-                            dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
+                            //dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
 
                             if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
                             {
@@ -119,7 +119,7 @@ namespace NetSignal
             
 
                 Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
-                await Task.Delay(60);
+                await Task.Delay(30);
             }
         }
 

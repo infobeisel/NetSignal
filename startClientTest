@@ -1,0 +1,1 @@
+mono ./TestNetSignalClient/bin/Debug/TestNetSignalClient.exe 4 "85.214.239.45" 5000 "http://85.214.239.45" 5432

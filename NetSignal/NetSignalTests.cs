@@ -47,8 +47,6 @@ namespace NetSignal
             }
 
 
-            TimeControl timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 10);
-            
 
             /*await TestDuplex(() => cancel, () => shouldPrint,
                  connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
@@ -65,7 +63,7 @@ namespace NetSignal
             server, serverData, serverState, clients, clientDatas, clientState);*/
 
             //args.Length > 0 ? int.Parse(args[0]) : 5001, 
-            await TestDuplex(() => cancel, () => shouldPrint, timeControl, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
+            await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
             server, serverData, serverState, clients, clientDatas, clientState);
 
             await Task.Delay(20000);
@@ -114,34 +112,7 @@ namespace NetSignal
             await Task.Delay(5555);
             teard = true;
         }
-        public async static Task TestOneOfClientsToRemoteDedicatedServer(
-            int countUpFromPort,
-        Func<bool> cancel,
-        Func<bool> shouldReport,
-        TimeControl timeControl,
-        ConnectionAPIs[] serverInstanceAPI,
-        ConnectionMetaData[] serverInstanceData,
-        ConnectionState[] serverInstanceState,
-        ConnectionAPIs[] clientInstancesAPI,
-        ConnectionMetaData[] clientInstancesData,
-        ConnectionState[] clientInstancesState
-        )
-        {
-
-            //every client has representation of other client's signals -> 4D
-
-            IncomingSignal[][][][] clientUnreliableIncoming, clientReliableIncoming;
-            OutgoingSignal[][][][] clientUnreliableOutgoing, clientReliableOutgoing;
-            ConstructSignals(timeControl, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
-
-            var clientId = await NetSignalStarter.StartClient(countUpFromPort , shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel);
-            NetSignalStarter.StartClientSignalSyncing(clientId, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
-                clientUnreliableOutgoing[clientId], clientUnreliableIncoming[clientId],
-            clientReliableOutgoing[clientId], clientReliableIncoming[clientId], cancel, serverInstanceData, timeControl);
-            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, timeControl, clientId , clientId == 0 ? 1 : 0);
-            //await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
-
-        }
+        
 
 
         public async static Task TestClientsToRemoteDedicatedServer(
@@ -177,7 +148,7 @@ namespace NetSignal
 
         }
 
-        private static async Task SyncLogCheckWithPlayer0And1( IncomingSignal[][][][] clientIncoming, OutgoingSignal[][][][] clientOutgoing, TimeControl timeControl, int outgoingClientId = 0, int incomingClientId = 1)
+        private static async Task SyncLogCheckWithPlayer0And1( IncomingSignal[][][][] clientIncoming, OutgoingSignal[][][][] clientOutgoing, TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
         {
             bool wasSame = false;
 
@@ -189,41 +160,42 @@ namespace NetSignal
             float trueVal = 0.0f;
             float sent = 0.0f;
             float incoming = 0.0f;
+            
             for (int i = 0; i < 100000; i++)
             {
 
-                var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+                
                 //wasSame = clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].Equals(clientIncoming[incomingClientId][outgoingClientId][histIndex][1]);
 
-                trueVal = 100.0f *  (float)Math.Sin(((float)i / 1000.0f) * Math.PI);
-
+                //trueVal =   100.0f *  (float)Math.Sin(((float)i / 1000.0f) * Math.PI);
+                trueVal += 0.001f;
                 if (i % 1 == 0)
                 {
+                    var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl0);
                     sent = trueVal;
                     var a = new DataPackage();
                     a.WriteFloat(sent);
                     a.clientId = outgoingClientId;
                     a.index = 1;
-                    a.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
+                    a.timeStamp = new DateTime(timeControl0.CurrentTimeTicks);
                     clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].data = a;
                 }
 
-                if (i % 1 == 0)
-                {
-                    var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], outgoingClientId, 1, timeControl, DateTime.UtcNow.Ticks);
-                    
-                    if(timeControl.CurrentTimeTicks == clientIncoming[incomingClientId][outgoingClientId][histIndex][1].data.timeStamp.Ticks)
-                    {
-                         incoming = clientIncoming[incomingClientId][outgoingClientId][histIndex][1].data.AsFloat();
-                    }
-
-                    
-                    Console.WriteLine((regressed-trueVal).ToString("0.000"));
-                    
-                }
+                
 
                 
-                await Task.Delay(5);
+                await Task.Delay(timeControl0.updateTimeStepMs);
+
+                if (i % 1 == 0)
+                {
+                    var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl1);
+                     var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], outgoingClientId, 1, timeControl1, DateTime.UtcNow.Ticks);
+                    
+
+                    
+                    Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") +  ", err: " + ( 100.0f *  (regressed-trueVal) / trueVal).ToString("0.000"));
+                    
+                }
 
             }
         }
@@ -231,7 +203,6 @@ namespace NetSignal
         public async static Task TestDuplex(
         Func<bool> cancel,
         Func<bool> shouldReport,
-        TimeControl timeControl,
         ConnectionAPIs[] clientConnectionsSeenFromServer,
         ConnectionMetaData[] clientConnectionDatasSeenFromServer,
         ConnectionState[] clientConnectionStatesSeenFromServer,
@@ -246,6 +217,9 @@ namespace NetSignal
         )
         {
 
+            
+            
+            TimeControl timeControlServer = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
 
             IncomingSignal[][][] unreliableSignalsSeenFromServer = new IncomingSignal[clientInstancesAPI.Length][][];
             OutgoingSignal[][][] unreliableSignalsSentFromServer = new OutgoingSignal[clientInstancesAPI.Length][][];
@@ -255,13 +229,13 @@ namespace NetSignal
 
             for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                unreliableSignalsSeenFromServer[i] = new IncomingSignal[timeControl.historySize][];
-                reliableSignalsSeenFromServer[i] = new IncomingSignal[timeControl.historySize][];
-                unreliableSignalsSentFromServer[i] = new OutgoingSignal[timeControl.historySize][];
-                reliableSignalsSentFromServer[i] = new OutgoingSignal[timeControl.historySize][];
+                unreliableSignalsSeenFromServer[i] = new IncomingSignal[timeControlServer.historySize][];
+                reliableSignalsSeenFromServer[i] = new IncomingSignal[timeControlServer.historySize][];
+                unreliableSignalsSentFromServer[i] = new OutgoingSignal[timeControlServer.historySize][];
+                reliableSignalsSentFromServer[i] = new OutgoingSignal[timeControlServer.historySize][];
 
 
-                for (int hisI = 0; hisI < timeControl.historySize; hisI++)
+                for (int hisI = 0; hisI < timeControlServer.historySize; hisI++)
                 {
                     unreliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
                     reliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
@@ -274,10 +248,11 @@ namespace NetSignal
 
             Logging.Write("TestDuplex: start server");
 
+
             var updatedServerTuple = await NetSignalStarter.StartServer(shouldReport(), serverInstanceAPI, serverInstanceData, serverInstanceState, cancel, clientConnectionsSeenFromServer, clientConnectionDatasSeenFromServer,
                 clientConnectionStatesSeenFromServer,
                 unreliableSignalsSentFromServer, unreliableSignalsSeenFromServer,
-                reliableSignalsSentFromServer, reliableSignalsSeenFromServer, timeControl);
+                reliableSignalsSentFromServer, reliableSignalsSeenFromServer, timeControlServer);
             serverInstanceAPI[0] = updatedServerTuple.Item1;
             serverInstanceData[0] = updatedServerTuple.Item2;
 
@@ -290,16 +265,20 @@ namespace NetSignal
 
             IncomingSignal[][][][] clientUnreliableIncoming, clientReliableIncoming;
             OutgoingSignal[][][][] clientUnreliableOutgoing, clientReliableOutgoing;
-            ConstructSignals(timeControl, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
+            ConstructSignals(timeControlServer, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
 
+            List<TimeControl> clientTimeControls = new List<TimeControl>();
+            
             for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
+                TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
+                clientTimeControls.Add(timeControlClient);
                 int clientI = await NetSignalStarter.StartClient(5001, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
                     cancel);
                 NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
                     clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
-                clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, timeControl);
+                clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, timeControlClient);
                 //clientUnreliableOutgoing, clientUnreliableIncoming,
                 //clientReliableOutgoing, clientReliableIncoming);
                 //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
@@ -309,15 +288,10 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, timeControl);
+            //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
 
             
-            await Task.Delay(1000);
-
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, timeControl);
-
-            
-
             await Task.Delay(1000);
 
 

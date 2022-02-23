@@ -78,6 +78,8 @@ namespace NetSignal
                     while (!cancel())
                     {
                         System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                        //System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
+                        //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
                         await Task.Delay(timeControl.updateTimeStepMs);
                     }
 
@@ -159,6 +161,9 @@ namespace NetSignal
                 while (!cancel())
                 {
                     System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                    //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
+                    System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
+                    //Logging.Write("timestep client " + clientI + " : " + DateTime.UtcNow.Ticks);
                     await Task.Delay(timeControl.updateTimeStepMs);
                 }
             });

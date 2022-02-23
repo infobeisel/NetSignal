@@ -2,26 +2,7 @@ using System;
 
 namespace NetSignal
 {
-    public class TimeControl
-    {
-        public bool HandleTimeManually;
-        public long CurrentTimeTicks;
-        public int updateTimeStepMs;
-        public int historySize;
-
-        private TimeControl()
-        {
-            
-        }
-        public TimeControl(bool shouldTimeBeHandledManually, long startWithTicks, int timeStepInMs, int sizeOfHistory)
-        {
-            HandleTimeManually = shouldTimeBeHandledManually;
-            CurrentTimeTicks = startWithTicks;
-            updateTimeStepMs = timeStepInMs;
-            historySize = sizeOfHistory;
-        }
-    }
-
+    
 
     [Serializable]
     public struct IncomingSignal

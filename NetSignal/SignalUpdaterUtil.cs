@@ -85,33 +85,47 @@ namespace NetSignal
 
         public static long CurrentHistoryIndex(TimeControl timeControl)
         {
-            return (timeControl.CurrentTimeTicks / TimeSpan.TicksPerMillisecond / timeControl.updateTimeStepMs) % timeControl.historySize;
+            return timeControl.CurrentHistIndex % timeControl.historySize;
         }
 
         public static float Regress(IncomingSignal[][][] signals, int clientId, int signalI, TimeControl timeControl, long toTicks)
         {
+
+            //int regressSize = timeControl.historySize;
+            int regressSize = 4;
+
             ThreadLocal<double[]> xs = new ThreadLocal<double[]>();
-            if (xs.Value == null || xs.Value.Length != timeControl.historySize)
-                xs.Value = new double[timeControl.historySize];
+            if (xs.Value == null || xs.Value.Length != regressSize )
+                xs.Value = new double[regressSize ];
             ThreadLocal<double[]> ys = new ThreadLocal<double[]>();
-            if (ys.Value == null || ys.Value.Length != timeControl.historySize)
-                ys.Value = new double[timeControl.historySize];
+            if (ys.Value == null || ys.Value.Length != regressSize )
+                ys.Value = new double[regressSize ];
 
             
             var historyI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+            var histSize = timeControl.historySize;
             var fromTimeStamp = toTicks;
             
+            var minTimeStamp = long.MaxValue;
+            for(int i = 0; i < regressSize; i++) {
+                minTimeStamp = Math.Min(minTimeStamp, signals[clientId][((historyI - i) % histSize + histSize) % histSize][signalI].data.timeStamp.Ticks);
+            }
 
-            for (int i = 1; i <= timeControl.historySize; i++)
-            {
-                double x = (signals[clientId][(historyI + i) % timeControl.historySize][signalI].data.timeStamp.Ticks - fromTimeStamp) / TimeSpan.TicksPerMillisecond;
-                double y = signals[clientId][(historyI + i) % timeControl.historySize][signalI].data.AsFloat();
+            for (int i = 0; i < regressSize ;i++)// regressSize; i++)
+            {   
+                var ticks = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.timeStamp.Ticks;
+                double x = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
+                double y = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.AsFloat();
 
-                xs.Value[i - 1] = x;
-                ys.Value[i - 1] = y;
+                xs.Value[i] = x;
+                ys.Value[i] = y;
+                //Console.WriteLine("at x " + x.ToString("0.000") +  "  or ticks " + ticks + " , y: " + y.ToString("0.000")); 
             }
             var poly = MathNet.Numerics.Polynomial.Fit(xs.Value, ys.Value, 2);
-            return (float)poly.Evaluate(0.0);
+            //Console.WriteLine("params " + poly.Coefficients[0].ToString("0.000") +  " , " + 
+            // poly.Coefficients[1].ToString("0.000") +  " , " 
+            // +              poly.Coefficients[2].ToString("0.000") +  " , hist index " + historyI);
+            return (float)poly.Evaluate( (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0);
         }
 
     }
