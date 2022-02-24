@@ -13,8 +13,8 @@ namespace NetSignal
         public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
             ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionAPIs[] connections,
             ConnectionMetaData[] connectionDatas, ConnectionState[] connectionStates,
-            OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
-            OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, TimeControl timeControl)
+            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
+            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, TimeControl timeControl)
         {
 
             
@@ -121,8 +121,8 @@ namespace NetSignal
             return clientI;
         }
         public async static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
-            OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
-            OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData, TimeControl timeControl)
+            OutgoingSignal[][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
+            OutgoingSignal[][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData, TimeControl timeControl)
         { 
             
             Logging.Write("StartClient: start receive signals");

@@ -131,7 +131,7 @@ namespace NetSignal
 
             //every client has representation of other client's signals -> 3D
             IncomingSignal[][][][] clientUnreliableIncoming, clientReliableIncoming;
-            OutgoingSignal[][][][] clientUnreliableOutgoing, clientReliableOutgoing;
+            OutgoingSignal[][][] clientUnreliableOutgoing, clientReliableOutgoing;
             ConstructSignals(timeControl, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
 
             for(int clientInstI = 0; clientInstI < clientInstancesAPI.Length; clientInstI++)
@@ -148,7 +148,7 @@ namespace NetSignal
 
         }
 
-        private static async Task SyncLogCheckWithPlayer0And1( IncomingSignal[][][][] clientIncoming, OutgoingSignal[][][][] clientOutgoing, TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
+        private static async Task SyncLogCheckWithPlayer0And1( IncomingSignal[][][][] clientIncoming, OutgoingSignal[][][] clientOutgoing, TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
         {
             bool wasSame = false;
 
@@ -171,14 +171,13 @@ namespace NetSignal
                 trueVal += 0.001f;
                 if (i % 1 == 0)
                 {
-                    var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl0);
                     sent = trueVal;
                     var a = new DataPackage();
                     a.WriteFloat(sent);
                     a.clientId = outgoingClientId;
                     a.index = 1;
                     a.timeStamp = new DateTime(timeControl0.CurrentTimeTicks);
-                    clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].data = a;
+                    clientOutgoing[outgoingClientId][outgoingClientId][1].data = a;
                 }
 
                 
@@ -222,25 +221,24 @@ namespace NetSignal
             TimeControl timeControlServer = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
 
             IncomingSignal[][][] unreliableSignalsSeenFromServer = new IncomingSignal[clientInstancesAPI.Length][][];
-            OutgoingSignal[][][] unreliableSignalsSentFromServer = new OutgoingSignal[clientInstancesAPI.Length][][];
+            OutgoingSignal[][] unreliableSignalsSentFromServer = new OutgoingSignal[clientInstancesAPI.Length][];
 
             IncomingSignal[][][] reliableSignalsSeenFromServer = new IncomingSignal[clientInstancesAPI.Length][][];
-            OutgoingSignal[][][] reliableSignalsSentFromServer = new OutgoingSignal[clientInstancesAPI.Length][][];
+            OutgoingSignal[][] reliableSignalsSentFromServer = new OutgoingSignal[clientInstancesAPI.Length][];
 
             for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
                 unreliableSignalsSeenFromServer[i] = new IncomingSignal[timeControlServer.historySize][];
                 reliableSignalsSeenFromServer[i] = new IncomingSignal[timeControlServer.historySize][];
-                unreliableSignalsSentFromServer[i] = new OutgoingSignal[timeControlServer.historySize][];
-                reliableSignalsSentFromServer[i] = new OutgoingSignal[timeControlServer.historySize][];
+
+                unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
 
 
                 for (int hisI = 0; hisI < timeControlServer.historySize; hisI++)
                 {
                     unreliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
                     reliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
-                    unreliableSignalsSentFromServer[i][hisI] = SignalFactory.ConstructOutgoingSignalArray(5);
-                    reliableSignalsSentFromServer[i][hisI] = SignalFactory.ConstructOutgoingSignalArray(5);
 
                 }
             }
@@ -264,7 +262,7 @@ namespace NetSignal
             //every client has representation of other client's signals -> 3D
 
             IncomingSignal[][][][] clientUnreliableIncoming, clientReliableIncoming;
-            OutgoingSignal[][][][] clientUnreliableOutgoing, clientReliableOutgoing;
+            OutgoingSignal[][][] clientUnreliableOutgoing, clientReliableOutgoing;
             ConstructSignals(timeControlServer, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
 
             List<TimeControl> clientTimeControls = new List<TimeControl>();
@@ -297,32 +295,32 @@ namespace NetSignal
 
         }
 
-        private static void ConstructSignals(TimeControl timeControl, ConnectionAPIs[] clientInstancesAPI, out IncomingSignal[][][][] clientUnreliableIncoming, out OutgoingSignal[][][][] clientUnreliableOutgoing, out IncomingSignal[][][][] clientReliableIncoming, out OutgoingSignal[][][][] clientReliableOutgoing)
+        private static void ConstructSignals(TimeControl timeControl, ConnectionAPIs[] clientInstancesAPI, out IncomingSignal[][][][] clientUnreliableIncoming, out OutgoingSignal[][][] clientUnreliableOutgoing, out IncomingSignal[][][][] clientReliableIncoming, out OutgoingSignal[][][] clientReliableOutgoing)
         {
             clientUnreliableIncoming = new IncomingSignal[clientInstancesAPI.Length][][][];
-            clientUnreliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][][];
+            clientUnreliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][];
             clientReliableIncoming = new IncomingSignal[clientInstancesAPI.Length][][][];
-            clientReliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][][];
+            clientReliableOutgoing = new OutgoingSignal[clientInstancesAPI.Length][][];
             for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
                 clientUnreliableIncoming[i] = new IncomingSignal[clientInstancesAPI.Length][][];
                 clientReliableIncoming[i] = new IncomingSignal[clientInstancesAPI.Length][][];
-                clientUnreliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][][];
-                clientReliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][][];
+                clientUnreliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][];
+                clientReliableOutgoing[i] = new OutgoingSignal[clientInstancesAPI.Length][];
 
                 for (int otherClientI = 0; otherClientI < clientInstancesAPI.Length; otherClientI++)
                 {
                     clientUnreliableIncoming[i][otherClientI] = new IncomingSignal[timeControl.historySize][];
                     clientReliableIncoming[i][otherClientI] = new IncomingSignal[timeControl.historySize][];
-                    clientUnreliableOutgoing[i][otherClientI] = new OutgoingSignal[timeControl.historySize][];
-                    clientReliableOutgoing[i][otherClientI] = new OutgoingSignal[timeControl.historySize][];
+                    
+                    clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(8);
+                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(2);
 
                     for (int hisI = 0; hisI < timeControl.historySize; hisI++)
                     {
                         clientUnreliableIncoming[i][otherClientI][hisI] = SignalFactory.ConstructIncomingSignalArray(8);
                         clientReliableIncoming[i][otherClientI][hisI] = SignalFactory.ConstructIncomingSignalArray(2);
-                        clientUnreliableOutgoing[i][otherClientI][hisI] = SignalFactory.ConstructOutgoingSignalArray(8);
-                        clientReliableOutgoing[i][otherClientI][hisI] = SignalFactory.ConstructOutgoingSignalArray(2);
+                        
                     }
                 }
 

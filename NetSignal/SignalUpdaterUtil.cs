@@ -9,7 +9,7 @@ namespace NetSignal
     public class SignalUpdaterUtil
     {
 
-        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
             if (incomingSignals.Length != outgoingSignals.Length)
                 throw new Exception("incoming and outgoing array length unequal");
@@ -21,11 +21,11 @@ namespace NetSignal
                 {
                     var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI][historyIndex].Length, outgoingSignals[connectionI][historyIndex].Length); signalI++)
+                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI][historyIndex].Length, outgoingSignals[connectionI].Length); signalI++)
                         {
                             if (incomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                outgoingSignals[connectionI][historyIndex][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
+                                outgoingSignals[connectionI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
                                 /*for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
                                 {
                                     if (fromConnectionI != toConnectionI) //dont send to self

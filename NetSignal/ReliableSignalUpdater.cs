@@ -9,7 +9,7 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
             foreach(var ind in toAllIndices)
             {
@@ -20,7 +20,7 @@ namespace NetSignal
             }
         }
 
-        private async static void SyncSignalsToReliably(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
+        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
         {
             while (!cancel())
             {
@@ -57,13 +57,13 @@ namespace NetSignal
                     if (!toConnectionStates[fromConnectionI].isConnectionActive) //inactive connection
                         continue;
 
-                    for (int signalI = 0; signalI < signals[fromClientId][historyIndex].Length && isSyncingSuccessfully; signalI++)
+                    for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
                     {
                         
                         
-                        if (signals[fromClientId][historyIndex][signalI].dataDirty)
+                        if (signals[fromClientId][signalI].dataDirty)
                         {
-                            var dataToSend = signals[fromClientId][historyIndex][signalI].data;
+                            var dataToSend = signals[fromClientId][signalI].data;
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
                             //dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
@@ -73,7 +73,7 @@ namespace NetSignal
                                 Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");
                                 dataToSend.signalType = SignalType.TCPAlive;
                             }
-                            signals[fromClientId][historyIndex][signalI].data = dataToSend;
+                            signals[fromClientId][signalI].data = dataToSend;
 
                             report("send data to " + toConnectionI + " : " + dataToSend);
 

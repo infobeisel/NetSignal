@@ -10,7 +10,7 @@ namespace NetSignal
     public class UnreliableSignalUpdater
     {
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(OutgoingSignal[][][] signals,TimeControl timeControl,  Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
+        public async static void SyncSignalsToAll(OutgoingSignal[][] signals,TimeControl timeControl,  Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
         {
             foreach(var toConnectionI in toIndices)
             {
@@ -24,7 +24,7 @@ namespace NetSignal
 
         
 
-        private static async Task SyncSignalsTo(OutgoingSignal[][][] signals, TimeControl timeControl, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, int toConnectionI, Func<bool> cancel)
+        private static async Task SyncSignalsTo(OutgoingSignal[][] signals, TimeControl timeControl, Action<string> report, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, int toConnectionI, Func<bool> cancel)
         {
             try
             {
@@ -73,13 +73,13 @@ namespace NetSignal
                             continue;
                         //report("try to send ur to B" + toConnectionI);
 
-                        for (int signalI = 0; signalI < signals[fromClientId][historyIndex].Length; signalI++)
+                        for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
                         {
                             //report("try to send ur to C" + signals[fromClientId][signalI] + " contnue? " + !cancel());
-                            if (signals[fromClientId][historyIndex][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
+                            if (signals[fromClientId][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
                             {
                                 //report("try to send ur to D" + toConnectionI);
-                                var dataToSend = signals[fromClientId][historyIndex][signalI].data;
+                                var dataToSend = signals[fromClientId][signalI].data;
                                 dataToSend.clientId = fromClientId; //make sure client id is correct;
                                 dataToSend.index = signalI;
                                 //dataToSend.timeStamp = new DateTime( timeControl.CurrentTimeTicks);
@@ -89,7 +89,7 @@ namespace NetSignal
                                     Logging.Write("the signal with index 0 is reserved for udp keepalive, please dont use it for game specific data");
                                     dataToSend.signalType = SignalType.UDPAlive;
                                 }
-                                signals[fromClientId][historyIndex][signalI].data = dataToSend;
+                                signals[fromClientId][signalI].data = dataToSend;
 
                                 var toAddressData = toAllData[toConnectionI];
                                 var udpClientToUse = toAllApis[toConnectionI].udpClient;
