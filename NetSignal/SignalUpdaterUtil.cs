@@ -117,6 +117,9 @@ namespace NetSignal
             var latestX = double.MinValue;
             var latestY = 0.0;
 
+            var secondLatestX = double.MinValue;
+            var secondLatestY = 0.0;
+
             for (int i = 0; i < regressSize ;i++)// regressSize; i++)
             {   
                 var ticks = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.timeStamp.Ticks;
@@ -130,12 +133,23 @@ namespace NetSignal
                     latestX = x;
                     latestY = y;
                 }
-                    
+                if(x > secondLatestX && x != latestX) {
+                    secondLatestX = x;
+                    secondLatestY = y;
+                }
             }
 
+            double nowX = (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
+            var ySpeed = latestY - secondLatestY;
+            var xSpeed = latestX - secondLatestX;
+            var yStep = ySpeed / xSpeed;
+            var extrapolateSpeedX = nowX - latestX;
+            var ret = latestY + yStep * extrapolateSpeedX;
+            return (float)ret;
+    
             //var poly = MathNet.Numerics.Polynomial.Fit(xs, ys, 2);
             //return (float)poly.Evaluate( (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0);
-            return (float)latestY;
+            //return (float)latestY;
 
         }
 
