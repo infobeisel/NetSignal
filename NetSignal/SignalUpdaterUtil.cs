@@ -114,23 +114,29 @@ namespace NetSignal
                 minTimeStamp = Math.Min(minTimeStamp, signals[clientId][((historyI - i) % histSize + histSize) % histSize][signalI].data.timeStamp.Ticks);
             }
 
+            var latestX = double.MinValue;
+            var latestY = 0.0;
+
             for (int i = 0; i < regressSize ;i++)// regressSize; i++)
             {   
                 var ticks = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.timeStamp.Ticks;
                 double x = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
                 double y = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.AsFloat();
 
-                /*xs.Value[i] = x;
-                ys.Value[i] = y;*/
                 xs[i] = x;
                 ys[i] = y;
-                //Console.WriteLine("at x " + x.ToString("0.000") +  "  or ticks " + ticks + " , y: " + y.ToString("0.000")); 
+
+                if(x > latestX) {
+                    latestX = x;
+                    latestY = y;
+                }
+                    
             }
-            var poly = MathNet.Numerics.Polynomial.Fit(xs, ys, 2);
-            //Console.WriteLine("params " + poly.Coefficients[0].ToString("0.000") +  " , " + 
-            // poly.Coefficients[1].ToString("0.000") +  " , " 
-            // +              poly.Coefficients[2].ToString("0.000") +  " , hist index " + historyI);
-            return (float)poly.Evaluate( (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0);
+
+            //var poly = MathNet.Numerics.Polynomial.Fit(xs, ys, 2);
+            //return (float)poly.Evaluate( (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0);
+            return (float)latestY;
+
         }
 
     }
