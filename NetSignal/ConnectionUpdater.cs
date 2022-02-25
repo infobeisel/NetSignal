@@ -250,7 +250,7 @@ namespace NetSignal
                                 var containingClientId = SignalCompressor.DecompressDataPackage(connectionState.tcpReadBytes, 1);
 
                                 connectionState.clientID = containingClientId.AsInt();
-                                connectionState.isConnectionActive = true;
+                                connectionState.isConnectionActive = connectionState.clientID == -1 ? false : true;
                                 Logging.Write("i am client " + containingClientId.AsInt());
                             },
                             async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
@@ -316,7 +316,6 @@ namespace NetSignal
                                 if (clientID == -1)
                                 {
                                     //sth went wrong
-                                    connection.Close(); // TODO WHAT TO DO HERE?
                                     Logging.Write("sth went wrong: too many players?");
                                 } else
                                 {
@@ -333,48 +332,42 @@ namespace NetSignal
                                     storeToConnectionStates[clientID].tcpKeepAlive = DateTime.UtcNow;
                                     storeToConnectionStates[clientID].clientID = clientID;
 
-
                                     Logging.Write("tcp received: " + package + " , will send back id " + clientID);
 
-                                    
+                                }
 
-                                    DataPackage containingClientId = new DataPackage();
-                                    containingClientId.WriteConnectionRequest(clientID);
+                                //respond to client in any case. if clientID == -1, the client knows that it cannot join the server
 
-                                    var usingBytes = byState.tcpWriteBytes;
-                                    Util.FlushBytes(usingBytes);
-                                    await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, usingBytes, async () =>
+                                DataPackage containingClientId = new DataPackage();
+                                containingClientId.WriteConnectionRequest(clientID);
+
+                                var usingBytes = byState.tcpWriteBytes;
+                                Util.FlushBytes(usingBytes);
+                                await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, usingBytes, async () =>
+                                {
+                                    SignalCompressor.Compress(containingClientId, usingBytes, 1);
+                                    try
                                     {
-                                        SignalCompressor.Compress(containingClientId, usingBytes, 1);
-
-
-                                        //var clientIdStr = clientID.ToString();
-                                        
-                                        //Encoding.ASCII.GetBytes(clientIdStr, 0, clientIdStr.Length, byState.tcpWriteBytes, 1);
-                                        try
-                                        {
-                                            await stream.WriteAsync(usingBytes, 0, usingBytes.Length);
-                                            storeToConnectionStates[clientID].isConnectionActive = true;
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            Logging.Write("StartProcessTCPConnections: tcp listener stream got closed, (unfortunately) this is intended behaviour, stop writing.");
-                                        }
-
-                                    });
-
-                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpWriteStateName, StateOfConnection.ReadyToOperate);
-                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpReadStateName, StateOfConnection.ReadyToOperate);
-
-
-                                    Logging.Write("connections: ");
-                                    foreach(var c in storeToConnectionDatas)
+                                        await stream.WriteAsync(usingBytes, 0, usingBytes.Length);
+                                        storeToConnectionStates[clientID].isConnectionActive = clientID == -1 ? false : true;
+                                    }
+                                    catch (Exception e)
                                     {
-                                        Logging.Write(c.ToString());
+                                        Logging.Write("StartProcessTCPConnections: tcp listener stream got closed, (unfortunately) this is intended behaviour, stop writing.");
                                     }
 
+                                });
 
+                                if(clientID != -1) {
+                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpWriteStateName, StateOfConnection.ReadyToOperate);
+                                    Util.Exchange(ref storeToConnectionStates[clientID].tcpReadStateName, StateOfConnection.ReadyToOperate);
+                                }
+                                
 
+                                Logging.Write("connections: ");
+                                foreach(var c in storeToConnectionDatas)
+                                {
+                                    Logging.Write(c.ToString());
                                 }
                             },
                             async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); },

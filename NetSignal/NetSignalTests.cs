@@ -137,7 +137,9 @@ namespace NetSignal
             for(int clientInstI = 0; clientInstI < clientInstancesAPI.Length; clientInstI++)
             {
                 var clientId = await NetSignalStarter.StartClient(countUpFromPort , shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel);
-                    NetSignalStarter.StartClientSignalSyncing(clientId, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
+                if(clientId == -1)
+                    continue;
+                NetSignalStarter.StartClientSignalSyncing(clientId, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
                         clientUnreliableOutgoing[clientId], clientUnreliableIncoming[clientId],
                     clientReliableOutgoing[clientId], clientReliableIncoming[clientId], cancel, serverInstanceData, timeControl);
 
@@ -267,13 +269,18 @@ namespace NetSignal
 
             List<TimeControl> clientTimeControls = new List<TimeControl>();
             
-            for (int i = 0; i < clientInstancesAPI.Length; i++)
+            for (int i = 0; i < clientInstancesAPI.Length + 1; i++)
             {
                 TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
                 clientTimeControls.Add(timeControlClient);
                 int clientI = await NetSignalStarter.StartClient(5001, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
                     //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
                     cancel);
+                if(clientI == -1) {
+                    Logging.Write("client connection not successful: too many players");
+                    continue;
+                }
+                    
                 NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
                     clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, timeControlClient);
