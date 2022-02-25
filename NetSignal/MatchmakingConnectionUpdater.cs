@@ -59,16 +59,16 @@ namespace NetSignal
             return ret;
         }
 
-        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Func<bool> cancel, int periodMs, Action<string> report)
+        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionState [] clientStates, Func<bool> cancel, int periodMs, Action<string> report)
         {
             while (!cancel())
             {
-                await UpdateServerEntry(connection, connectionData, connectionState, report);
+                await UpdateServerEntry(connection, connectionData, connectionState, clientStates, report);
                 await Task.Delay(periodMs);
             }
         }
 
-        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, Action<string> report)
+        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState,ConnectionState [] clientStates, Action<string> report)
         {
 
             
@@ -77,7 +77,14 @@ namespace NetSignal
             ServerKeepAlive update = new ServerKeepAlive();
             update.ip = connectionData.myIp;
             update.port = connectionData.iListenToPort;
-            update.currentPlayerCount = 0; //TODO
+
+            int activeConCount = 0;
+            foreach(var state in clientStates) {
+                activeConCount += state.isConnectionActive ? 1 : 0;
+            }
+            Logging.Write("current players :" + activeConCount);
+
+            update.currentPlayerCount = activeConCount;
             update.tick = DateTime.UtcNow.Ticks;
 
             try

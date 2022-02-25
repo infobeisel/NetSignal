@@ -68,7 +68,7 @@ namespace NetSignal
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
             _ = Task.Run(() =>
             {
-                MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], cancel, 5000,
+                MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], connectionStates, cancel, 5000,
                     (string r) => { if (shouldLog) Logging.Write("server keep alive: " + r); });
             });
 
