@@ -55,11 +55,15 @@ namespace NetSignal
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
 
-                var package = SignalCompressor.DecompressDataPackage(bytes, 1);
+                int historyIndex = CurrentHistoryIndex(timeControl);
+                /*var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("data package: " + package.ToString());
-                long historyIndex = CurrentHistoryIndex(timeControl);
+                
                 signals[package.clientId][historyIndex][package.index].data = package;
                 signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
+                */
+
+                SignalCompressor.Decompress(bytes, 1, historyIndex, signals);
 
             },
             async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
@@ -83,7 +87,7 @@ namespace NetSignal
             });
         }
 
-        public static long CurrentHistoryIndex(TimeControl timeControl)
+        public static int CurrentHistoryIndex(TimeControl timeControl)
         {
             return timeControl.CurrentHistIndex % timeControl.historySize;
         }

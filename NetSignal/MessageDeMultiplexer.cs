@@ -19,13 +19,7 @@ namespace NetSignal
                 case SignalType.UDPAlive: //udp alive signal
                     await handleUdpAliveSignal();
                     break;
-                case SignalType.Float:
-                    await handleDataSignal();
-                    break;
-                case SignalType.Int:
-                    await handleDataSignal();
-                    break;
-                case SignalType.String:
+                case SignalType.Data:
                     await handleDataSignal();
                     break;
             }

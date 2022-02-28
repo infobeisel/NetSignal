@@ -49,6 +49,194 @@ namespace NetSignal
             return p;
         }*/
 
+        public unsafe static void Decompress(byte[] compressed, int startFrom, int toHistInd, IncomingSignal [][][] to) {
+            
+
+            int clientIdByteI = startFrom;
+            int clientId = DecodeClientId(compressed, clientIdByteI);
+            if(clientId < 0 || clientId >= to.Length)
+                throw new IndexOutOfRangeException("got client id " + clientId);
+
+            int timestampByteI = startFrom + 4; //timestamp
+            int rangeIndsByteI = timestampByteI + 8; // range inds, to be written yet
+            int signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
+
+            var timeStamp = DecodeTimestamp(compressed, timestampByteI);
+
+            while(timeStamp.Ticks != 0) { //valid data
+                int fromSignalI = 0;
+                int signalCount = 0;
+                DecodeIndexRange(compressed, rangeIndsByteI, out fromSignalI, out signalCount);
+                for(int i = 0; i < signalCount; i++) {
+
+                    to[clientId][toHistInd][fromSignalI + i].cameIn = DateTime.UtcNow;
+                    var incomingData = to[clientId][toHistInd][fromSignalI + i].data;
+                    incomingData.timeStamp = timeStamp;
+                    incomingData.index = fromSignalI + i;
+                    DecodeSignalBytes(compressed, signalsByteI + i * 4, ref incomingData);
+                    to[clientId][toHistInd][fromSignalI + i].data = incomingData;
+                }
+
+                timestampByteI = signalsByteI + signalCount * 4; //timestamp
+                rangeIndsByteI = timestampByteI + 8; // range inds, to be written yet
+                signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
+
+                if(timestampByteI <= compressed.Length)
+                    timeStamp = DecodeTimestamp(compressed, timestampByteI);
+                else 
+                    timeStamp = new DateTime(0);
+            }
+            
+        }
+
+
+        public unsafe static int Compress(OutgoingSignal [] signals, int startFromSignalI, byte[] to, int startFromByteI)
+        {
+            
+            int rangeStartSignalI = startFromSignalI;
+            var currentClientId = signals[startFromSignalI].data.clientId;
+            var currentT = signals[startFromSignalI].data.timeStamp.Ticks;
+            int clientIdByteI = startFromByteI;
+            EncodeClientIdInto32(currentClientId, to, clientIdByteI);
+            int timestampByteI = startFromByteI + 4; //timestamp
+            int rangeIndsByteI = timestampByteI + 8; // range inds, to be written yet
+            int signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
+            int signalAcc = 0;
+
+            //find signal to start with
+            bool found = false;
+            int signalI = startFromSignalI;
+            for(; signalI < signals.Length; signalI++) {
+                rangeStartSignalI = signalI;
+                currentT = signals[signalI].data.timeStamp.Ticks;
+                found = signals[signalI].dataDirty;
+                if(found)
+                    break;
+            }
+            if(!found)
+                return -1;
+
+
+            //Logging.Write("start with signal " + signalI + " from client " + currentClientId);
+            //write timestamp
+            EncodeTimestampInto64(currentT, to, timestampByteI);
+
+            bool fitsCompletely = true;
+            bool staysDirty = true;
+            for(; signalI < signals.Length && fitsCompletely; signalI++) {
+
+                if(signalsByteI + signalAcc * 4  + 8 + 8 >= to.Length) {
+                    fitsCompletely = false;
+                    break;
+                }
+
+                //bool sameClientId = signals[signalI].data.clientId == currentClientId;
+                if( signals[signalI].data.timeStamp.Ticks != currentT ||
+                  (staysDirty && !signals[signalI].dataDirty)  // was dirty and isnt anymore
+                  ) {
+
+                    staysDirty = signals[signalI].dataDirty; 
+
+
+                    //Logging.Write("this were " +signalAcc + " signals, from " + rangeStartSignalI
+                    //+ " at " + currentT );
+
+                    //write new timestamp
+                    currentT = signals[signalI].data.timeStamp.Ticks;
+                    timestampByteI = signalsByteI + signalAcc * 4;
+                    EncodeTimestampInto64(currentT, to, timestampByteI);
+                    //write old inds range
+                    EncodeIndexRangeInto64(rangeStartSignalI, signalAcc, to, rangeIndsByteI);
+                    rangeIndsByteI = timestampByteI + 8;
+                    signalsByteI = timestampByteI + 8 + 8;
+
+                    
+                    signalAcc = 0;
+                    rangeStartSignalI = signalI;
+                }
+                staysDirty = signals[signalI].dataDirty; 
+
+                //write signal data
+                if(staysDirty) {
+                    EncodeSignalInto32(signals[signalI].data, to, signalsByteI + signalAcc * 4);
+                    signalAcc++;
+                }
+                
+
+            }
+            //write last inds range
+            EncodeIndexRangeInto64(rangeStartSignalI, signalAcc, to, rangeIndsByteI);
+
+            return signalI;
+
+        }
+
+        private unsafe static void EncodeIndexRangeInto64(int  startI, int endI, byte [] to, int startFrom) {
+            byte* cIdPtr = (byte*)&startI;
+            for (int i = 0; i < 4; i++)
+                to[startFrom + 0 + i] = cIdPtr[BitConverter.IsLittleEndian ? i - 0 : i];
+            cIdPtr = (byte*)&endI;
+            for (int i = 0; i < 4; i++)
+                to[startFrom + 4 + i] = cIdPtr[BitConverter.IsLittleEndian ? i - 0 : i];
+        }
+
+        private unsafe static void EncodeClientIdInto32(int clientId, byte [] to, int startFrom) {
+        
+            byte * cIdPtr = (byte*)&clientId;
+            for (int i = 0; i < 4; i++)
+                to[startFrom + 0 + i] = cIdPtr[BitConverter.IsLittleEndian ? i - 0 : i];
+        }
+
+        private unsafe static void EncodeTimestampInto64(long ticks, byte [] to, int startFrom) {
+        
+            byte * cIdPtr = (byte*)&ticks;
+            for (int i = 0; i < 8; i++)
+                to[startFrom + 0 + i] = cIdPtr[BitConverter.IsLittleEndian ? i -  0 : i];
+        }
+        private unsafe static void EncodeSignalInto32(DataPackage package, byte [] to, int startFrom) {
+            to[startFrom +  0] = package.d0;
+            to[startFrom +  1] = package.d1;
+            to[startFrom +  2] = package.d2;
+            to[startFrom +  3] = package.d3;
+        }
+
+        private unsafe static DateTime DecodeTimestamp(byte [] from, int startFromByteI) {
+            long ticks = 0;
+            byte * cIdPtr = (byte*)&ticks;
+            for (int i = 0; i < 8; i++)
+                cIdPtr[i] = from[startFromByteI + (BitConverter.IsLittleEndian ? i -  0 : i)];
+            return new DateTime(ticks);
+        }
+         private unsafe static int DecodeClientId(byte [] from, int startFromByteI) {
+            int cid = -1;
+            byte * cIdPtr = (byte*)&cid;
+            for (int i = 0; i < 4; i++)
+                cIdPtr[i] = from[startFromByteI + (BitConverter.IsLittleEndian ? i - 0 : i)];
+            return cid;
+        }
+
+
+        private unsafe static void DecodeIndexRange(byte [] from, int startFromByteI, out int startI, out int count)  {
+            int _startI = 0;
+            int _count = 0;
+            byte* cIdPtr = (byte*)&_startI;
+            for (int i = 0; i < 4; i++)
+                cIdPtr[i] = from[startFromByteI + 0 + (BitConverter.IsLittleEndian ? i - 0 : i)];
+
+            cIdPtr = (byte*)&_count;
+            for (int i = 0; i < 4; i++)
+                cIdPtr[i] = from[startFromByteI + 4 + (BitConverter.IsLittleEndian ? i - 0 : i)];
+            
+            startI = _startI;
+            count = _count;
+        }
+        private unsafe static void DecodeSignalBytes(byte [] from, int startFromByteI, ref DataPackage to) {
+            to.d0 = from[startFromByteI +  0];
+            to.d1 = from[startFromByteI +  1];
+            to.d2 = from[startFromByteI +  2];
+            to.d3 = from[startFromByteI +  3];
+
+        }
 
         public unsafe static void Compress(DataPackage package, byte[] to, int startFrom)
         {

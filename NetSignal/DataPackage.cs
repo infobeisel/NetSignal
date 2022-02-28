@@ -23,14 +23,8 @@ namespace NetSignal
             string ret = "";
             switch (signalType)
             {
-                case SignalType.Float:
-                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType  + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsFloat().ToString("0000.000");
-                    break;
-                case SignalType.Int:
-                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsInt();
-                    break;
-                case SignalType.String:
-                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p:" + AsString();
+                case SignalType.Data:
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType  + ",t: " + timeStamp.ToShortTimeString() + ", p:" + ToString();
                     break;
                 case SignalType.TCPAlive:
                     ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p: tcpalive";
@@ -48,7 +42,7 @@ namespace NetSignal
 
         public void WriteFloat(float f)
         {
-            signalType = SignalType.Float;
+            signalType = SignalType.Data;
             unsafe
             {
                 byte* b = (byte*)&f;
@@ -73,7 +67,7 @@ namespace NetSignal
 
         public void WriteInt(int i)
         {
-            signalType = SignalType.Int;
+            signalType = SignalType.Data;
             unsafe
             {
                 byte* b = (byte*)&i;
@@ -93,7 +87,7 @@ namespace NetSignal
 
         public void WriteString(string str)
         {
-            signalType = SignalType.String;
+            signalType = SignalType.Data;
             //Encoding.ASCII.GetBytes(str, 0, Math.Min(ConnectionState.byteCount , str.Length / sizeof(char)), data, 0);
         }
 

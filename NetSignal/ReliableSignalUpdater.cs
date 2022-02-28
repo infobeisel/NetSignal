@@ -70,18 +70,27 @@ namespace NetSignal
 
                             if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
                             {
-                                Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");
+                                //Logging.Write("the signal with index 0 is reserved for tcp keepalive, please dont use it for game specific data");
                                 dataToSend.signalType = SignalType.TCPAlive;
                             }
                             signals[fromClientId][signalI].data = dataToSend;
+                        }
+                    }
 
-                            report("send data to " + toConnectionI + " : " + dataToSend);
+                    //for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
+                    {
+                        
+                        
+                        //if (signals[fromClientId][signalI].dataDirty)
+                        {
 
                             var usingBytes = toConnectionStates[toConnectionI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);
-                            await MessageDeMultiplexer.MarkSignal(dataToSend.signalType, usingBytes, async () =>
+                            await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                             {
-                                SignalCompressor.Compress(dataToSend, usingBytes, 1);
+                                //SignalCompressor.Compress(dataToSend, usingBytes, 1);
+                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1);
+
                                 try
                                 {
                                     await toConnections[toConnectionI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
