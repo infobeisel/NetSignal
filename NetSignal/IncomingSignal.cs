@@ -7,7 +7,7 @@ namespace NetSignal
     [Serializable]
     public struct IncomingSignal
     {
-        private DataPackage dataMember;
+        public DataPackage dataMember;
         public DataPackage data
         {
             internal set
