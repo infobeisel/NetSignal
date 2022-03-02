@@ -62,8 +62,9 @@ namespace NetSignal
             int signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
 
             var timeStamp = DecodeTimestamp(compressed, timestampByteI);
+            Logging.Write(" first timestamp " + timeStamp.Ticks);
 
-            while(timeStamp.Ticks != 0) { //valid data
+            while (timeStamp.Ticks != 0) { //valid data
                 int fromSignalI = 0;
                 int signalCount = 0;
                 DecodeIndexRange(compressed, rangeIndsByteI, out fromSignalI, out signalCount);
@@ -84,9 +85,15 @@ namespace NetSignal
                 signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
 
                 if(timestampByteI <= compressed.Length)
+                {
                     timeStamp = DecodeTimestamp(compressed, timestampByteI);
-                else 
+                    Logging.Write(" next timestamp " + timeStamp.Ticks);
+                }
+                else
+                {
                     timeStamp = new DateTime(0);
+                    Logging.Write(" no next timestamp " + timeStamp.Ticks);
+                }
             }
             
         }

@@ -128,25 +128,45 @@ namespace NetSignal
         ConnectionState[] clientInstancesState
         )
         {
+            TimeControl timeControlServer = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
 
-            //every client has representation of other client's signals -> 3D
             IncomingSignal[][][][] clientUnreliableIncoming, clientReliableIncoming;
             OutgoingSignal[][][] clientUnreliableOutgoing, clientReliableOutgoing;
-            ConstructSignals(timeControl, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
+            ConstructSignals(timeControlServer, clientInstancesAPI, out clientUnreliableIncoming, out clientUnreliableOutgoing, out clientReliableIncoming, out clientReliableOutgoing);
 
-            for(int clientInstI = 0; clientInstI < clientInstancesAPI.Length; clientInstI++)
+            List<TimeControl> clientTimeControls = new List<TimeControl>();
+
+            for (int i = 0; i < clientInstancesAPI.Length; i++)
             {
-                var clientId = await NetSignalStarter.StartClient(countUpFromPort , shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData, cancel);
-                if(clientId == -1)
+                TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
+                clientTimeControls.Add(timeControlClient);
+                int clientI = await NetSignalStarter.StartClient(5001, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
+                    //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
+                    cancel);
+                if (clientI == -1)
+                {
+                    Logging.Write("client connection not successful: too many players");
                     continue;
-                NetSignalStarter.StartClientSignalSyncing(clientId, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
-                        clientUnreliableOutgoing[clientId], clientUnreliableIncoming[clientId],
-                    clientReliableOutgoing[clientId], clientReliableIncoming[clientId], cancel, serverInstanceData, timeControl);
+                }
+
+                NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
+                    clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
+                clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, timeControlClient);
+                //clientUnreliableOutgoing, clientUnreliableIncoming,
+                //clientReliableOutgoing, clientReliableIncoming);
+                //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
+                // clientInstancesData[clientI] = updatedClientTuple.Item2;
+                await Task.Delay(1000);
 
             }
+            await Task.Delay(1000);
 
-            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing);
-            //await SyncLogCheckWithPlayer0And1(clientInstancesData, clientReliableIncoming, clientReliableOutgoing);
+
+            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+
+
+            await Task.Delay(1000);
 
         }
 
@@ -294,8 +314,8 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
-            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
 
             
             await Task.Delay(1000);
