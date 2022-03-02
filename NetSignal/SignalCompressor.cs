@@ -72,6 +72,7 @@ namespace NetSignal
                     var incomingData = to[clientId][toHistInd][fromSignalI + i].data;
                     incomingData.timeStamp = timeStamp;
                     incomingData.index = fromSignalI + i;
+                    incomingData.clientId = clientId;
                     DecodeSignalBytes(compressed, signalsByteI + i * 4, ref incomingData);
                     incomingData.signalType = SignalType.Data; //TODO
                     Logging.Write("decomp [" + clientId + "][" + toHistInd + "][" + (fromSignalI + i) + "]:" + incomingData.ToString());
