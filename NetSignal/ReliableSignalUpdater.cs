@@ -67,6 +67,7 @@ namespace NetSignal
                             dataToSend.clientId = fromClientId; //make sure client id is correct;
                             dataToSend.index = signalI;
                             //dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
+                            dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
 
                             if (signalI == 0 && dataToSend.signalType != SignalType.TCPAlive)
                             {

@@ -269,7 +269,7 @@ namespace NetSignal
 
             List<TimeControl> clientTimeControls = new List<TimeControl>();
             
-            for (int i = 0; i < clientInstancesAPI.Length + 1; i++)
+            for (int i = 0; i < clientInstancesAPI.Length ; i++)
             {
                 TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
                 clientTimeControls.Add(timeControlClient);
@@ -288,6 +288,7 @@ namespace NetSignal
                 //clientReliableOutgoing, clientReliableIncoming);
                 //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
                 // clientInstancesData[clientI] = updatedClientTuple.Item2;
+                await Task.Delay(1000);
 
             }
             await Task.Delay(1000);

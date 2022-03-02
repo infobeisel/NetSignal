@@ -69,6 +69,7 @@ namespace NetSignal
                                 var dataToSend = signals[fromClientId][signalI].data;
                                 dataToSend.clientId = fromClientId; //make sure client id is correct;
                                 dataToSend.index = signalI;
+                                dataToSend.timeStamp = new DateTime(timeControl.CurrentTimeTicks);
                                 if(signalI == 0 && dataToSend.signalType != SignalType.UDPAlive)
                                 {
                                     //Logging.Write("the signal with index 0 is reserved for udp keepalive, please dont use it for game specific data");
@@ -98,6 +99,8 @@ namespace NetSignal
                                 int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1);
 
                                 //SignalCompressor.Compress(dataToSend, usingBytes, 1);
+                                if (compressedSignalCount == -1)
+                                    continue;
 
                                 await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                                 {
