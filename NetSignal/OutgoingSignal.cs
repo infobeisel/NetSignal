@@ -20,7 +20,6 @@ namespace NetSignal
 
         private void makeDirty()
         {
-            dataMember.timeStamp = DateTime.UtcNow;//TODO
             dataDirty = true;
         }
 
