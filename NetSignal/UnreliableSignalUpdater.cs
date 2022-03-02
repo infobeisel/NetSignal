@@ -99,8 +99,7 @@ namespace NetSignal
                                 int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1);
 
                                 //SignalCompressor.Compress(dataToSend, usingBytes, 1);
-                                if (compressedSignalCount == -1)
-                                    continue;
+                                
 
                                 await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                                 {
