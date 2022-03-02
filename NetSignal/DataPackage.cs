@@ -24,7 +24,7 @@ namespace NetSignal
             switch (signalType)
             {
                 case SignalType.Data:
-                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType  + ",t: " + timeStamp.ToShortTimeString() + ", p:" + ToString();
+                    ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType  + ",t: " + timeStamp.ToShortTimeString() + ", p:[" + d0 +","+d1+","+d2+","+d3+"]";
                     break;
                 case SignalType.TCPAlive:
                     ret = "ci: " + clientId + ", si: " + index + ", type: " + signalType + ",t: " + timeStamp.ToShortTimeString() + ", p: tcpalive";
