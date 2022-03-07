@@ -14,7 +14,7 @@ namespace NetSignal
             var cancel = false;
             var shouldPrint = false;
 
-            int clientCount = 4;
+            int clientCount = 2;
 
             ConnectionMetaData[] connectionMetaDatasSeenFromServer = new ConnectionMetaData[clientCount];
             ConnectionAPIs[] connectionApisSeenFromServer = new ConnectionAPIs[clientCount];
@@ -138,7 +138,7 @@ namespace NetSignal
 
             List<TimeControl> clientTimeControls = new List<TimeControl>();
 
-            for (int i = 0; i < clientInstancesAPI.Length; i++)
+            for (int i = 0; i < 1; i++)
             {
                 TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
                 clientTimeControls.Add(timeControlClient);
