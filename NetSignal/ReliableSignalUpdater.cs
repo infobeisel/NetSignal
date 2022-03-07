@@ -94,6 +94,7 @@ namespace NetSignal
 
                                 try
                                 {
+                                    report(compressedSignalCount.ToString());
                                     await toConnections[toConnectionI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
 
                                 }

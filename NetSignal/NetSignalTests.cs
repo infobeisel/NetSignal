@@ -29,8 +29,8 @@ namespace NetSignal
             ConnectionState[] serverState = new ConnectionState[1] { new ConnectionState() };
 
             serverData[0].iListenToPort = 5000;
-            serverData[0].myIp = "127.0.0.1";
-            //serverData[0].myIp = "85.214.239.45";
+            //serverData[0].myIp = "127.0.0.1";
+            serverData[0].myIp = "85.214.239.45";
             serverData[0].matchmakingServerIp = "http://127.0.0.1";
             serverData[0].matchmakingServerPort = 5432;
 
@@ -63,10 +63,10 @@ namespace NetSignal
             server, serverData, serverState, clients, clientDatas, clientState);*/
 
             //args.Length > 0 ? int.Parse(args[0]) : 5001, 
-            await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-            server, serverData, serverState, clients, clientDatas, clientState);
-            //await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
+            //await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
             //server, serverData, serverState, clients, clientDatas, clientState);
+            await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
+            server, serverData, serverState, clients, clientDatas, clientState);
             
 
             await Task.Delay(20000);
@@ -319,13 +319,11 @@ namespace NetSignal
             }
             await Task.Delay(1000);
 
-            clientUnreliableOutgoing[0][0][0].WriteInt(1);
-            clientUnreliableOutgoing[1][0][0].WriteInt(1);
 
             //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
             //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
 
-
+            
             await Task.Delay(1000);
 
 
