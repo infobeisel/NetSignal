@@ -260,13 +260,13 @@ namespace NetSignal
                 reliableSignalsSeenFromServer[i] = new IncomingSignal[timeControlServer.historySize][];
 
                 unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
-                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(5+5);
 
 
                 for (int hisI = 0; hisI < timeControlServer.historySize; hisI++)
                 {
                     unreliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
-                    reliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5);
+                    reliableSignalsSeenFromServer[i][hisI] = SignalFactory.ConstructIncomingSignalArray(5+5);
 
                 }
             }
@@ -348,12 +348,12 @@ namespace NetSignal
                     clientReliableIncoming[i][otherClientI] = new IncomingSignal[timeControl.historySize][];
                     
                     clientUnreliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(9);
-                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(9);
+                    clientReliableOutgoing[i][otherClientI] = SignalFactory.ConstructOutgoingSignalArray(9+9);
 
                     for (int hisI = 0; hisI < timeControl.historySize; hisI++)
                     {
                         clientUnreliableIncoming[i][otherClientI][hisI] = SignalFactory.ConstructIncomingSignalArray(9);
-                        clientReliableIncoming[i][otherClientI][hisI] = SignalFactory.ConstructIncomingSignalArray(9);
+                        clientReliableIncoming[i][otherClientI][hisI] = SignalFactory.ConstructIncomingSignalArray(9+9);
                         
                     }
                 }
