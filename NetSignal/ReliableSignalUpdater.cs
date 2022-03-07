@@ -9,13 +9,13 @@ namespace NetSignal
     {
        
 
-        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
             foreach(var ind in toAllIndices)
             {
                 await Task.Run(() =>
                 {
-                    SyncSignalsToReliably(signals, timeControl, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, ind);
+                    SyncSignalsToReliably(signals[ind], timeControl, cancel, report, toConnections, toConnectionsDatas, toConnectionStates, ind);
                 });
             }
         }

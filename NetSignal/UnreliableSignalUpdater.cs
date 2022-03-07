@@ -10,13 +10,13 @@ namespace NetSignal
     public class UnreliableSignalUpdater
     {
         //uses udp to sync signals unreliably
-        public async static void SyncSignalsToAll(OutgoingSignal[][] signals,TimeControl timeControl,  Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
+        public async static void SyncSignalsToAll(OutgoingSignal[][][] signals,TimeControl timeControl,  Action<string> report, Func<bool> cancel, ConnectionAPIs[] toAllApis, ConnectionMetaData[] toAllData, ConnectionState[] toAllStates, IEnumerable<int> toIndices)
         {
             foreach(var toConnectionI in toIndices)
             {
                   await Task.Run(() =>
                    {
-                    _ = SyncSignalsTo(signals, timeControl,  report, toAllApis, toAllData, toAllStates, toConnectionI, cancel);
+                    _ = SyncSignalsTo(signals[toConnectionI], timeControl,  report, toAllApis, toAllData, toAllStates, toConnectionI, cancel);
                   });
             }
                 

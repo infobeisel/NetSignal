@@ -25,9 +25,10 @@ namespace NetSignal
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
                         for (int signalI = tcpToUdpSignalRangeStart; signalI < tcpToUdpSignalRangeEnd ; signalI++)
                         {
-                            if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
+                           // if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                incomingUnreliable[connectionI][signalI][signalI - tcpToUdpSignalRangeStart].data = incomingReliable[connectionI][historyIndex][signalI].data;
+                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].data = 
+                                    incomingReliable[connectionI][historyIndex][signalI].data;
                               
                             }
                         }
@@ -43,7 +44,7 @@ namespace NetSignal
             }
         }
 
-        public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
          
 
@@ -76,9 +77,14 @@ namespace NetSignal
                             {
                                 if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
-                                    Logging.Write("keepalive was tcp mode, write to  " + signalI + tcpToUdpSignalRangeStart);
-                                    reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
-                                    reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].dataDirty = true;
+
+                                    Logging.Write("keepalive was tcp mode, write to  ");//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
+                                    for (int fromConI = 0; fromConI < clientCount; fromConI++)
+                                    {
+
+                                        reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
+                                        reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].dataDirty = true;
+                                    }
                                 }
                             }
                         }
@@ -98,7 +104,7 @@ namespace NetSignal
 
 
 
-        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
             if (incomingSignals.Length != outgoingSignals.Length)
                 throw new Exception("incoming and outgoing array length unequal");
@@ -114,16 +120,11 @@ namespace NetSignal
                         {
                             if (incomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                outgoingSignals[connectionI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
-                                /*for (int toConnectionI = 0; toConnectionI < clientCount; toConnectionI++)
+                                for(int toConI = 0; toConI < clientCount; toConI++)
                                 {
-                                    if (fromConnectionI != toConnectionI) //dont send to self
-                                    {
-                                        outgoingSignals[toConnectionI][signalI].WriteFloat( incomingSignals[fromConnectionI][signalI].data.AsFloat());
-                                        //outgoingSignals[toConnectionI][signalI].data = incomingSignals[fromConnectionI][signalI].data;
-                                        //incomingSignals[toConnectionI][signalI].dataHasBeenUpdated = false;
-                                    }
-                                }*/
+                                    outgoingSignals[connectionI][toConI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
+                                }
+                                
                             }
                         }
                     await Task.Delay(30);
