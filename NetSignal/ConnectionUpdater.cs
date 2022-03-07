@@ -401,7 +401,7 @@ namespace NetSignal
             }
             
         }
-        private static int findLatest(NetSignal.IncomingSignal[][] signals, int signalI)
+        public static int findLatest(NetSignal.IncomingSignal[][] signals, int signalI)
         {
             var ret = 0;
             var comp = new DateTime(0);

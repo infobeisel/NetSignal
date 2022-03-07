@@ -216,12 +216,12 @@ namespace NetSignal
                 if (i % 1 == 0)
                 {
                     var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl1);
-                     var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], outgoingClientId, 1, timeControl1, DateTime.UtcNow.Ticks);
-                    
+                    //var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], incomingClientId, 1, timeControl1, DateTime.UtcNow.Ticks);
+                    var regressedI = ConnectionUpdater.findLatest(clientIncoming[outgoingClientId][incomingClientId], 1);
+                    var regressed = clientIncoming[outgoingClientId][incomingClientId][regressedI][1].data.AsFloat();
+                    //Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") + ", err: " + (100.0f * (regressed - trueVal) / trueVal).ToString("0.000"));
+                    Console.WriteLine(" val from client  " + incomingClientId + " : " + regressed.ToString("0.000") );
 
-                    
-                    Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") +  ", err: " + ( 100.0f *  (regressed-trueVal) / trueVal).ToString("0.000"));
-                    
                 }
 
             }
