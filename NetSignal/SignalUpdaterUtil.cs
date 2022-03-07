@@ -50,7 +50,7 @@ namespace NetSignal
         }
 
 
-        public static async Task WriteToIncomingSignals(IncomingSignal[][][] signals, TimeControl timeControl, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, params ConnectionMetaData[] fromConnectionDatas)
+        public static async Task WriteToIncomingSignals(IncomingSignal[][][] signals, TimeControl timeControl, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, Action<int, int, int> perSignalUpdate, params ConnectionMetaData[] fromConnectionDatas )
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
@@ -63,7 +63,17 @@ namespace NetSignal
                 signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
                 */
 
-                SignalCompressor.Decompress(bytes, 1, historyIndex, signals);
+                SignalCompressor.Decompress(report,bytes, 1, historyIndex, signals, (int clientId, int histInd, int signalI) => {
+                    if(signalI == 0)
+                    {
+                        fromConnectionDatas[clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
+                        fromConnectionDatas[clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
+                    }
+                    perSignalUpdate(clientId, histInd, signalI);
+
+                });
+
+                
 
             },
             async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
@@ -71,19 +81,6 @@ namespace NetSignal
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("keep alive package: " + package.ToString());
 
-            },
-            async () => {
-
-
-                var package = SignalCompressor.DecompressDataPackage(bytes, 1);
-
-                report("keep alive package: " + package.ToString());
-                if (fromConnectionDatas.Length > package.clientId)
-                {
-
-                    fromConnectionDatas[package.clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
-                    fromConnectionDatas[package.clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
-                }
             });
         }
 

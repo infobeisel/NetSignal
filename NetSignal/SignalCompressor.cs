@@ -20,36 +20,36 @@ namespace NetSignal
 
     public class SignalCompressor
     {
-      /*  public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
-        {
-            byte* cIdPtr = (byte*) & package.clientId;
-            for (int i = 0; i < 4; i++)
-                to[startFrom + 0 + i] = cIdPtr[i];
+        /*  public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
+          {
+              byte* cIdPtr = (byte*) & package.clientId;
+              for (int i = 0; i < 4; i++)
+                  to[startFrom + 0 + i] = cIdPtr[i];
 
-            var ticks = package.timeStamp.Ticks;
-            cIdPtr = (byte*)& ticks;
-            for (int i = 0; i < 8; i++)
-                to[startFrom + 4 + i] = cIdPtr[i];
-            
-        }
+              var ticks = package.timeStamp.Ticks;
+              cIdPtr = (byte*)& ticks;
+              for (int i = 0; i < 8; i++)
+                  to[startFrom + 4 + i] = cIdPtr[i];
 
-        public unsafe static KeepAlivePackage DecompressKeepAlive(byte [] compressed, int startFrom)
-        {
-            
-            KeepAlivePackage p = new KeepAlivePackage();
-            byte* cIdPtr = (byte*)&p.clientId;
-            for (int i = 0; i < 4; i++)
-                cIdPtr[i] = compressed[startFrom + 0 + i];
+          }
 
-            long ticks = 0;
-            cIdPtr = (byte*)&ticks;
-            for (int i = 0; i < 8; i++)
-                cIdPtr[i] = compressed[startFrom + 4 + i];
-            p.timeStamp = new DateTime(ticks);
-            return p;
-        }*/
+          public unsafe static KeepAlivePackage DecompressKeepAlive(byte [] compressed, int startFrom)
+          {
 
-        public unsafe static void Decompress(byte[] compressed, int startFrom, int toHistInd, IncomingSignal [][][] to) {
+              KeepAlivePackage p = new KeepAlivePackage();
+              byte* cIdPtr = (byte*)&p.clientId;
+              for (int i = 0; i < 4; i++)
+                  cIdPtr[i] = compressed[startFrom + 0 + i];
+
+              long ticks = 0;
+              cIdPtr = (byte*)&ticks;
+              for (int i = 0; i < 8; i++)
+                  cIdPtr[i] = compressed[startFrom + 4 + i];
+              p.timeStamp = new DateTime(ticks);
+              return p;
+          }*/
+
+        public unsafe static void Decompress(Action<string> report, byte[] compressed, int startFrom, int toHistInd, IncomingSignal [][][] to, Action<int,int,int> perSignalUpdated) {
             
 
             int clientIdByteI = startFrom;
@@ -62,7 +62,7 @@ namespace NetSignal
             int signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
 
             var timeStamp = DecodeTimestamp(compressed, timestampByteI);
-            Logging.Write(" first timestamp " + timeStamp.Ticks);
+            report(" first timestamp " + timeStamp.Ticks);
 
             while (timeStamp.Ticks != 0) { //valid data
                 int fromSignalI = 0;
@@ -76,8 +76,9 @@ namespace NetSignal
                     incomingData.clientId = clientId;
                     DecodeSignalBytes(compressed, signalsByteI + i * 4, ref incomingData);
                     incomingData.signalType = SignalType.Data; //TODO
-                    //Logging.Write("decomp [" + clientId + "][" + toHistInd + "][" + (fromSignalI + i) + "]:" + incomingData.ToString());
+                    report("decomp [" + clientId + "][" + toHistInd + "][" + (fromSignalI + i) + "]:" + incomingData.ToString());
                     to[clientId][toHistInd][fromSignalI + i].data = incomingData;
+                    perSignalUpdated(clientId, toHistInd, fromSignalI);
                 }
 
                 timestampByteI = signalsByteI + signalCount * 4; //timestamp
@@ -87,12 +88,12 @@ namespace NetSignal
                 if(timestampByteI <= compressed.Length)
                 {
                     timeStamp = DecodeTimestamp(compressed, timestampByteI);
-                    Logging.Write(" next timestamp " + timeStamp.Ticks);
+                    report(" next timestamp " + timeStamp.Ticks);
                 }
                 else
                 {
                     timeStamp = new DateTime(0);
-                    Logging.Write(" no next timestamp " + timeStamp.Ticks);
+                    report(" no next timestamp " + timeStamp.Ticks);
                 }
             }
             

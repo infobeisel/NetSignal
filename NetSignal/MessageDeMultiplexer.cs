@@ -6,7 +6,7 @@ namespace NetSignal
     //contains the NetSignal protocol rules for identifying the right type of an incoming udp or tcp message
     public class MessageDeMultiplexer
     {
-        public async static Task Divide(byte [] message, Func<Task> handleDataSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal, Func<Task> handleUdpAliveSignal)
+        public async static Task Divide(byte [] message, Func<Task> handleDataSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal)
         {
             switch ((SignalType) message[0])
             {
@@ -15,9 +15,6 @@ namespace NetSignal
                     break;
                 case SignalType.TCPAlive: //tcp alive signal
                     await handleTCPAliveSignal();
-                    break;
-                case SignalType.UDPAlive: //udp alive signal
-                    await handleUdpAliveSignal();
                     break;
                 case SignalType.Data:
                     await handleDataSignal();

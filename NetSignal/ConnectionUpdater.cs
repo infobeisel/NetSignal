@@ -198,7 +198,7 @@ namespace NetSignal
                 }
                 
             }
-            
+            Logging.Write("managed to open at " + managedToOpen + " " + connectionData.iListenToPort);
 
 
             Util.Exchange(ref connectionState.udpWriteStateName, StateOfConnection.ReadyToOperate);
@@ -253,8 +253,7 @@ namespace NetSignal
                                 connectionState.isConnectionActive = connectionState.clientID == -1 ? false : true;
                                 Logging.Write("i am client " + containingClientId.AsInt());
                             },
-                            async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); },
-                            async () => { Logging.Write("handle udp keepalive!? unexpected reply to client's tcp connection request"); });
+                            async () => { Logging.Write("handle tcp keepalive!? unexpected reply to client's tcp connection request"); });
                     });
                 });
         }
@@ -370,8 +369,7 @@ namespace NetSignal
                                     Logging.Write(c.ToString());
                                 }
                             },
-                            async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); },
-                            async () => { Logging.Write("udp keepalive receive not yet implemented and should NOT occur here!?"); }
+                            async  () => { Logging.Write("tcp keepalive receive not yet implemented and should NOT occur here!?"); }
                             );
                     }
 

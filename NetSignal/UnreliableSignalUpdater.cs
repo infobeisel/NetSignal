@@ -174,7 +174,7 @@ namespace NetSignal
                     {
                         receiveResult = await connection[withInd].udpClient.ReceiveAsync();
                         var bytes = receiveResult.Buffer;
-                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, report, bytes, receiveResult, from);
+                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => Logging.Write(s), bytes, receiveResult, (int c,int h,int s) => { }, from);
                         Util.Exchange(ref connectionState[withInd].udpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     catch (ObjectDisposedException e)
