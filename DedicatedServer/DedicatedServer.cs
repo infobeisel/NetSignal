@@ -81,12 +81,12 @@ namespace DedicatedServer
                 //reliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][]; 
 
                 unreliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
-                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(reliableCount);
+                reliableSignalsSentFromServer[i] = SignalFactory.ConstructOutgoingSignalArray(reliableCount + unreliableCount);
 
                 for(int j = 0; j < historyCount; j++)
                 {
                     unreliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(unreliableCount);
-                    reliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(reliableCount);
+                    reliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(reliableCount + unreliableCount);
                     
                 }
 
