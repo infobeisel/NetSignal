@@ -65,6 +65,11 @@ namespace NetSignal
                 SignalUpdaterUtil.SyncIncomingToOutgoingSignals(reliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
             });
 
+            _ = Task.Run(() =>
+            {
+                SignalUpdaterUtil.SyncURIsToROsInCaseOfUdpOverTcpWorkaround(reliableIncomingSignals,unreliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
+            });
+
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
             _ = Task.Run(() =>
             {
@@ -130,10 +135,14 @@ namespace NetSignal
             _ = Task.Run(() =>
             {
                 UnreliableSignalUpdater.ReceiveSignals(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableIncomingSignals, timeControl, cancel,
-                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive: " + r); });
+                (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive ur: " + r); });
             });
                 
-            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel, (string s) => { }, new [] {clientI},
+            ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel,
+                (string s) => {
+                    if (shouldReport()) Logging.Write("client " + clientI + " receive r: " + s);
+                    },
+                new [] {clientI},
                  storeToClientCon , storeToClientData , storeToClientState );
 
             Logging.Write("StartClient: start sync signals to server");
@@ -158,8 +167,12 @@ namespace NetSignal
                 ConnectionUpdater.DetectUdpComNotWorking(clientI,  reliableIncomingSignals[clientI], unreliableIncomingSignals[clientI], cancel, timeControl,
                     () =>
                     {
-                        Logging.Write("shit, udp doesnt seem to work. TODO");
-                    
+                        Logging.Write("shit, udp doesnt seem to work. Instead, receive those over tcp ");
+                        _ = Task.Run(() =>
+                        {
+                            SignalUpdaterUtil.SyncTcpToUdpSignalsWorkaroundIncoming(reliableIncomingSignals, unreliableIncomingSignals, timeControl, cancel);
+                        });
+
                     });
             });
             

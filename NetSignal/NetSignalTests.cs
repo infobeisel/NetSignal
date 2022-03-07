@@ -12,7 +12,7 @@ namespace NetSignal
         {
 
             var cancel = false;
-            var shouldPrint = false;
+            var shouldPrint = true;
 
             int clientCount = 2;
 

@@ -8,6 +8,89 @@ namespace NetSignal
 {
     public class SignalUpdaterUtil
     {
+        public async static void SyncTcpToUdpSignalsWorkaroundIncoming(IncomingSignal[][][] incomingReliable, IncomingSignal[][][] incomingUnreliable, TimeControl timeControl, Func<bool> cancel)
+        {
+            if (incomingReliable.Length != incomingUnreliable.Length)
+                throw new Exception("incoming and outgoing array length unequal");
+
+            var clientCount = Math.Min(incomingReliable.Length, incomingUnreliable.Length);
+
+            var tcpToUdpSignalRangeStart = incomingReliable[0][0].Length - incomingUnreliable[0][0].Length;
+            var tcpToUdpSignalRangeEnd = incomingReliable[0][0].Length;
+            try
+            {
+                while (!cancel())
+                {
+                    var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+                    for (int connectionI = 0; connectionI < clientCount; connectionI++)
+                        for (int signalI = tcpToUdpSignalRangeStart; signalI < tcpToUdpSignalRangeEnd ; signalI++)
+                        {
+                            if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
+                            {
+                                incomingUnreliable[connectionI][signalI][signalI - tcpToUdpSignalRangeStart].data = incomingReliable[connectionI][historyIndex][signalI].data;
+                              
+                            }
+                        }
+                    await Task.Delay(30);
+                }
+            }
+            catch (SocketException e)
+            {
+                Logging.Write(e);
+            }
+            finally
+            {
+            }
+        }
+
+        public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        {
+         
+
+            var tcpToUdpSignalRangeStart = reliableOutgoingSignals[0].Length - unreliableIncomingSignals[0][0].Length;
+            var tcpToUdpSignalRangeEnd = reliableOutgoingSignals[0].Length;
+
+            if (unreliableIncomingSignals.Length != reliableOutgoingSignals.Length)
+                throw new Exception("incoming and outgoing array length unequal");
+
+            var clientCount = Math.Min(unreliableIncomingSignals.Length, reliableOutgoingSignals.Length);
+            try
+            {
+                while (!cancel())
+                {
+                    var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+
+                    for (int connectionI = 0; connectionI < clientCount; connectionI++)
+                    {
+                        var reliableKeepAliveI = ConnectionUpdater.findLatest(reliableIncomingSignals[connectionI], 0);
+                        var unreliableKeepAliveI = ConnectionUpdater.findLatest(unreliableIncomingSignals[connectionI], 0);
+                        //keepalive shows that udp is not working, for this client send everything over tcp
+                        if ((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp - 
+                            unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds > 1000)
+                        {
+                            for (int signalI = 0; signalI < unreliableIncomingSignals[connectionI][historyIndex].Length; signalI++)
+                            {
+                                if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
+                                {
+                                    reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
+                                }
+                            }
+                        }
+                    }
+                    await Task.Delay(30);
+                }
+            }
+            catch (SocketException e)
+            {
+                Logging.Write(e);
+            }
+            finally
+            {
+            }
+        }
+
+
+
 
         public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {

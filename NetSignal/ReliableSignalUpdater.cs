@@ -182,9 +182,8 @@ namespace NetSignal
                             {
                                 if (c >= 0 && c < fromDatas.Length)
                                 {
-
-                                  
-                                    report("tcp keepalive " );
+                                    report("tcp keepalive " 
+                                        + fromStreams[streamI].tcpClient.Client.RemoteEndPoint.ToString());
                                 }
 
                             }
