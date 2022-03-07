@@ -48,8 +48,8 @@ namespace NetSignal
         {
          
 
-            var tcpToUdpSignalRangeStart = reliableOutgoingSignals[0].Length - unreliableIncomingSignals[0][0].Length;
-            var tcpToUdpSignalRangeEnd = reliableOutgoingSignals[0].Length;
+            var tcpToUdpSignalRangeStart = reliableOutgoingSignals[0][0].Length - unreliableIncomingSignals[0][0].Length;
+            var tcpToUdpSignalRangeEnd = reliableOutgoingSignals[0][0].Length;
 
             if (unreliableIncomingSignals.Length != reliableOutgoingSignals.Length)
                 throw new Exception("incoming and outgoing array length unequal");
