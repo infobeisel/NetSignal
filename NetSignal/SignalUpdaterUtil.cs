@@ -78,7 +78,7 @@ namespace NetSignal
                                 if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
 
-                                    Logging.Write("keepalive was tcp mode, write to  ");//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
+                                    Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
                                     for (int fromConI = 0; fromConI < clientCount; fromConI++)
                                     {
 

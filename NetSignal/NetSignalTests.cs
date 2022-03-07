@@ -168,7 +168,7 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            //await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
             await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
 
 
