@@ -91,15 +91,15 @@ namespace NetSignal
 
                                 IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
 
-                                //report("send data to " + toSendTo + " : " + dataToSend);
 
                                 var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
                                 Util.FlushBytes(usingBytes);
                                 
                                 int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1);
+                                report("send data to " + toSendTo + " : " + compressedSignalCount);
 
                                 //SignalCompressor.Compress(dataToSend, usingBytes, 1);
-                                
+
 
                                 await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                                 {
@@ -183,7 +183,7 @@ namespace NetSignal
                                         
                                         from[c].iListenToPort = receiveResult.RemoteEndPoint.Port;
                                         from[c].myIp = receiveResult.RemoteEndPoint.Address.ToString();
-                                        Logging.Write("udp endpoint update " + receiveResult.RemoteEndPoint.ToString() + " : " + receiveResult.RemoteEndPoint.Port);
+                                        Logging.Write("udp endpoint update " + receiveResult.RemoteEndPoint.ToString() );
                                     }
                                     
                                 }

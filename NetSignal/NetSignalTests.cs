@@ -63,8 +63,8 @@ namespace NetSignal
             server, serverData, serverState, clients, clientDatas, clientState);*/
 
             //args.Length > 0 ? int.Parse(args[0]) : 5001, 
-            /*await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-            server, serverData, serverState, clients, clientDatas, clientState);*/
+            //await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
+            //server, serverData, serverState, clients, clientDatas, clientState);
             await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
             server, serverData, serverState, clients, clientDatas, clientState);
             
