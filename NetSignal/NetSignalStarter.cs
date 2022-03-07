@@ -153,11 +153,16 @@ namespace NetSignal
                 {
                     ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals, new[] { clientI }, cancel, timeControl);
                 });
-            /*_ = Task.Run(() =>
+            _ = Task.Run(() =>
             {
-                ConnectionUpdater.FixUdpComIfNecessary(clientI, storeToClientData,  reliableIncomingSignals[clientI], unreliableIncomingSignals[clientI], new[] { clientI }, cancel, timeControl);
+                ConnectionUpdater.DetectUdpComNotWorking(clientI,  reliableIncomingSignals[clientI], unreliableIncomingSignals[clientI], cancel, timeControl,
+                    () =>
+                    {
+                        Logging.Write("shit, udp doesnt seem to work. TODO");
+                    
+                    });
             });
-            */
+            
             
 
 

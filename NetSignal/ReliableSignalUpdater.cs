@@ -166,7 +166,7 @@ namespace NetSignal
 
                 if (previousState != StateOfConnection.ReadyToOperate)
                 {
-                    await Task.Delay(2000);
+                    //await Task.Delay(2000);
                     continue;
                 }
 

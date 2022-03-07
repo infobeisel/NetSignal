@@ -416,7 +416,7 @@ namespace NetSignal
             return ret;
         }
 
-        public async static void FixUdpComIfNecessary(int clientId , ConnectionMetaData [] metaData, IncomingSignal[][] reliable, IncomingSignal[][] unreliable, IEnumerable<int> indices, Func<bool> cancel, TimeControl timeControl, int periodMs = 1000)
+        public async static void DetectUdpComNotWorking(int clientId , IncomingSignal[][] reliable, IncomingSignal[][] unreliable, Func<bool> cancel, TimeControl timeControl, Action callBackUdpNotWorking, int periodMs = 1000)
         {
             int timesTimestampsDontMatch = 0;
 
@@ -441,24 +441,9 @@ namespace NetSignal
                 //we need to do sth!
                 if(timesTimestampsDontMatch > 3)
                 {
-                    Logging.Write("START DISCOV_:....................................");
-                    var discoverer = new Open.Nat.NatDiscoverer();
+                    callBackUdpNotWorking();
 
-                    // using SSDP protocol, it discovers NAT device.
-                    var device = await discoverer.DiscoverDeviceAsync();
-
-                    // display the NAT's IP address
-                    Console.WriteLine("The external IP Address is: {0} ", await device.GetExternalIPAsync());
-
-                    // create a new mapping in the router [external_ip:1702 -> host_machine:1602]
-                    await device.CreatePortMapAsync(new Open.Nat.Mapping(Open.Nat.Protocol.Udp, 1602, 1702, "For testing"));
-
-                    // configure a TCP socket listening on port 1602
-                    //var endPoint = new IPEndPoint(IPAddress.Any, 1602);
-                    //var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                    //socket.SetIPProtectionLevel(IPProtectionLevel.Unrestricted);
-                    //socket.Bind(endPoint);
-                    //socket.Listen(4);
+                    break;
                 }
                 
                 await Task.Delay(periodMs);
