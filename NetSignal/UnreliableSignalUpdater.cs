@@ -183,7 +183,7 @@ namespace NetSignal
                                         
                                         from[c].iListenToPort = receiveResult.RemoteEndPoint.Port;
                                         from[c].myIp = receiveResult.RemoteEndPoint.Address.ToString();
-                                        Logging.Write("udp endpoint update " + from[c]);
+                                        Logging.Write("udp endpoint update " + from[c].ToString());
                                     }
                                     
                                 }
