@@ -21,7 +21,7 @@ namespace DedicatedServer
             ConnectionState[] connectionStatesSeenFromServer, serverState;
             IncomingSignal[][][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
             OutgoingSignal[][][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
-            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 8 , 2, historySize);
+            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 9 , 9, historySize);
             TimeControl timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, historySize);
             
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
@@ -80,8 +80,8 @@ namespace DedicatedServer
                 //unreliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][]; 
                 //reliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][]; 
 
-                unreliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][]; SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
-                reliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][]; SignalFactory.ConstructOutgoingSignalArray(reliableCount + unreliableCount);
+                unreliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][];
+                reliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][]; 
 
                 for(int j = 0; j < historyCount; j++)
                 {
