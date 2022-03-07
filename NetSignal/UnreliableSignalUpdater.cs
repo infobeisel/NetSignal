@@ -180,8 +180,10 @@ namespace NetSignal
                                 {
                                     if(c >= 0 && c < from.Length)
                                     {
+                                        
                                         from[c].iListenToPort = receiveResult.RemoteEndPoint.Port;
                                         from[c].myIp = receiveResult.RemoteEndPoint.Address.ToString();
+                                        Logging.Write("udp endpoint update " + from[c]);
                                     }
                                     
                                 }
