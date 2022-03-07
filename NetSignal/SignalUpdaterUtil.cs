@@ -77,6 +77,7 @@ namespace NetSignal
                                 if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
                                     reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
+                                    reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].dataDirty = true;
                                 }
                             }
                         }
