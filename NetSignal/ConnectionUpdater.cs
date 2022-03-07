@@ -401,7 +401,73 @@ namespace NetSignal
             }
             
         }
-        
+        private static int findLatest(NetSignal.IncomingSignal[][] signals, int signalI)
+        {
+            var ret = 0;
+            var comp = new DateTime(0);
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i][signalI].data.timeStamp > comp)
+                {
+                    comp = signals[i][signalI].data.timeStamp;
+                    ret = i;
+                }
+            }
+            return ret;
+        }
+
+        public async static void FixUdpComIfNecessary(int clientId , ConnectionMetaData [] metaData, IncomingSignal[][] reliable, IncomingSignal[][] unreliable, IEnumerable<int> indices, Func<bool> cancel, TimeControl timeControl, int periodMs = 1000)
+        {
+            int timesTimestampsDontMatch = 0;
+
+            while (!cancel())
+            {
+                var reliableKeepAliveI = findLatest(reliable, 0);
+                var unreliableKeepAliveI = findLatest(unreliable, 0);
+
+                Logging.Write("ms between keepalives tcp and upd: " +  reliable[reliableKeepAliveI][0].data.timeStamp  + " , " 
+                    + unreliable[unreliableKeepAliveI][0].data.timeStamp);
+                
+                if((reliable[reliableKeepAliveI][0].data.timeStamp - unreliable[unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds > 1000)
+                {
+                    Logging.Write("dont match " + timesTimestampsDontMatch);
+                    timesTimestampsDontMatch++;
+                }
+                else {
+                    timesTimestampsDontMatch--;
+                    timesTimestampsDontMatch = Math.Max(0, timesTimestampsDontMatch);
+                }
+
+                //we need to do sth!
+                if(timesTimestampsDontMatch > 3)
+                {
+                    Logging.Write("START DISCOV_:....................................");
+                    var discoverer = new Open.Nat.NatDiscoverer();
+
+                    // using SSDP protocol, it discovers NAT device.
+                    var device = await discoverer.DiscoverDeviceAsync();
+
+                    // display the NAT's IP address
+                    Console.WriteLine("The external IP Address is: {0} ", await device.GetExternalIPAsync());
+
+                    // create a new mapping in the router [external_ip:1702 -> host_machine:1602]
+                    await device.CreatePortMapAsync(new Open.Nat.Mapping(Open.Nat.Protocol.Udp, 1602, 1702, "For testing"));
+
+                    // configure a TCP socket listening on port 1602
+                    //var endPoint = new IPEndPoint(IPAddress.Any, 1602);
+                    //var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    //socket.SetIPProtectionLevel(IPProtectionLevel.Unrestricted);
+                    //socket.Bind(endPoint);
+                    //socket.Listen(4);
+                }
+                
+                await Task.Delay(periodMs);
+            }
+
+
+        }
+
+     
 
         private static void IdentifyClient(int clientHintsUdpPort, ConnectionAPIs[] storeToConnections,ConnectionState [] storeToConnectionStates,  TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {

@@ -87,7 +87,8 @@ namespace NetSignal
                                 
 
                                 var toAddressData = toAllData[toConnectionI];
-                                var udpClientToUse = toAllApis[toConnectionI].udpClient;
+                                //var udpClientToUse = toAllApis[toConnectionI].udpClient;
+                                var udpClientToUse = toAllApis[0].udpClient;
 
                                 IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
 
@@ -174,7 +175,7 @@ namespace NetSignal
                     {
                         receiveResult = await connection[withInd].udpClient.ReceiveAsync();
                         var bytes = receiveResult.Buffer;
-                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => Logging.Write(s), bytes, receiveResult,
+                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => report(s), bytes, receiveResult,
                             (int c,int h,int s) => {
                                 if (s == 0)
                                 {
@@ -183,7 +184,7 @@ namespace NetSignal
                                         
                                         from[c].iListenToPort = receiveResult.RemoteEndPoint.Port;
                                         from[c].myIp = receiveResult.RemoteEndPoint.Address.ToString();
-                                        Logging.Write("udp endpoint update " + receiveResult.RemoteEndPoint.ToString() );
+                                        report("udp endpoint update " + receiveResult.RemoteEndPoint.ToString() );
                                     }
                                     
                                 }

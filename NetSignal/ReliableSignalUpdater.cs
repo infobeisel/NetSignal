@@ -175,7 +175,21 @@ namespace NetSignal
                     var usingBytes = fromStates[streamI].tcpReadBytes;
                     Util.FlushBytes(usingBytes);
                     var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
-                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes, new UdpReceiveResult(), (int c,int h,int s) => { } , fromDatas[streamI]);
+                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes,
+                        new UdpReceiveResult(), 
+                        (int c, int h, int s) => {
+                            if (s == 0)
+                            {
+                                if (c >= 0 && c < fromDatas.Length)
+                                {
+
+                                  
+                                    report("tcp keepalive " );
+                                }
+
+                            }
+                        }
+                        , fromDatas[streamI]);
 
                     Util.Exchange(ref fromStates[streamI].tcpReadStateName, StateOfConnection.ReadyToOperate);
                 }

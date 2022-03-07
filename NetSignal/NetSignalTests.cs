@@ -12,7 +12,7 @@ namespace NetSignal
         {
 
             var cancel = false;
-            var shouldPrint = true;
+            var shouldPrint = false;
 
             int clientCount = 4;
 
@@ -316,8 +316,8 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
-            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
+            await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
 
             
             await Task.Delay(1000);
