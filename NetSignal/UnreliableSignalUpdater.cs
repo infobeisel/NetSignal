@@ -174,7 +174,18 @@ namespace NetSignal
                     {
                         receiveResult = await connection[withInd].udpClient.ReceiveAsync();
                         var bytes = receiveResult.Buffer;
-                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => Logging.Write(s), bytes, receiveResult, (int c,int h,int s) => { }, from);
+                        await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => Logging.Write(s), bytes, receiveResult,
+                            (int c,int h,int s) => {
+                                if (s == 0)
+                                {
+                                    if(c >= 0 && c < from.Length)
+                                    {
+                                        from[c].iListenToPort = receiveResult.RemoteEndPoint.Port;
+                                        from[c].myIp = receiveResult.RemoteEndPoint.Address.ToString();
+                                    }
+                                    
+                                }
+                            }, from);
                         Util.Exchange(ref connectionState[withInd].udpReadStateName, StateOfConnection.ReadyToOperate);
                     }
                     catch (ObjectDisposedException e)

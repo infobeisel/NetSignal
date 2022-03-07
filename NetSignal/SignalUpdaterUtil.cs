@@ -63,15 +63,7 @@ namespace NetSignal
                 signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
                 */
 
-                SignalCompressor.Decompress(report,bytes, 1, historyIndex, signals, (int clientId, int histInd, int signalI) => {
-                    if(signalI == 0)
-                    {
-                        fromConnectionDatas[clientId].iListenToPort = udpReceiveResult.RemoteEndPoint.Port;
-                        fromConnectionDatas[clientId].myIp = udpReceiveResult.RemoteEndPoint.Address.ToString();
-                    }
-                    perSignalUpdate(clientId, histInd, signalI);
-
-                });
+                SignalCompressor.Decompress(report,bytes, 1, historyIndex, signals, perSignalUpdate);
 
                 
 
