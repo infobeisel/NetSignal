@@ -87,8 +87,8 @@ namespace NetSignal
                                 
 
                                 var toAddressData = toAllData[toConnectionI];
-                                //var udpClientToUse = toAllApis[toConnectionI].udpClient;
-                                var udpClientToUse = toAllApis[0].udpClient;
+                                var udpClientToUse = toAllApis[toConnectionI].udpClient;
+                                //var udpClientToUse = toAllApis[0].udpClient;
 
                                 IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
 

@@ -47,7 +47,7 @@ namespace NetSignal
             Logging.Write("StartServer: start sync signals");
             
             UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl, 
-            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, serverConnection, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
+            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
             
             ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
              (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
