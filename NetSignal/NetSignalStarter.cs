@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace NetSignal
 {
 
-    public class NetSignalStarter
+    public partial class NetSignalStarter
     {
         public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
             ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionAPIs[] connections,
@@ -67,7 +67,7 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                SignalUpdaterUtil.SyncURIsToROsInCaseOfUdpOverTcpWorkaround(reliableIncomingSignals,unreliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
+                SignalUpdaterUtil.SyncURIsToROsInCaseOfUdpOverTcpWorkaround(unreliableIncomingSignals , reliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
             });
 
             MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
@@ -94,6 +94,7 @@ namespace NetSignal
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);
         }
+
 
         //please provide array with one element for server*
         public async static Task<int> StartClient(int udpPort, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState,
@@ -160,6 +161,7 @@ namespace NetSignal
             
                 _ = Task.Run(() =>
                 {
+                    unreliableOutgoingSignals[clientI][0].WriteInt((int)UdpKeepAliveInfo.NormalMode);
                     ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals, unreliableOutgoingSignals, new[] { clientI }, cancel, timeControl);
                 });
             _ = Task.Run(() =>
@@ -168,6 +170,7 @@ namespace NetSignal
                     () =>
                     {
                         Logging.Write("shit, udp doesnt seem to work. Instead, receive those over tcp ");
+                        unreliableOutgoingSignals[clientI][0].WriteInt((int)UdpKeepAliveInfo.UdpOverTcpReceiveMode);
                         _ = Task.Run(() =>
                         {
                             SignalUpdaterUtil.SyncTcpToUdpSignalsWorkaroundIncoming(reliableIncomingSignals, unreliableIncomingSignals, timeControl, cancel);

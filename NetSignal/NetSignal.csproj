@@ -71,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UdpKeepAliveInfo.cs" />
     <Compile Include="TimeControl.cs" />
     <Compile Include="ConnectionAPIs.cs" />
     <Compile Include="ConnectionMapping.cs" />

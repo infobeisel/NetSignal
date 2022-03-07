@@ -64,9 +64,13 @@ namespace NetSignal
                     {
                         var reliableKeepAliveI = ConnectionUpdater.findLatest(reliableIncomingSignals[connectionI], 0);
                         var unreliableKeepAliveI = ConnectionUpdater.findLatest(unreliableIncomingSignals[connectionI], 0);
+                        
                         //keepalive shows that udp is not working, for this client send everything over tcp
-                        if ((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp - 
-                            unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds > 1000)
+                        if( 
+                            ((UdpKeepAliveInfo) unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.AsInt())
+                            == UdpKeepAliveInfo.UdpOverTcpReceiveMode)
+                        //if (Math.Abs((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp - 
+                        //unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds) > 1000)
                         {
                             for (int signalI = 0; signalI < unreliableIncomingSignals[connectionI][historyIndex].Length; signalI++)
                             {
