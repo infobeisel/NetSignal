@@ -192,6 +192,16 @@ namespace NetSignal
                 signls[i].data = new DataPackage();
                 signls[i].dataDirty = false;
             }
+            {
+                var s = new DataPackage();
+                s.WriteFloat((float)rng.NextDouble());
+                s.timeStamp = DateTime.UtcNow;
+                s.index = 0;
+                s.clientId = 5;
+                signls[0].data = s;
+
+            }
+
             for (int i = 5; i < signls.Length; i++)
             {
                 var s = new DataPackage();
@@ -204,7 +214,7 @@ namespace NetSignal
             byte[] byts = new byte[256];
             Util.FlushBytes(byts);
 
-            SignalCompressor.Compress(signls, 0, byts, 0);
+            SignalCompressor.Compress(signls, 0, byts, 0, (string s) => Logging.Write(s));
 
             IncomingSignal[][][] incomingSignals = new IncomingSignal[6][][];
             for (int i = 0; i < incomingSignals.Length; i++)
@@ -215,7 +225,7 @@ namespace NetSignal
                     incomingSignals[i][j] = new IncomingSignal[10];
                 }
             }
-            SignalCompressor.Decompress((string s) => { }, byts, 0, 0, incomingSignals, (int a, int b, int c) => { });
+            SignalCompressor.Decompress((string s) => Logging.Write(s), byts, 0, 0, incomingSignals, (int a, int b, int c) => { });
 
             for (int i = 0; i < 10; i++)
             {

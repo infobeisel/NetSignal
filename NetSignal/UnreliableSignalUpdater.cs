@@ -96,7 +96,7 @@ namespace NetSignal
                                 var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
                                 Util.FlushBytes(usingBytes);
                                 
-                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1);
+                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1, report);
                                 report("send data to " + toSendTo + " : " + compressedSignalCount);
 
                                 //SignalCompressor.Compress(dataToSend, usingBytes, 1);

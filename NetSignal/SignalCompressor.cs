@@ -72,7 +72,7 @@ namespace NetSignal
         }
 
 
-        public unsafe static int Compress(OutgoingSignal [] signals, int startFromSignalI, byte[] to, int startFromByteI)
+        public unsafe static int Compress(OutgoingSignal [] signals, int startFromSignalI, byte[] to, int startFromByteI, Action<string> report)
         {
             
             int rangeStartSignalI = startFromSignalI;
@@ -99,10 +99,12 @@ namespace NetSignal
             var currentClientId = signals[signalI].data.clientId;
             int clientIdByteI = startFromByteI;
             EncodeClientIdInto32(currentClientId, to, clientIdByteI);
+            EncodeTimestampInto64(currentT, to, timestampByteI);
+            report("begin new block at " + rangeStartSignalI );
 
             //Logging.Write("start with signal " + signalI + " from client " + currentClientId);
             //write timestamp
-            EncodeTimestampInto64(currentT, to, timestampByteI);
+
 
             bool fitsCompletely = true;
             bool staysDirty = true;
@@ -114,44 +116,49 @@ namespace NetSignal
                     break;
                 }
 
-                //bool sameClientId = signals[signalI].data.clientId == currentClientId;
-                if( signals[signalI].data.timeStamp.Ticks != currentT ||
-                  (staysDirty && !signals[signalI].dataDirty)  // was dirty and isnt anymore
-                  ) {
-
-                    staysDirty = signals[signalI].dataDirty; 
-
-
-                    //Logging.Write("this were " +signalAcc + " signals, from " + rangeStartSignalI
-                    //+ " at " + currentT );
-
-                    //write new timestamp
-                    currentT = signals[signalI].data.timeStamp.Ticks;
-                    timestampByteI = signalsByteI + signalAcc * 4;
-                    EncodeTimestampInto64(currentT, to, timestampByteI);
-                    //write old inds range
+                //begin new block
+                if ((!staysDirty && signals[signalI].dataDirty)
+                    || 
+                    (signals[signalI].data.timeStamp.Ticks != currentT && signals[signalI].dataDirty)
+                    )
+                {
+                    report("begin new block at " + signalI + " , old was from " + rangeStartSignalI + " to " + (rangeStartSignalI + signalAcc));
                     EncodeIndexRangeInto64(rangeStartSignalI, signalAcc, to, rangeIndsByteI);
+                    timestampByteI = signalsByteI + signalAcc * 4;
+                    currentT = signals[signalI].data.timeStamp.Ticks;
+                    EncodeTimestampInto64(currentT, to, timestampByteI);
                     rangeIndsByteI = timestampByteI + 8;
                     signalsByteI = timestampByteI + 8 + 8;
-
-                    
                     signalAcc = 0;
                     rangeStartSignalI = signalI;
                 }
+
+                //stop current block
+                if ((staysDirty && !signals[signalI].dataDirty)
+                    //|| 
+                    //(signals[signalI].data.timeStamp.Ticks != currentT)
+                    )
+                {
+                    
+                }
+
+                if (signals[signalI].data.timeStamp.Ticks != currentT)
+                {
+                    
+                }
+                
                 staysDirty = signals[signalI].dataDirty; 
 
                 //write signal data
-                if(staysDirty) {
+                if(signals[signalI].dataDirty) {
                    // Logging.Write("write signal " + signalI);
-
                     EncodeSignalInto32(signals[signalI].data, to, signalsByteI + signalAcc * 4);
                     signalAcc++;
                 }
-                
-
             }
             //write last inds range
             EncodeIndexRangeInto64(rangeStartSignalI, signalAcc, to, rangeIndsByteI);
+            report("end last block, was from " + rangeStartSignalI + " to " + (rangeStartSignalI + signalAcc));
 
             return signalI;
 
