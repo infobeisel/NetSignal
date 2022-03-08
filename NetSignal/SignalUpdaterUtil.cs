@@ -43,20 +43,20 @@ namespace NetSignal
             {
             }
         }
-        public static void LogIncoming(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI)
+        public static void LogIncoming(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI, Action<string> logLine, Action<string> log)
         {
-            Console.WriteLine("incoming signals:");
+            logLine("incoming signals:");
             foreach (var signal in clientIncoming[incomingClientId][regressedI])
             {
-                Console.Write(signal.data.AsFloat().ToString("0.00") + " , ");
+                log(signal.data.AsFloat().ToString("0.00") + " , ");
             }
-            Console.WriteLine();
+            logLine("");
             foreach (var signal in clientIncoming[incomingClientId][regressedI])
             {
-                Console.Write(signal.data.AsInt().ToString("0000") + " , ");
+                log(signal.data.AsInt().ToString("0000") + " , ");
             }
-            Console.WriteLine();
-            Console.WriteLine();
+            logLine("");
+            logLine("");
         }
 
         public static void LogOutgoing(OutgoingSignal[][] clientOutgoing, int otherClientId)
@@ -113,7 +113,7 @@ namespace NetSignal
                                     for (int fromConI = 0; fromConI < clientCount; fromConI++)
                                     {
                                         //does not arrive at client for some reason
-                                        reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
+                                        reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[fromConI][historyIndex][signalI].data;
                                         reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].dataDirty = true;
                                     }
                                 }

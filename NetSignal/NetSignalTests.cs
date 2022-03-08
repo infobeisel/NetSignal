@@ -295,8 +295,8 @@ namespace NetSignal
                     var regressedI = ConnectionUpdater.findLatest(clientIncoming[outgoingClientId][incomingClientId], 1);
                     var regressed = clientIncoming[outgoingClientId][incomingClientId][regressedI][1].data.AsFloat();
                     //Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") + ", err: " + (100.0f * (regressed - trueVal) / trueVal).ToString("0.000"));
-                    SignalUpdaterUtil.LogIncoming(clientIncoming[outgoingClientId],  incomingClientId, regressedI);
-                    SignalUpdaterUtil.LogIncoming(alsoIncoming[outgoingClientId],  incomingClientId, regressedI);
+                    SignalUpdaterUtil.LogIncoming(clientIncoming[outgoingClientId],  incomingClientId, regressedI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
+                    SignalUpdaterUtil.LogIncoming(alsoIncoming[outgoingClientId],  incomingClientId, regressedI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
                     //Console.WriteLine(" val from client  " + incomingClientId + " : " + regressed.ToString("0.000"));
                     //TODO val is not working , why : ((( trying to sync over tcp in case udp does not work, but it doesnt work yet
 
