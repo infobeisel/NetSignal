@@ -20,34 +20,6 @@ namespace NetSignal
 
     public class SignalCompressor
     {
-        /*  public unsafe static void Compress(KeepAlivePackage package, byte [] to, int startFrom)
-          {
-              byte* cIdPtr = (byte*) & package.clientId;
-              for (int i = 0; i < 4; i++)
-                  to[startFrom + 0 + i] = cIdPtr[i];
-
-              var ticks = package.timeStamp.Ticks;
-              cIdPtr = (byte*)& ticks;
-              for (int i = 0; i < 8; i++)
-                  to[startFrom + 4 + i] = cIdPtr[i];
-
-          }
-
-          public unsafe static KeepAlivePackage DecompressKeepAlive(byte [] compressed, int startFrom)
-          {
-
-              KeepAlivePackage p = new KeepAlivePackage();
-              byte* cIdPtr = (byte*)&p.clientId;
-              for (int i = 0; i < 4; i++)
-                  cIdPtr[i] = compressed[startFrom + 0 + i];
-
-              long ticks = 0;
-              cIdPtr = (byte*)&ticks;
-              for (int i = 0; i < 8; i++)
-                  cIdPtr[i] = compressed[startFrom + 4 + i];
-              p.timeStamp = new DateTime(ticks);
-              return p;
-          }*/
 
         public unsafe static void Decompress(Action<string> report, byte[] compressed, int startFrom, int toHistInd, IncomingSignal [][][] to, Action<int,int,int> perSignalUpdated) {
             
@@ -104,10 +76,8 @@ namespace NetSignal
         {
             
             int rangeStartSignalI = startFromSignalI;
-            var currentClientId = signals[startFromSignalI].data.clientId;
             var currentT = signals[startFromSignalI].data.timeStamp.Ticks;
-            int clientIdByteI = startFromByteI;
-            EncodeClientIdInto32(currentClientId, to, clientIdByteI);
+            
             int timestampByteI = startFromByteI + 4; //timestamp
             int rangeIndsByteI = timestampByteI + 8; // range inds, to be written yet
             int signalsByteI   = timestampByteI + 8 + 8; //the actual signal data
@@ -126,6 +96,9 @@ namespace NetSignal
             if(!found)
                 return -1;
 
+            var currentClientId = signals[signalI].data.clientId;
+            int clientIdByteI = startFromByteI;
+            EncodeClientIdInto32(currentClientId, to, clientIdByteI);
 
             //Logging.Write("start with signal " + signalI + " from client " + currentClientId);
             //write timestamp

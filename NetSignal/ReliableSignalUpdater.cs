@@ -57,7 +57,7 @@ namespace NetSignal
                     if (!toConnectionStates[fromConnectionI].isConnectionActive) //inactive connection
                         continue;
 
-                    for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
+                    for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
                     {
                         
                         

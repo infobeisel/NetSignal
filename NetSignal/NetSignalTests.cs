@@ -67,7 +67,8 @@ namespace NetSignal
             //server, serverData, serverState, clients, clientDatas, clientState);
             await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
             server, serverData, serverState, clients, clientDatas, clientState);
-            
+
+            //TestCompressor();
 
             await Task.Delay(20000);
 
@@ -168,9 +169,30 @@ namespace NetSignal
 
             await Task.Delay(1000);
 
+            
+
+            await Task.Delay(1000);
+
+
+            //await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
+            await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
+
+
+            await Task.Delay(100000);
+
+        }
+
+
+        private static  void TestCompressor()
+        {
             System.Random rng = new Random();
             OutgoingSignal[] signls = new OutgoingSignal[10];
-            for(int i = 0; i < signls.Length; i++)
+            for (int i = 0; i < signls.Length; i++)
+            {
+                signls[i].data = new DataPackage();
+                signls[i].dataDirty = false;
+            }
+            for (int i = 5; i < signls.Length; i++)
             {
                 var s = new DataPackage();
                 s.WriteFloat((float)rng.NextDouble());
@@ -185,7 +207,7 @@ namespace NetSignal
             SignalCompressor.Compress(signls, 0, byts, 0);
 
             IncomingSignal[][][] incomingSignals = new IncomingSignal[6][][];
-            for(int i = 0; i < incomingSignals.Length; i ++)
+            for (int i = 0; i < incomingSignals.Length; i++)
             {
                 incomingSignals[i] = new IncomingSignal[1][];
                 for (int j = 0; j < incomingSignals[i].Length; j++)
@@ -201,16 +223,6 @@ namespace NetSignal
                 float inc = incomingSignals[5][0][i].data.AsFloat();
                 Console.WriteLine("signal " + i + " :  " + outg + "  vs " + inc + "  , " + (outg == inc));
             }
-
-            await Task.Delay(1000);
-
-
-            //await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
-            await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
-
-
-            await Task.Delay(100000);
-
         }
 
         private static async Task SyncLogCheckWithPlayer0And1( int sendFrom , IncomingSignal[][][][] clientIncoming, OutgoingSignal [][][] clientOutgoing, IncomingSignal [][][][] alsoIncoming,  TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
