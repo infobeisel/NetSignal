@@ -106,7 +106,7 @@ namespace NetSignal
                         {
                             for (int signalI = 0; signalI < unreliableIncomingSignals[connectionI][historyIndex].Length; signalI++)
                             {
-                                if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
+                                //if (unreliableIncomingSignals[fromConI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
 
                                     //Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
@@ -154,7 +154,7 @@ namespace NetSignal
                             {
                                 for(int toConI = 0; toConI < clientCount; toConI++)
                                 {
-                                    outgoingSignals[connectionI][toConI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
+                                    outgoingSignals[toConI][connectionI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
                                 }
                                 
                             }
