@@ -401,7 +401,7 @@ namespace NetSignal
             }
             
         }
-        public static int findLatest(NetSignal.IncomingSignal[][] signals, int signalI)
+        public static int findLatestHistIndex(NetSignal.IncomingSignal[][] signals, int signalI)
         {
             var ret = 0;
             var comp = new DateTime(0);
@@ -422,8 +422,8 @@ namespace NetSignal
 
             while (!cancel())
             {
-                var reliableKeepAliveI = findLatest(reliable, 0);
-                var unreliableKeepAliveI = findLatest(unreliable, 0);
+                var reliableKeepAliveI = findLatestHistIndex(reliable, 0);
+                var unreliableKeepAliveI = findLatestHistIndex(unreliable, 0);
 
                 Logging.Write("ms between keepalives tcp and upd: " +  reliable[reliableKeepAliveI][0].data.timeStamp  + " , " 
                     + unreliable[unreliableKeepAliveI][0].data.timeStamp);

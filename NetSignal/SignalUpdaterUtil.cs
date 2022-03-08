@@ -94,8 +94,8 @@ namespace NetSignal
 
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
                     {
-                        var reliableKeepAliveI = ConnectionUpdater.findLatest(reliableIncomingSignals[connectionI], 0);
-                        var unreliableKeepAliveI = ConnectionUpdater.findLatest(unreliableIncomingSignals[connectionI], 0);
+                        var reliableKeepAliveI = ConnectionUpdater.findLatestHistIndex(reliableIncomingSignals[connectionI], 0);
+                        var unreliableKeepAliveI = ConnectionUpdater.findLatestHistIndex(unreliableIncomingSignals[connectionI], 0);
                         
                         //keepalive shows that udp is not working, for this client send everything over tcp
                         if( 
