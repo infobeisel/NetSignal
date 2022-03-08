@@ -139,7 +139,7 @@ namespace NetSignal
 
                 //write signal data
                 if(signals[signalI].dataDirty) {
-                   // Logging.Write("write signal " + signalI);
+                    Logging.Write("write signal " + signalI);
                     EncodeSignalInto32(signals[signalI].data, to, signalsByteI + signalAcc * 4);
                     signalAcc++;
                 }

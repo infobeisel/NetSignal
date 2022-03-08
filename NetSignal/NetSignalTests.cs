@@ -65,10 +65,10 @@ namespace NetSignal
             //args.Length > 0 ? int.Parse(args[0]) : 5001, 
             //await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
             //server, serverData, serverState, clients, clientDatas, clientState);
-            await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
-            server, serverData, serverState, clients, clientDatas, clientState);
+            //await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
+            //server, serverData, serverState, clients, clientDatas, clientState);
 
-            //TestCompressor();
+            TestCompressor();
 
             await Task.Delay(20000);
 
@@ -202,7 +202,7 @@ namespace NetSignal
 
             }
 
-            for (int i = 5; i < signls.Length; i++)
+            for (int i = 0; i < 6; i++)
             {
                 var s = new DataPackage();
                 s.WriteFloat((float)rng.NextDouble());
@@ -211,6 +211,17 @@ namespace NetSignal
                 s.clientId = 5;
                 signls[i].data = s;
             }
+
+            for (int i = 9; i < 10; i++)
+            {
+                var s = new DataPackage();
+                s.WriteFloat((float)rng.NextDouble());
+                s.timeStamp = DateTime.UtcNow;
+                s.index = i;
+                s.clientId = 5;
+                signls[i].data = s;
+            }
+
             byte[] byts = new byte[256];
             Util.FlushBytes(byts);
 
