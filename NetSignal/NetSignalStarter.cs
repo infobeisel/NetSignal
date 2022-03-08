@@ -88,7 +88,10 @@ namespace NetSignal
                         await Task.Delay(timeControl.updateTimeStepMs);
 
                         var histI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
-                        SignalUpdaterUtil.LogSignals(reliableIncomingSignals, 1, histI);
+                        SignalUpdaterUtil.LogIncoming(reliableIncomingSignals, 1, histI);
+                        SignalUpdaterUtil.LogIncoming(unreliableIncomingSignals, 1, histI);
+                        SignalUpdaterUtil.LogOutgoing(reliableOutgoingSignals[1], 1);
+                        SignalUpdaterUtil.LogOutgoing(unreliableOutgoingSignals[1], 1);
                     }
 
                 });

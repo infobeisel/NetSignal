@@ -43,9 +43,9 @@ namespace NetSignal
             {
             }
         }
-        public static void LogSignals(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI)
+        public static void LogIncoming(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI)
         {
-            Console.WriteLine("signals:");
+            Console.WriteLine("incoming signals:");
             foreach (var signal in clientIncoming[incomingClientId][regressedI])
             {
                 Console.Write(signal.data.AsFloat().ToString("0.00") + " , ");
@@ -58,6 +58,23 @@ namespace NetSignal
             Console.WriteLine();
             Console.WriteLine();
         }
+
+        public static void LogOutgoing(OutgoingSignal[][] clientOutgoing, int otherClientId)
+        {
+            Console.WriteLine("outgoing signals:");
+            foreach (var signal in clientOutgoing[otherClientId])
+            {
+                Console.Write(signal.data.AsFloat().ToString("0.00") + " , ");
+            }
+            Console.WriteLine();
+            foreach (var signal in clientOutgoing[otherClientId])
+            {
+                Console.Write(signal.data.AsInt().ToString("0000") + " , ");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+        }
+
         public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
          
