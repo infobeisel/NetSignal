@@ -81,7 +81,7 @@ namespace NetSignal
                                     Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
                                     for (int fromConI = 0; fromConI < clientCount; fromConI++)
                                     {
-
+                                        //does not arrive at client for some reason
                                         reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].data = unreliableIncomingSignals[connectionI][historyIndex][signalI].data;
                                         reliableOutgoingSignals[connectionI][fromConI][signalI + tcpToUdpSignalRangeStart].dataDirty = true;
                                     }
@@ -110,13 +110,14 @@ namespace NetSignal
                 throw new Exception("incoming and outgoing array length unequal");
 
             var clientCount = Math.Min(incomingSignals.Length, outgoingSignals.Length);
+            var signalCount = incomingSignals[0][0].Length;
             try
             {
                 while (!cancel())
                 {
                     var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
-                        for (int signalI = 0; signalI < Math.Min(incomingSignals[connectionI][historyIndex].Length, outgoingSignals[connectionI].Length); signalI++)
+                        for (int signalI = 0; signalI < signalCount; signalI++)
                         {
                             if (incomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {

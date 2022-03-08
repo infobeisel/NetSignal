@@ -136,6 +136,7 @@ namespace NetSignal
             for(; signalI < signals.Length && fitsCompletely; signalI++) {
 
                 if(signalsByteI + signalAcc * 4  + 8 + 8 >= to.Length) {
+                    Logging.Write("need to stop at signal " + signalI + " and byte " + signalsByteI);
                     fitsCompletely = false;
                     break;
                 }
@@ -168,6 +169,8 @@ namespace NetSignal
 
                 //write signal data
                 if(staysDirty) {
+                   // Logging.Write("write signal " + signalI);
+
                     EncodeSignalInto32(signals[signalI].data, to, signalsByteI + signalAcc * 4);
                     signalAcc++;
                 }
