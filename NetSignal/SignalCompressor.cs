@@ -40,7 +40,8 @@ namespace NetSignal
                 int fromSignalI = 0;
                 int signalCount = 0;
                 DecodeIndexRange(compressed, rangeIndsByteI, out fromSignalI, out signalCount);
-                for(int i = 0; i < signalCount; i++) {
+                signalCount = Math.Min(to[clientId][toHistInd].Length - fromSignalI, signalCount);
+                for (int i = 0; i < signalCount; i++) {
                     to[clientId][toHistInd][fromSignalI + i].cameIn = DateTime.UtcNow;
                     var incomingData = to[clientId][toHistInd][fromSignalI + i].data;
                     incomingData.timeStamp = timeStamp;
@@ -133,20 +134,7 @@ namespace NetSignal
                     rangeStartSignalI = signalI;
                 }
 
-                //stop current block
-                if ((staysDirty && !signals[signalI].dataDirty)
-                    //|| 
-                    //(signals[signalI].data.timeStamp.Ticks != currentT)
-                    )
-                {
-                    
-                }
-
-                if (signals[signalI].data.timeStamp.Ticks != currentT)
-                {
-                    
-                }
-                
+            
                 staysDirty = signals[signalI].dataDirty; 
 
                 //write signal data
