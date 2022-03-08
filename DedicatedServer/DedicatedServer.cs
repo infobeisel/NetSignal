@@ -21,7 +21,7 @@ namespace DedicatedServer
             ConnectionState[] connectionStatesSeenFromServer, serverState;
             IncomingSignal[][][] unreliableSignalsSeenFromServer, reliableSignalsSeenFromServer;
             OutgoingSignal[][][] unreliableSignalsSentFromServer, reliableSignalsSentFromServer;
-            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 9 , 9, historySize);
+            Initialize(args, cancel, shouldPrint, out connectionMetaDatasSeenFromServer, out connectionApisSeenFromServer, out connectionStatesSeenFromServer, out server, out serverData, out serverState, out unreliableSignalsSeenFromServer, out unreliableSignalsSentFromServer, out reliableSignalsSeenFromServer, out reliableSignalsSentFromServer, 9 , 9 + 9, historySize);
             TimeControl timeControl = new TimeControl(false, DateTime.UtcNow.Ticks, 60, historySize);
             
             NetSignalStarter.StartServer(shouldPrint, server, serverData, serverState, () => cancel, connectionApisSeenFromServer,
@@ -86,13 +86,13 @@ namespace DedicatedServer
                 for(int j = 0; j < historyCount; j++)
                 {
                     unreliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(unreliableCount);
-                    reliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(reliableCount + unreliableCount);
+                    reliableSignalsSeenFromServer[i][j] = SignalFactory.ConstructIncomingSignalArray(reliableCount );
                     
                 }
                 for (int j = 0; j < clients.Length; j++)
                 {
                     unreliableSignalsSentFromServer[i][j] = SignalFactory.ConstructOutgoingSignalArray(unreliableCount);
-                    reliableSignalsSentFromServer[i][j] = SignalFactory.ConstructOutgoingSignalArray(reliableCount + unreliableCount);
+                    reliableSignalsSentFromServer[i][j] = SignalFactory.ConstructOutgoingSignalArray(reliableCount );
                 }
             }
 
