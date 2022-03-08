@@ -86,6 +86,9 @@ namespace NetSignal
                         //System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
                         //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
                         await Task.Delay(timeControl.updateTimeStepMs);
+
+                        var histI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+                        SignalUpdaterUtil.LogSignals(reliableIncomingSignals, 1, histI);
                     }
 
                 });

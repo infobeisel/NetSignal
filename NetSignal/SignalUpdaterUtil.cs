@@ -43,7 +43,21 @@ namespace NetSignal
             {
             }
         }
-
+        public static void LogSignals(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI)
+        {
+            Console.WriteLine("signals:");
+            foreach (var signal in clientIncoming[incomingClientId][regressedI])
+            {
+                Console.Write(signal.data.AsFloat().ToString("0.00") + " , ");
+            }
+            Console.WriteLine();
+            foreach (var signal in clientIncoming[incomingClientId][regressedI])
+            {
+                Console.Write(signal.data.AsInt().ToString("0000") + " , ");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+        }
         public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
          
@@ -78,7 +92,7 @@ namespace NetSignal
                                 if (unreliableIncomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
 
-                                    Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
+                                    //Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
                                     for (int fromConI = 0; fromConI < clientCount; fromConI++)
                                     {
                                         //does not arrive at client for some reason

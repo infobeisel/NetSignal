@@ -205,15 +205,15 @@ namespace NetSignal
             await Task.Delay(1000);
 
 
-            await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
-            //await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
+            //await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
+            await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
 
 
-            await Task.Delay(1000);
+            await Task.Delay(100000);
 
         }
 
-        private static async Task SyncLogCheckWithPlayer0And1( int sendFrom , IncomingSignal[][][][] clientIncoming, OutgoingSignal [][][] clientOutgoing, TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
+        private static async Task SyncLogCheckWithPlayer0And1( int sendFrom , IncomingSignal[][][][] clientIncoming, OutgoingSignal [][][] clientOutgoing, IncomingSignal [][][][] alsoIncoming,  TimeControl timeControl0,  TimeControl timeControl1, int outgoingClientId = 0, int incomingClientId = 1)
         {
             bool wasSame = false;
 
@@ -245,7 +245,7 @@ namespace NetSignal
                         a.index = j;
                         a.timeStamp = new DateTime(timeControl0.CurrentTimeTicks);
                         clientOutgoing[outgoingClientId][outgoingClientId][j].data = a;
-                        Console.WriteLine("wrote  signal " + j);
+                       // Console.WriteLine("wrote  signal " + j);
                     }
                     
                 }
@@ -262,18 +262,8 @@ namespace NetSignal
                     var regressedI = ConnectionUpdater.findLatest(clientIncoming[outgoingClientId][incomingClientId], 1);
                     var regressed = clientIncoming[outgoingClientId][incomingClientId][regressedI][1].data.AsFloat();
                     //Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") + ", err: " + (100.0f * (regressed - trueVal) / trueVal).ToString("0.000"));
-                    Console.WriteLine("signals:");
-                    foreach (var signal in clientIncoming[outgoingClientId][incomingClientId][regressedI])
-                    {
-                        Console.Write(signal.data.AsFloat().ToString("0.00") + " , ");
-                    }
-                    Console.WriteLine();
-                    foreach (var signal in clientIncoming[outgoingClientId][incomingClientId][regressedI])
-                    {
-                        Console.Write(signal.data.AsInt().ToString("0000") + " , ");
-                    }
-                    Console.WriteLine();
-                    Console.WriteLine();
+                    SignalUpdaterUtil.LogSignals(clientIncoming[outgoingClientId],  incomingClientId, regressedI);
+                    SignalUpdaterUtil.LogSignals(alsoIncoming[outgoingClientId],  incomingClientId, regressedI);
                     //Console.WriteLine(" val from client  " + incomingClientId + " : " + regressed.ToString("0.000"));
                     //TODO val is not working , why : ((( trying to sync over tcp in case udp does not work, but it doesnt work yet
 
@@ -281,6 +271,8 @@ namespace NetSignal
 
             }
         }
+
+        
 
         public async static Task TestDuplex(
         Func<bool> cancel,
