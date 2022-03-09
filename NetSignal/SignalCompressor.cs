@@ -101,10 +101,7 @@ namespace NetSignal
             int clientIdByteI = startFromByteI;
             EncodeClientIdInto32(currentClientId, to, clientIdByteI);
             EncodeTimestampInto64(currentT, to, timestampByteI);
-            report("begin new block at " + rangeStartSignalI );
-
-            //Logging.Write("start with signal " + signalI + " from client " + currentClientId);
-            //write timestamp
+            //report("begin new block at " + rangeStartSignalI );
 
 
             bool fitsCompletely = true;
@@ -112,7 +109,7 @@ namespace NetSignal
             for(; signalI < signals.Length && fitsCompletely; signalI++) {
 
                 if(signalsByteI + signalAcc * 4  + 8 + 8 >= to.Length) {
-                    Logging.Write("need to stop at signal " + signalI + " and byte " + signalsByteI);
+                    //Logging.Write("need to stop at signal " + signalI + " and byte " + signalsByteI);
                     fitsCompletely = false;
                     break;
                 }

@@ -87,11 +87,11 @@ namespace NetSignal
                         //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
                         await Task.Delay(timeControl.updateTimeStepMs);
 
-                        var histI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
+                        /*var histI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                         SignalUpdaterUtil.LogIncoming(reliableIncomingSignals, 1, histI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
                         SignalUpdaterUtil.LogIncoming(unreliableIncomingSignals, 1, histI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
                         SignalUpdaterUtil.LogOutgoing(reliableOutgoingSignals[1], 1);
-                        SignalUpdaterUtil.LogOutgoing(unreliableOutgoingSignals[1], 1);
+                        SignalUpdaterUtil.LogOutgoing(unreliableOutgoingSignals[1], 1);*/
                     }
 
                 });

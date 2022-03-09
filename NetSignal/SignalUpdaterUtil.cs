@@ -27,9 +27,14 @@ namespace NetSignal
                         {
                            // if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].data = 
-                                    incomingReliable[connectionI][historyIndex][signalI].data;
-                              
+                                var data = incomingReliable[connectionI][historyIndex][signalI].data;
+                                data.index = signalI - tcpToUdpSignalRangeStart;
+                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].data = data;
+                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].dataHasBeenUpdated = true;
+                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].cameIn =
+                                    incomingReliable[connectionI][historyIndex][signalI].cameIn;
+
+
                             }
                         }
                     await Task.Delay(30);
@@ -94,8 +99,8 @@ namespace NetSignal
 
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
                     {
-                        var reliableKeepAliveI = ConnectionUpdater.findLatestHistIndex(reliableIncomingSignals[connectionI], 0);
-                        var unreliableKeepAliveI = ConnectionUpdater.findLatestHistIndex(unreliableIncomingSignals[connectionI], 0);
+                        var reliableKeepAliveI = Util.findLatestHistIndex(reliableIncomingSignals[connectionI], 0);
+                        var unreliableKeepAliveI = Util.findLatestHistIndex(unreliableIncomingSignals[connectionI], 0);
                         
                         //keepalive shows that udp is not working, for this client send everything over tcp
                         if( 
@@ -205,66 +210,29 @@ namespace NetSignal
 
         public static float Regress(IncomingSignal[][][] signals, int clientId, int signalI, TimeControl timeControl, long toTicks)
         {
+            int latest = 0;
+            int secondLatest = 0;
 
-            //int regressSize = timeControl.historySize;
-            int regressSize = 4;
+            Util.findTwoLatestHistIndices(signals[clientId], signalI, out latest, out secondLatest);
 
-            /*ThreadLocal<double[]> xs = new ThreadLocal<double[]>();
-            if (xs.Value == null || xs.Value.Length != regressSize )
-                xs.Value = new double[regressSize ];
-            ThreadLocal<double[]> ys = new ThreadLocal<double[]>();
-            if (ys.Value == null || ys.Value.Length != regressSize )
-                ys.Value = new double[regressSize ];
-            */
 
-            double[] xs = new double[regressSize];
-            double[] ys = new double[regressSize];
+            var minTimeStamp = signals[clientId][secondLatest][signalI].data.timeStamp.Ticks;
+            var ticks = signals[clientId][secondLatest][signalI].data.timeStamp.Ticks;
+            var secondLatestX = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
+            var secondLatestY = signals[clientId][secondLatest][signalI].data.AsFloat();
+
+            ticks = signals[clientId][latest][signalI].data.timeStamp.Ticks;
+            var latestX = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
+            var latestY = signals[clientId][latest][signalI].data.AsFloat();
             
-            var historyI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
-            var histSize = timeControl.historySize;
-            var fromTimeStamp = toTicks;
-            
-            var minTimeStamp = long.MaxValue;
-            for(int i = 0; i < regressSize; i++) {
-                minTimeStamp = Math.Min(minTimeStamp, signals[clientId][((historyI - i) % histSize + histSize) % histSize][signalI].data.timeStamp.Ticks);
-            }
+            var ping = signals[clientId][latest][signalI].cameIn.Ticks - ticks;
 
-            var latestX = double.MinValue;
-            var latestY = 0.0;
 
-            var secondLatestX = double.MinValue;
-            var secondLatestY = 0.0;
+            double nowX = (double)(toTicks - minTimeStamp - ping) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
 
-            for (int i = 0; i < regressSize ;i++)// regressSize; i++)
-            {   
-                var ticks = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.timeStamp.Ticks;
-                double x = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
-                double y = signals[clientId][((historyI - i) % histSize +histSize) % histSize][signalI].data.AsFloat();
+            double alpha = (nowX - secondLatestX) / (latestX - secondLatestX);
+            return (float)((1.0 - alpha) * secondLatestY + alpha * latestY);
 
-                xs[i] = x;
-                ys[i] = y;
-
-                if(x > latestX) {
-                    latestX = x;
-                    latestY = y;
-                }
-                if(x > secondLatestX && x != latestX) {
-                    secondLatestX = x;
-                    secondLatestY = y;
-                }
-            }
-
-            double nowX = (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
-            var ySpeed = latestY - secondLatestY;
-            var xSpeed = latestX - secondLatestX;
-            var yStep = ySpeed / xSpeed;
-            var extrapolateSpeedX = nowX - latestX;
-            var ret = latestY + yStep * extrapolateSpeedX;
-            return (float)ret;
-    
-            //var poly = MathNet.Numerics.Polynomial.Fit(xs, ys, 2);
-            //return (float)poly.Evaluate( (double)(toTicks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0);
-            //return (float)latestY;
 
         }
 

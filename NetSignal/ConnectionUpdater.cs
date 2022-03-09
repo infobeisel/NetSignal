@@ -401,20 +401,7 @@ namespace NetSignal
             }
             
         }
-        public static int findLatestHistIndex(NetSignal.IncomingSignal[][] signals, int signalI)
-        {
-            var ret = 0;
-            var comp = new DateTime(0);
-            for (int i = 0; i < signals.Length; i++)
-            {
-                if (signals[i][signalI].data.timeStamp > comp)
-                {
-                    comp = signals[i][signalI].data.timeStamp;
-                    ret = i;
-                }
-            }
-            return ret;
-        }
+        
 
         public async static void DetectUdpComNotWorking(int clientId , IncomingSignal[][] reliable, IncomingSignal[][] unreliable, Func<bool> cancel, TimeControl timeControl, Action callBackUdpNotWorking, int periodMs = 1000)
         {
@@ -422,8 +409,8 @@ namespace NetSignal
 
             while (!cancel())
             {
-                var reliableKeepAliveI = findLatestHistIndex(reliable, 0);
-                var unreliableKeepAliveI = findLatestHistIndex(unreliable, 0);
+                var reliableKeepAliveI = Util.findLatestHistIndex(reliable, 0);
+                var unreliableKeepAliveI = Util.findLatestHistIndex(unreliable, 0);
 
                 Logging.Write("ms between keepalives tcp and upd: " +  reliable[reliableKeepAliveI][0].data.timeStamp  + " , " 
                     + unreliable[unreliableKeepAliveI][0].data.timeStamp);
