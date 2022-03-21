@@ -40,47 +40,12 @@ namespace NetSignal
                 clientState[i] = new ConnectionState();
             }
 
-            /*await TestDuplex(() => cancel, () => shouldPrint,
-                 connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-                 server, serverData, serverState,  clients, clientDatas, clientState);
-
-            */
-
-            /*await TestClientsToRemoteDedicatedServer(args.Length > 0 ? int.Parse(args[0])   : 5001, () => cancel, () => shouldPrint,
-                  server, serverData, serverState, clients, clientDatas, clientState);*/
-            /*await TestOneOfClientsToRemoteDedicatedServer(  args.Length > 0 ? int.Parse(args[0]) : 5001, () => cancel, () => shouldPrint,
-                server, serverData, serverState, clients, clientDatas, clientState);*/
-            /*await TestClientsToRemoteDedicatedServer(args.Length > 0 ? int.Parse(args[0]) : 5001, () => cancel, () => shouldPrint,
-            server, serverData, serverState, clients, clientDatas, clientState);*/
-
-            //args.Length > 0 ? int.Parse(args[0]) : 5001,
-            //await TestDuplex(() => cancel, () => shouldPrint, connectionApisSeenFromServer, connectionMetaDatasSeenFromServer, connectionStatesSeenFromServer,
-            //server, serverData, serverState, clients, clientDatas, clientState);
-            //await TestClientsToRemoteDedicatedServer(5002, () => cancel, () => shouldPrint,
-            //server, serverData, serverState, clients, clientDatas, clientState);
-
             TestCompressor();
 
             await Task.Delay(20000);
 
             cancel = true;
-            //TODOS:
-            //implement websocket for matchmaking (to find ip to connect to server), set up with strato !! (CHECK)
-            // - partial check, set up matchmaking server on strato and test initial server list request(CHECK)
-            // - implement security features (https) IMPORTANT
-            /*
-             * matchmaking server listens to http, following endpoints:
-             * x dedicated server register (will be done manually)
-             * - dedicated server update free slots and keepalive (partial check, misses free slots)
-             * - client ask for server list (paged subset) (partial check)
-             *
-             * discretized timestamp for signals
-             * better compression: take multiple signals that have same timestamp
-             * delta compression: stop syncing signals when they dont change
-             * protocol for player tries to join already full server
-             *
-             *battletest: make scriptable objects that have Incoming- and Outgoing Signals, write Mono Updaters that assign Signals to specific game objects (mainly: Bird slots, state enums for UI)
-            */
+         
         }
 
         public static async void TestMatchMakingClientToSetUpRemoteServer()
@@ -131,7 +96,6 @@ namespace NetSignal
             for (int i = 0; i < 1; i++)
             {
                 clientI = await NetSignalStarter.StartClient(countUpFromPort, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
-                    //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
                     cancel);
                 if (clientI == -1)
                 {
@@ -142,10 +106,7 @@ namespace NetSignal
                 NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
                     clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, clientTimeControls[clientI]);
-                //clientUnreliableOutgoing, clientUnreliableIncoming,
-                //clientReliableOutgoing, clientReliableIncoming);
-                //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
-                // clientInstancesData[clientI] = updatedClientTuple.Item2;
+         
                 await Task.Delay(1000);
             }
 
@@ -153,7 +114,6 @@ namespace NetSignal
 
             await Task.Delay(1000);
 
-            //await SyncLogCheckWithPlayer0And1(clientI, clientReliableIncoming, clientReliableOutgoing[clientI], clientReliableIncoming,  clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
             await SyncLogCheckWithPlayer0And1(clientI, clientUnreliableIncoming, clientUnreliableOutgoing[clientI], clientReliableIncoming, clientTimeControls[0], clientTimeControls[1], clientI, clientI == 0 ? 1 : 0);
 
             await Task.Delay(100000);
@@ -235,9 +195,7 @@ namespace NetSignal
 
             for (int i = 0; i < 100000; i++)
             {
-                //wasSame = clientOutgoing[outgoingClientId][outgoingClientId][histIndex][1].Equals(clientIncoming[incomingClientId][outgoingClientId][histIndex][1]);
-
-                //trueVal =   100.0f *  (float)Math.Sin(((float)i / 1000.0f) * Math.PI);
+              
                 trueVal += 0.001f;
                 if (i % 1 == 0)
                 {
@@ -250,7 +208,6 @@ namespace NetSignal
                         a.index = j;
                         a.timeStamp = new DateTime(timeControl0.CurrentTimeTicks);
                         clientOutgoing[outgoingClientId][outgoingClientId][j].data = a;
-                        // Console.WriteLine("wrote  signal " + j);
                     }
                 }
 
@@ -259,14 +216,11 @@ namespace NetSignal
                 if (i % 1 == 0)
                 {
                     var histIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl1);
-                    //var regressed = SignalUpdaterUtil.Regress(clientIncoming[incomingClientId], incomingClientId, 1, timeControl1, DateTime.UtcNow.Ticks);
                     var regressedI = Util.findLatestHistIndex(clientIncoming[outgoingClientId][incomingClientId], 1);
                     var regressed = clientIncoming[outgoingClientId][incomingClientId][regressedI][1].data.AsFloat();
-                    //Console.WriteLine("true: " + trueVal.ToString("0.000") + " regressed: " + regressed.ToString("0.000") + ", err: " + (100.0f * (regressed - trueVal) / trueVal).ToString("0.000"));
                     SignalUpdaterUtil.LogIncoming(clientIncoming[outgoingClientId], incomingClientId, regressedI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
                     SignalUpdaterUtil.LogIncoming(alsoIncoming[outgoingClientId], incomingClientId, regressedI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
-                    //Console.WriteLine(" val from client  " + incomingClientId + " : " + regressed.ToString("0.000"));
-                    //TODO val is not working , why : ((( trying to sync over tcp in case udp does not work, but it doesnt work yet
+                    
                 }
             }
         }
@@ -340,7 +294,6 @@ namespace NetSignal
                 TimeControl timeControlClient = new TimeControl(false, DateTime.UtcNow.Ticks, 60, 30);
                 clientTimeControls.Add(timeControlClient);
                 int clientI = await NetSignalStarter.StartClient(5001, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState, serverInstanceData,
-                    //clientI == clientToLeaveAndJoin ? cancelTestClient : cancel,
                     cancel);
                 if (clientI == -1)
                 {
@@ -351,16 +304,10 @@ namespace NetSignal
                 NetSignalStarter.StartClientSignalSyncing(clientI, shouldReport, clientInstancesAPI, clientInstancesData, clientInstancesState,
                     clientUnreliableOutgoing[clientI], clientUnreliableIncoming[clientI],
                 clientReliableOutgoing[clientI], clientReliableIncoming[clientI], cancel, serverInstanceData, timeControlClient);
-                //clientUnreliableOutgoing, clientUnreliableIncoming,
-                //clientReliableOutgoing, clientReliableIncoming);
-                //clientInstancesAPI[clientI] = updatedClientTuple.Item1;
-                // clientInstancesData[clientI] = updatedClientTuple.Item2;
+             
                 await Task.Delay(1000);
             }
             await Task.Delay(1000);
-
-            //await SyncLogCheckWithPlayer0And1(clientReliableIncoming, clientReliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
-            //await SyncLogCheckWithPlayer0And1(clientUnreliableIncoming, clientUnreliableOutgoing, clientTimeControls[0], clientTimeControls[1]);
 
             await Task.Delay(1000);
         }

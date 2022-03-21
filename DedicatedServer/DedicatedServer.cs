@@ -65,8 +65,6 @@ namespace DedicatedServer
             {
                 unreliableSignalsSeenFromServer[i] = new IncomingSignal[historyCount][];
                 reliableSignalsSeenFromServer[i] = new IncomingSignal[historyCount][];
-                //unreliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][];
-                //reliableSignalsSentFromServer[i] = new OutgoingSignal[historyCount][];
 
                 unreliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][];
                 reliableSignalsSentFromServer[i] = new OutgoingSignal[clients.Length][];

@@ -83,12 +83,10 @@ namespace NetSignal
         public void WriteString(string str)
         {
             signalType = SignalType.Data;
-            //Encoding.ASCII.GetBytes(str, 0, Math.Min(ConnectionState.byteCount , str.Length / sizeof(char)), data, 0);
         }
 
         public string AsString()
         {
-            //return Encoding.ASCII.GetString(data, 0, data.Length);
             return "";
         }
 

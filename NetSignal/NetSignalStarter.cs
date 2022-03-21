@@ -12,8 +12,7 @@ namespace NetSignal
             OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
             OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, TimeControl timeControl)
         {
-            //serverData.listenPort = 3000;
-            //serverData.serverIp = null;
+           
             Logging.Write("StartServer: init multi connection");
             ConnectionUpdater.InitializeMultiConnection(ref serverConnection[0], ref serverData[0], serverState[0], connections, connectionDatas, connectionStates);
 
@@ -75,15 +74,9 @@ namespace NetSignal
                     while (!cancel())
                     {
                         System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
-                        //System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
-                        //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
+                     
                         await Task.Delay(timeControl.updateTimeStepMs);
 
-                        /*var histI = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
-                        SignalUpdaterUtil.LogIncoming(reliableIncomingSignals, 1, histI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
-                        SignalUpdaterUtil.LogIncoming(unreliableIncomingSignals, 1, histI, (string s) => Console.WriteLine(s), (string s) => Console.Write(s));
-                        SignalUpdaterUtil.LogOutgoing(reliableOutgoingSignals[1], 1);
-                        SignalUpdaterUtil.LogOutgoing(unreliableOutgoingSignals[1], 1);*/
                     }
                 });
             }
@@ -150,7 +143,6 @@ namespace NetSignal
             ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
                  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },
                                storeToClientCon, storeToClientData, storeToClientState);
-            //storeToClientCon, storeToClientData, storeToClientState);
 
             _ = Task.Run(() =>
             {
@@ -178,9 +170,7 @@ namespace NetSignal
                     while (!cancel())
                     {
                         System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
-                        //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
                         System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
-                        //Logging.Write("timestep client " + clientI + " : " + DateTime.UtcNow.Ticks);
                         await Task.Delay(timeControl.updateTimeStepMs);
                     }
                 });

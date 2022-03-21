@@ -74,51 +74,42 @@ namespace NetSignal
                                 signals[fromClientId][signalI].data = dataToSend;
                             }
                         }
-                        //for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
+                        //report("try to send ur to D" + toConnectionI);
+
+                        var toAddressData = toAllData[toConnectionI];
+                        var udpClientToUse = toAllApis[toConnectionI].udpClient;
+                        //var udpClientToUse = toAllApis[0].udpClient;
+
+                        IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
+
+                        var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
+                        Util.FlushBytes(usingBytes);
+
+                        int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1, report);
+                        report("send data to " + toSendTo + " : " + compressedSignalCount);
+
+                        //SignalCompressor.Compress(dataToSend, usingBytes, 1);
+
+                        await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                         {
-                            //report("try to send ur to C" + signals[fromClientId][signalI] + " contnue? " + !cancel());
-                            //if (signals[fromClientId][signalI].dataDirty) //on server side: this can happen for every fromClientI, but on client side this should happen only for the local client, i.e. the local client should only write to its own outgoing signals
+                            try
                             {
-                                //report("try to send ur to D" + toConnectionI);
-
-                                var toAddressData = toAllData[toConnectionI];
-                                var udpClientToUse = toAllApis[toConnectionI].udpClient;
-                                //var udpClientToUse = toAllApis[0].udpClient;
-
-                                IPEndPoint toSendTo = new IPEndPoint(IPAddress.Parse(toAddressData.myIp), toAddressData.iListenToPort);
-
-                                var usingBytes = toAllStates[toConnectionI].udpWriteBytes;
-                                Util.FlushBytes(usingBytes);
-
-                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1, report);
-                                report("send data to " + toSendTo + " : " + compressedSignalCount);
-
-                                //SignalCompressor.Compress(dataToSend, usingBytes, 1);
-
-                                await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
-                                {
-                                    try
-                                    {
-                                        //var lockObj = useOwnUdpClient ? connectionState.udpWriteLock : toAllStates[toClientI].udpWriteLock;
-                                        await udpClientToUse.SendAsync(usingBytes, usingBytes.Length, toSendTo);
-                                    }
-                                    catch (SocketException e)
-                                    {
-                                        previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
-                                        report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
-                                    }
-                                    catch (ObjectDisposedException e)
-                                    {
-                                        previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
-                                        report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
-                                    }
-                                });
+                                //var lockObj = useOwnUdpClient ? connectionState.udpWriteLock : toAllStates[toClientI].udpWriteLock;
+                                await udpClientToUse.SendAsync(usingBytes, usingBytes.Length, toSendTo);
                             }
-                            //report("try to send ur to E" + signals);
-                            //TODO need mechanism to exclude signal from being sent
-                            //signals[fromClientI][signalI].dataDirty = false;
-                        }
+                            catch (SocketException e)
+                            {
+                                previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
+                                report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                            }
+                            catch (ObjectDisposedException e)
+                            {
+                                previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.Uninitialized);
+                                report("SyncSignalsToAll: udp client socket " + toConnectionI + " got closed, (unfortunately) this is intended behaviour, stop sending.");
+                            }
+                        });
                     }
+                          
                     //report("try to send ur to F");
                     previousState = Util.Exchange(ref toAllStates[toConnectionI].udpWriteStateName, StateOfConnection.ReadyToOperate);
                     //report("try to send ur to G");

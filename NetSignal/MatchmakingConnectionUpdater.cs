@@ -17,14 +17,7 @@ namespace NetSignal
             {
                 await Task.Delay(1000);
             }
-            /*while (currentState.udpStateName != StateOfConnection.ReadyToOperate)
-            {
-                await Task.Delay(1000);
-            }*/
             Logging.Write("clean up http listener");
-
-            //Util.Exchange(ref currentState.udpStateName, StateOfConnection.Uninitialized);
-
             connection.httpListener.Stop();
             connection.httpListener.Close();
         }
@@ -87,7 +80,6 @@ namespace NetSignal
 
                 Logging.Write("make update server entry");
                 CancellationTokenSource source = new CancellationTokenSource();
-                //previouslyProvidedToken = source.Token;
                 _ = connection.httpClient.PostAsync(uri, stringContent, source.Token);
                 await Task.Delay(2000);
                 source.Cancel();
@@ -125,7 +117,6 @@ namespace NetSignal
             {
                 Logging.Write("start and stop http listener");
                 connection.httpListener = new HttpListener();
-                //connection.httpListener.Prefixes.Add("http://+:" + 5042.ToString() + "/matchmaking/");
                 connection.httpListener.Prefixes.Add("http://+:" + data.matchmakingServerPort.ToString() + "/v0/matchmaking/");
                 connection.httpListener.Start();
 

@@ -50,7 +50,6 @@ namespace FlyByIslandDedicatedServer
             var terrainId = rng.Next();
             var trackId = rng.Next();
             for (int clientI = 0; clientI < reliableSignalsSentFromServer.Length; clientI++)
-            //foreach (var toClient in reliableSignalsSentFromServer)
             {
                 reliableSignalsSentFromServer[clientI][clientI][ReliableSignalIndices.TERRAIN_ID].WriteInt(terrainId);
                 reliableSignalsSentFromServer[clientI][clientI][ReliableSignalIndices.TRACK_ID].WriteInt(trackId);

@@ -23,15 +23,12 @@ namespace NetSignal
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
                         for (int signalI = tcpToUdpSignalRangeStart; signalI < tcpToUdpSignalRangeEnd; signalI++)
                         {
-                            // if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
-                            {
-                                var data = incomingReliable[connectionI][historyIndex][signalI].data;
-                                data.index = signalI - tcpToUdpSignalRangeStart;
-                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].data = data;
-                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].dataHasBeenUpdated = true;
-                                incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].cameIn =
-                                    incomingReliable[connectionI][historyIndex][signalI].cameIn;
-                            }
+                            var data = incomingReliable[connectionI][historyIndex][signalI].data;
+                            data.index = signalI - tcpToUdpSignalRangeStart;
+                            incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].data = data;
+                            incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].dataHasBeenUpdated = true;
+                            incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].cameIn =
+                                incomingReliable[connectionI][historyIndex][signalI].cameIn;
                         }
                     await Task.Delay(30);
                 }
@@ -101,8 +98,6 @@ namespace NetSignal
                         if (
                             ((UdpKeepAliveInfo)unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.AsInt())
                             == UdpKeepAliveInfo.UdpOverTcpReceiveMode)
-                        //if (Math.Abs((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp -
-                        //unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds) > 1000)
                         {
                             for (int signalI = 0; signalI < unreliableIncomingSignals[connectionI][historyIndex].Length; signalI++)
                             {
@@ -171,12 +166,7 @@ namespace NetSignal
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
                 int historyIndex = CurrentHistoryIndex(timeControl);
-                /*var package = SignalCompressor.DecompressDataPackage(bytes, 1);
-                report("data package: " + package.ToString());
-
-                signals[package.clientId][historyIndex][package.index].data = package;
-                signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
-                */
+             
 
                 SignalCompressor.Decompress(report, bytes, 1, historyIndex, signals, perSignalUpdate);
             },

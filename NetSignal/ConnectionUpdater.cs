@@ -184,7 +184,6 @@ namespace NetSignal
 
         private static async Task ExchangeConnectionInitials(ConnectionAPIs connectors, ConnectionMetaData connectionData, ConnectionState connectionState)
         {
-            //byte[] data = Encoding.ASCII.GetBytes(connectionData.listenPort.ToString());//only send the port we are listening to over udp
             Util.FlushBytes(connectionState.tcpWriteBytes);
             await MessageDeMultiplexer.MarkSignal(SignalType.TCPConnectionRequest, connectionState.tcpWriteBytes,
                 async () =>
@@ -393,10 +392,8 @@ namespace NetSignal
 
         private static void IdentifyClient(int clientHintsUdpPort, ConnectionAPIs[] storeToConnections, ConnectionState[] storeToConnectionStates, TcpClient connection, out IPEndPoint clientEndpoint, out int clientID)
         {
-            //clientEndpoint = (IPEndPoint)connection.Client.RemoteEndPoint;
-            //var splitIPAndPort = fromTCPMessage.Split('|');
             var connnectedToIPAddress = ((IPEndPoint)connection.Client.RemoteEndPoint).Address;
-            //var dataContainingListenPort = ((IPEndPoint)connection.Client.RemoteEndPoint).Port;
+            
             var clientListensToUdpPort = clientHintsUdpPort;
 
             clientEndpoint = new IPEndPoint(connnectedToIPAddress, clientListensToUdpPort);
