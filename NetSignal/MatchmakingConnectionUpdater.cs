@@ -1,23 +1,18 @@
+using Mono.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
-using Mono.Data.Sqlite;
-
 using System.Data;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace NetSignal
 {
     public class MatchmakingConnectionUpdater
     {
-
-        
-
-        public async static void AwaitAndPerformTearDownHttpListener(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
+        public static async void AwaitAndPerformTearDownHttpListener(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
         {
-
             while (!shouldTearDown())
             {
                 await Task.Delay(1000);
@@ -34,9 +29,8 @@ namespace NetSignal
             connection.httpListener.Close();
         }
 
-        public async static Task<ServerList> GatherServerList(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
+        public static async Task<ServerList> GatherServerList(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState)
         {
-
             //string uri = "http://127.0.0.1:" + httpPort + "/methodlist/" + selectedInspectable.id;
             string uri = connectionData.matchmakingServerIp + ":" + connectionData.matchmakingServerPort.ToString() + "/v0/matchmaking/serverlist";
 
@@ -50,7 +44,6 @@ namespace NetSignal
                 string responseString = await getResponse.Content.ReadAsStringAsync();
                 ret = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerList>(responseString);
                 Logging.Write(ret.ToString());
-
             }
             catch (Exception e)
             {
@@ -59,7 +52,7 @@ namespace NetSignal
             return ret;
         }
 
-        public async static void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionState [] clientStates, Func<bool> cancel, int periodMs, Action<string> report)
+        public static async void PeriodicallySendKeepAlive(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionState[] clientStates, Func<bool> cancel, int periodMs, Action<string> report)
         {
             while (!cancel())
             {
@@ -68,10 +61,8 @@ namespace NetSignal
             }
         }
 
-        internal async static Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState,ConnectionState [] clientStates, Action<string> report)
+        internal static async Task UpdateServerEntry(ConnectionAPIs connection, ConnectionMetaData connectionData, ConnectionState connectionState, ConnectionState[] clientStates, Action<string> report)
         {
-
-            
             string uri = connectionData.matchmakingServerIp + ":" + connectionData.matchmakingServerPort.ToString() + "/v0/matchmaking/dedicatedkeepalive";
 
             ServerKeepAlive update = new ServerKeepAlive();
@@ -79,7 +70,8 @@ namespace NetSignal
             update.port = connectionData.iListenToPort;
 
             int activeConCount = 0;
-            foreach(var state in clientStates) {
+            foreach (var state in clientStates)
+            {
                 activeConCount += state.isConnectionActive ? 1 : 0;
             }
             Logging.Write("current players :" + activeConCount);
@@ -99,48 +91,38 @@ namespace NetSignal
                 _ = connection.httpClient.PostAsync(uri, stringContent, source.Token);
                 await Task.Delay(2000);
                 source.Cancel();
-
-
             }
             catch (HttpRequestException e)
             {
-                Logging.Write("the matchmaking server is not available" ); 
+                Logging.Write("the matchmaking server is not available");
             }
             finally
             {
-
             }
         }
 
-
-
-
-        public async static void AwaitAndPerformTearDownHttpClient(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
+        public static async void AwaitAndPerformTearDownHttpClient(ConnectionAPIs connection, Func<bool> shouldTearDown, ConnectionState currentState)
         {
-
             while (!shouldTearDown())
             {
                 await Task.Delay(1000);
             }
-            
+
             Logging.Write("clean up http client");
 
             connection.httpClient.Dispose();
-            
         }
 
         public static void InitializeMatchMakingClient(ref ConnectionAPIs connection, ref ConnectionMetaData data, ref ConnectionState state, Func<bool> shouldTearDown)
         {
             connection.httpClient = new System.Net.Http.HttpClient();
             AwaitAndPerformTearDownHttpClient(connection, shouldTearDown, state);
-            
         }
 
         public static void InitializeMatchMakingServer(ref ConnectionAPIs connection, ref ConnectionMetaData data, ref ConnectionState state, Func<bool> shouldTearDown)
         {
             try
             {
-
                 Logging.Write("start and stop http listener");
                 connection.httpListener = new HttpListener();
                 //connection.httpListener.Prefixes.Add("http://+:" + 5042.ToString() + "/matchmaking/");
@@ -152,8 +134,6 @@ namespace NetSignal
                 StartListenMatchmaking(connection, data, state, shouldTearDown);
 
                 AwaitAndPerformTearDownHttpListener(connection, shouldTearDown, state);
-
-
             }
             catch (Exception e)
             {
@@ -189,13 +169,10 @@ namespace NetSignal
             {
                 Logging.Write("http listener was disposed, doesnt offer cancelation token, so this is intended");
             }
-             catch(HttpListenerException e)
+            catch (HttpListenerException e)
             {
                 Logging.Write("http listener was disposed, doesnt offer cancelation token, so this is intended");
             }
-
-            
-            
 
             if (requestContext != null && (StateOfConnection)state.httpListenerStateName == StateOfConnection.ReadyToOperate && !shouldStop())
             {
@@ -225,8 +202,6 @@ namespace NetSignal
                     MakeDatabaseUpdateOp(
                         "update MatchList set LastKeepAliveTick = " + up.tick + ", CurrentPlayerCount = " + up.currentPlayerCount +
                         " where Address =  '" + up.ip + "' and port = " + up.port + "");
-
-
                 }
 
                 if (request.HttpMethod.Equals("GET") && request.Url.LocalPath.Equals("/v0/matchmaking/serverlist"))
@@ -248,7 +223,6 @@ namespace NetSignal
 
                     var serializedServerList = Newtonsoft.Json.JsonConvert.SerializeObject(serverList, Newtonsoft.Json.Formatting.None);
 
-
                     var buffer = System.Text.Encoding.UTF8.GetBytes(serializedServerList);
                     response.ContentLength64 = buffer.Length;
                     using (System.IO.Stream outputStream = response.OutputStream)
@@ -269,10 +243,10 @@ namespace NetSignal
             try
             {
                 con.Open();
-            
+
                 Logging.Write("opened db");
                 IDbCommand dbcmd;
-                
+
                 dbcmd = con.CreateCommand();
 
                 dbcmd.CommandText = sqlCommand;
@@ -280,23 +254,20 @@ namespace NetSignal
                 reader = dbcmd.ExecuteReader();
                 Logging.Write("executed sql");
 
-
                 while (reader.Read())
                 {
-
                     resultReader(reader);
                 }
-
-                
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Logging.Write(e);
-            } finally
+            }
+            finally
             {
                 reader.Close();
                 con.Close();
             }
-            
         }
 
         private static void MakeDatabaseUpdateOp(string sqlCommand)
@@ -319,7 +290,6 @@ namespace NetSignal
                 Logging.Write("execute sql");
                 dbcmd.ExecuteNonQuery();
                 Logging.Write("executed sql");
-                
             }
             catch (Exception e)
             {
@@ -329,10 +299,7 @@ namespace NetSignal
             {
                 dbcmd.Dispose();
                 con.Close();
-
             }
-
         }
     }
-
 }

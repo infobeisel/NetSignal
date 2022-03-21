@@ -17,5 +17,4 @@ namespace NetSignal
             return name + "," + ip + ":" + port.ToString() + "," + currentPlayerCount.ToString() + "/" + maxPlayerCount.ToString();
         }
     }
-
 }

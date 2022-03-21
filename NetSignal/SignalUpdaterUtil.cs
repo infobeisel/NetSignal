@@ -1,14 +1,12 @@
 using System;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetSignal
 {
     public class SignalUpdaterUtil
     {
-        public async static void SyncTcpToUdpSignalsWorkaroundIncoming(IncomingSignal[][][] incomingReliable, IncomingSignal[][][] incomingUnreliable, TimeControl timeControl, Func<bool> cancel)
+        public static async void SyncTcpToUdpSignalsWorkaroundIncoming(IncomingSignal[][][] incomingReliable, IncomingSignal[][][] incomingUnreliable, TimeControl timeControl, Func<bool> cancel)
         {
             if (incomingReliable.Length != incomingUnreliable.Length)
                 throw new Exception("incoming and outgoing array length unequal");
@@ -23,9 +21,9 @@ namespace NetSignal
                 {
                     var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
                     for (int connectionI = 0; connectionI < clientCount; connectionI++)
-                        for (int signalI = tcpToUdpSignalRangeStart; signalI < tcpToUdpSignalRangeEnd ; signalI++)
+                        for (int signalI = tcpToUdpSignalRangeStart; signalI < tcpToUdpSignalRangeEnd; signalI++)
                         {
-                           // if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
+                            // if (incomingReliable[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
                                 var data = incomingReliable[connectionI][historyIndex][signalI].data;
                                 data.index = signalI - tcpToUdpSignalRangeStart;
@@ -33,8 +31,6 @@ namespace NetSignal
                                 incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].dataHasBeenUpdated = true;
                                 incomingUnreliable[connectionI][historyIndex][signalI - tcpToUdpSignalRangeStart].cameIn =
                                     incomingReliable[connectionI][historyIndex][signalI].cameIn;
-
-
                             }
                         }
                     await Task.Delay(30);
@@ -48,6 +44,7 @@ namespace NetSignal
             {
             }
         }
+
         public static void LogIncoming(IncomingSignal[][][] clientIncoming, int incomingClientId, int regressedI, Action<string> logLine, Action<string> log)
         {
             logLine("incoming signals:");
@@ -80,10 +77,8 @@ namespace NetSignal
             Console.WriteLine();
         }
 
-        public async static void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        public static async void SyncURIsToROsInCaseOfUdpOverTcpWorkaround(IncomingSignal[][][] unreliableIncomingSignals, IncomingSignal[][][] reliableIncomingSignals, OutgoingSignal[][][] reliableOutgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
-         
-
             var tcpToUdpSignalRangeStart = reliableOutgoingSignals[0][0].Length - unreliableIncomingSignals[0][0].Length;
             var tcpToUdpSignalRangeEnd = reliableOutgoingSignals[0][0].Length;
 
@@ -101,19 +96,18 @@ namespace NetSignal
                     {
                         var reliableKeepAliveI = Util.findLatestHistIndex(reliableIncomingSignals[connectionI], 0);
                         var unreliableKeepAliveI = Util.findLatestHistIndex(unreliableIncomingSignals[connectionI], 0);
-                        
+
                         //keepalive shows that udp is not working, for this client send everything over tcp
-                        if( 
-                            ((UdpKeepAliveInfo) unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.AsInt())
+                        if (
+                            ((UdpKeepAliveInfo)unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.AsInt())
                             == UdpKeepAliveInfo.UdpOverTcpReceiveMode)
-                        //if (Math.Abs((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp - 
+                        //if (Math.Abs((reliableIncomingSignals[connectionI][reliableKeepAliveI][0].data.timeStamp -
                         //unreliableIncomingSignals[connectionI][unreliableKeepAliveI][0].data.timeStamp).TotalMilliseconds) > 1000)
                         {
                             for (int signalI = 0; signalI < unreliableIncomingSignals[connectionI][historyIndex].Length; signalI++)
                             {
                                 //if (unreliableIncomingSignals[fromConI][historyIndex][signalI].dataHasBeenUpdated)
                                 {
-
                                     //Logging.Write("keepalive was tcp mode, write to  " + connectionI + " , start from signal " + tcpToUdpSignalRangeStart);//+ reliableOutgoingSignals[connectionI][signalI + tcpToUdpSignalRangeStart].data);
                                     for (int fromConI = 0; fromConI < clientCount; fromConI++)
                                     {
@@ -137,10 +131,7 @@ namespace NetSignal
             }
         }
 
-
-
-
-        public async static void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
+        public static async void SyncIncomingToOutgoingSignals(IncomingSignal[][][] incomingSignals, OutgoingSignal[][][] outgoingSignals, TimeControl timeControl, Func<bool> cancel)
         {
             if (incomingSignals.Length != outgoingSignals.Length)
                 throw new Exception("incoming and outgoing array length unequal");
@@ -157,11 +148,10 @@ namespace NetSignal
                         {
                             if (incomingSignals[connectionI][historyIndex][signalI].dataHasBeenUpdated)
                             {
-                                for(int toConI = 0; toConI < clientCount; toConI++)
+                                for (int toConI = 0; toConI < clientCount; toConI++)
                                 {
                                     outgoingSignals[toConI][connectionI][signalI].WriteFloat(incomingSignals[connectionI][historyIndex][signalI].data.AsFloat());
                                 }
-                                
                             }
                         }
                     await Task.Delay(30);
@@ -176,30 +166,25 @@ namespace NetSignal
             }
         }
 
-
-        public static async Task WriteToIncomingSignals(IncomingSignal[][][] signals, TimeControl timeControl, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, Action<int, int, int> perSignalUpdate, params ConnectionMetaData[] fromConnectionDatas )
+        public static async Task WriteToIncomingSignals(IncomingSignal[][][] signals, TimeControl timeControl, Action<string> report, byte[] bytes, UdpReceiveResult udpReceiveResult, Action<int, int, int> perSignalUpdate, params ConnectionMetaData[] fromConnectionDatas)
         {
             await MessageDeMultiplexer.Divide(bytes, async () =>
             {
-
                 int historyIndex = CurrentHistoryIndex(timeControl);
                 /*var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("data package: " + package.ToString());
-                
+
                 signals[package.clientId][historyIndex][package.index].data = package;
                 signals[package.clientId][historyIndex][package.index].cameIn = new DateTime(timeControl.CurrentTimeTicks);
                 */
 
-                SignalCompressor.Decompress(report,bytes, 1, historyIndex, signals, perSignalUpdate);
-
-                
-
+                SignalCompressor.Decompress(report, bytes, 1, historyIndex, signals, perSignalUpdate);
             },
             async () => { Logging.Write("ReceiveSignals: unexpected package connection request!?"); },
-            async () => {
+            async () =>
+            {
                 var package = SignalCompressor.DecompressDataPackage(bytes, 1);
                 report("keep alive package: " + package.ToString());
-
             });
         }
 
@@ -215,7 +200,6 @@ namespace NetSignal
 
             Util.findTwoLatestHistIndices(signals[clientId], signalI, out latest, out secondLatest);
 
-
             var minTimeStamp = signals[clientId][secondLatest][signalI].data.timeStamp.Ticks;
             var ticks = signals[clientId][secondLatest][signalI].data.timeStamp.Ticks;
             var secondLatestX = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
@@ -224,17 +208,13 @@ namespace NetSignal
             ticks = signals[clientId][latest][signalI].data.timeStamp.Ticks;
             var latestX = (double)(ticks - minTimeStamp) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
             var latestY = signals[clientId][latest][signalI].data.AsFloat();
-            
-            var ping = signals[clientId][latest][signalI].cameIn.Ticks - ticks;
 
+            var ping = signals[clientId][latest][signalI].cameIn.Ticks - ticks;
 
             double nowX = (double)(toTicks - minTimeStamp - ping) / (double)TimeSpan.TicksPerMillisecond / 1000.0;
 
             double alpha = (nowX - secondLatestX) / (latestX - secondLatestX);
             return (float)((1.0 - alpha) * secondLatestY + alpha * latestY);
-
-
         }
-
     }
 }

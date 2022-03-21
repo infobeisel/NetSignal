@@ -56,8 +56,7 @@ namespace NetSignal
                 {
                     compLatest = signals[i][signalI].data.timeStamp;
                     latest = i;
-                } 
-                
+                }
             }
             for (int i = 0; i < signals.Length; i++)
             {
@@ -66,9 +65,7 @@ namespace NetSignal
                     compSecondLatest = signals[i][signalI].data.timeStamp;
                     secondLatest = i;
                 }
-
             }
         }
-
     }
 }

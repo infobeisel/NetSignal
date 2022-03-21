@@ -7,11 +7,9 @@ namespace NetSignal
 {
     public class ReliableSignalUpdater
     {
-       
-
-        public async static void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
+        public static async void SyncSignalsToAllReliablyAndTrackIsConnected(OutgoingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> toAllIndices, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates)
         {
-            foreach(var ind in toAllIndices)
+            foreach (var ind in toAllIndices)
             {
                 await Task.Run(() =>
                 {
@@ -20,13 +18,10 @@ namespace NetSignal
             }
         }
 
-        private async static void SyncSignalsToReliably(OutgoingSignal[][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
+        private static async void SyncSignalsToReliably(OutgoingSignal[][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] toConnections, ConnectionMetaData[] toConnectionsDatas, ConnectionState[] toConnectionStates, int toConnectionI)
         {
             while (!cancel())
             {
-
-                
-
                 var isConActive = toConnections[toConnectionI].tcpClient == null ? false : toConnections[toConnectionI].tcpClient.Connected;
                 if (!isConActive)
                 {
@@ -49,7 +44,7 @@ namespace NetSignal
 
                 bool isSyncingSuccessfully = true;
                 var historyIndex = SignalUpdaterUtil.CurrentHistoryIndex(timeControl);
-               // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
+                // Logging.Write("SyncSignalsToReliably: willtoConnectionsDatas.Length " + toConnectionsDatas.Length);
                 for (int fromConnectionI = 0; fromConnectionI < toConnectionsDatas.Length && isSyncingSuccessfully; fromConnectionI++)
                 {
                     int fromClientId = fromConnectionI;
@@ -59,8 +54,6 @@ namespace NetSignal
 
                     for (int signalI = 0; signalI < signals[fromClientId].Length; signalI++)
                     {
-                        
-                        
                         if (signals[fromClientId][signalI].dataDirty)
                         {
                             var dataToSend = signals[fromClientId][signalI].data;
@@ -80,23 +73,19 @@ namespace NetSignal
 
                     //for (int signalI = 0; signalI < signals[fromClientId].Length && isSyncingSuccessfully; signalI++)
                     {
-                        
-                        
                         //if (signals[fromClientId][signalI].dataDirty)
                         {
-
                             var usingBytes = toConnectionStates[toConnectionI].tcpWriteBytes;
                             Util.FlushBytes(usingBytes);
                             await MessageDeMultiplexer.MarkSignal(SignalType.Data, usingBytes, async () =>
                             {
                                 //SignalCompressor.Compress(dataToSend, usingBytes, 1);
-                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1,report);
+                                int compressedSignalCount = SignalCompressor.Compress(signals[fromClientId], 0, usingBytes, 1, report);
 
                                 try
                                 {
                                     report(compressedSignalCount.ToString() + " signals in " + usingBytes.Length + " bytes");
                                     await toConnections[toConnectionI].tcpStream.WriteAsync(usingBytes, 0, usingBytes.Length);
-
                                 }
                                 catch (SocketException e)
                                 {
@@ -127,16 +116,15 @@ namespace NetSignal
                         }
                     }
                 }
-            
 
                 Util.CompareExchange(ref toConnectionStates[toConnectionI].tcpWriteStateName, StateOfConnection.ReadyToOperate, StateOfConnection.BeingOperated);
                 await Task.Delay(30);
             }
         }
 
-        public async static void ReceiveSignalsReliablyFromAllAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report,IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
+        public static async void ReceiveSignalsReliablyFromAllAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, IEnumerable<int> fromIndices, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates)
         {
-            foreach(var index in fromIndices)
+            foreach (var index in fromIndices)
             {
                 await Task.Run(() =>
                 {
@@ -146,11 +134,10 @@ namespace NetSignal
         }
 
         //uses tcp to sync signals reliably
-        private async static void ReceiveSignalsReliablyFromAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
+        private static async void ReceiveSignalsReliablyFromAndTrackIsConnected(IncomingSignal[][][] signals, TimeControl timeControl, Func<bool> cancel, Action<string> report, ConnectionAPIs[] fromStreams, ConnectionMetaData[] fromDatas, ConnectionState[] fromStates, int streamI)
         {
             while (!cancel())
             {
-
                 var isConActive = fromStreams[streamI].tcpClient == null ? false : fromStreams[streamI].tcpClient.Connected;
                 if (!isConActive)
                 {
@@ -176,17 +163,17 @@ namespace NetSignal
                     var usingBytes = fromStates[streamI].tcpReadBytes;
                     Util.FlushBytes(usingBytes);
                     var bytesRead = await fromStreams[streamI].tcpStream.ReadAsync(usingBytes, 0, usingBytes.Length);
-                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) =>  report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes,
-                        new UdpReceiveResult(), 
-                        (int c, int h, int s) => {
+                    await SignalUpdaterUtil.WriteToIncomingSignals(signals, timeControl, (string s) => report("from " + streamI + " " + s), fromStates[streamI].tcpReadBytes,
+                        new UdpReceiveResult(),
+                        (int c, int h, int s) =>
+                        {
                             if (s == 0)
                             {
                                 if (c >= 0 && c < fromDatas.Length)
                                 {
-                                    report("tcp keepalive " 
+                                    report("tcp keepalive "
                                         + fromStreams[streamI].tcpClient.Client.RemoteEndPoint.ToString());
                                 }
-
                             }
                         }
                         , fromDatas[streamI]);
@@ -213,10 +200,7 @@ namespace NetSignal
                     ConnectionUpdater.TearDownTcpOfClient(fromStreams, fromStates, streamI);
                     Logging.Write("ReceiveSignalsReliablyFrom: tcp stream " + streamI + "  has been closed, (unfortunately) this is intended behaviour, stop receiving.");
                 }
-                
             }
         }
-
-        
     }
 }

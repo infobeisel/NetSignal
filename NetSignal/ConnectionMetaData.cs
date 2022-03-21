@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 
 namespace NetSignal
 {
@@ -7,7 +6,6 @@ namespace NetSignal
     [Serializable]
     public struct ConnectionMetaData
     {
-
         public string matchmakingServerIp;
         public int matchmakingServerPort;
         /*
@@ -19,12 +17,8 @@ namespace NetSignal
 
         public IPEndPoint toSendToServer;
         */
-        
 
         public string myIp;
         public int iListenToPort;
-
-        
-
     }
 }

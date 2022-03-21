@@ -5,5 +5,4 @@
         NormalMode = 0,
         UdpOverTcpReceiveMode = 1
     }
-   
 }

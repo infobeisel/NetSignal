@@ -18,8 +18,6 @@ namespace NetSignal
             }
             ret += "]";
             return ret;
-
         }
     }
-
 }

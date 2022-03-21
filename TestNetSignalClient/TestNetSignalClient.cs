@@ -1,17 +1,12 @@
 using NetSignal;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestNetSignalClient
 {
-    class TestNetSignalClient
+    internal class TestNetSignalClient
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-    
             int avWThreads; int avIOThreads;
             System.Threading.ThreadPool.GetMinThreads(out avWThreads, out avIOThreads);
 

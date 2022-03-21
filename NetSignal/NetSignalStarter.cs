@@ -1,24 +1,17 @@
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-
 namespace NetSignal
 {
-
     public partial class NetSignalStarter
     {
-        public async static Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
+        public static async Task<Tuple<ConnectionAPIs, ConnectionMetaData>> StartServer(bool shouldLog,
             ConnectionAPIs[] serverConnection, ConnectionMetaData[] serverData, ConnectionState[] serverState, Func<bool> cancel, ConnectionAPIs[] connections,
             ConnectionMetaData[] connectionDatas, ConnectionState[] connectionStates,
             OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
             OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, TimeControl timeControl)
         {
-
-            
-
             //serverData.listenPort = 3000;
             //serverData.serverIp = null;
             Logging.Write("StartServer: init multi connection");
@@ -36,21 +29,19 @@ namespace NetSignal
 
             ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel,
                 (string r) => { if (shouldLog) Logging.Write("server receive reliably: " + r); },
-                System.Linq.Enumerable.Range(0,connectionDatas.Length),
+                System.Linq.Enumerable.Range(0, connectionDatas.Length),
                 connections, connectionDatas, connectionStates);
-
-            
 
             Logging.Write("StartServer: start accept tcp connections");
             ConnectionUpdater.StartProcessTCPConnections(serverConnection[0], serverState[0], connections, connectionDatas, connectionStates, cancel, () => { });
 
             Logging.Write("StartServer: start sync signals");
-            
-            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl, 
-            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0,connections.Length));
-            
+
+            UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl,
+            (string r) => { if (shouldLog) Logging.Write("server send ur: " + r); }, cancel, connections, connectionDatas, connectionStates, System.Linq.Enumerable.Range(0, connections.Length));
+
             ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
-             (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0,connectionDatas.Length), connections, connectionDatas, connectionStates);
+             (string r) => { if (shouldLog) Logging.Write("server send r: " + r); }, System.Linq.Enumerable.Range(0, connectionDatas.Length), connections, connectionDatas, connectionStates);
 
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(serverConnection[0], cancel, serverState[0]);
             ConnectionUpdater.AwaitAndPerformTearDownTCPListenerAndUdpToClients(serverConnection[0], cancel, serverState[0], connections, connectionStates, connectionDatas);
@@ -67,19 +58,20 @@ namespace NetSignal
 
             _ = Task.Run(() =>
             {
-                SignalUpdaterUtil.SyncURIsToROsInCaseOfUdpOverTcpWorkaround(unreliableIncomingSignals , reliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
+                SignalUpdaterUtil.SyncURIsToROsInCaseOfUdpOverTcpWorkaround(unreliableIncomingSignals, reliableIncomingSignals, reliableOutgoingSignals, timeControl, cancel);
             });
 
-            MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0],ref serverData[0],ref serverState[0], cancel);
+            MatchmakingConnectionUpdater.InitializeMatchMakingClient(ref serverConnection[0], ref serverData[0], ref serverState[0], cancel);
             _ = Task.Run(() =>
             {
                 MatchmakingConnectionUpdater.PeriodicallySendKeepAlive(serverConnection[0], serverData[0], serverState[0], connectionStates, cancel, 5000,
                     (string r) => { if (shouldLog) Logging.Write("server keep alive: " + r); });
             });
 
-            if(!timeControl.HandleTimeManually)
+            if (!timeControl.HandleTimeManually)
             {
-                _ = Task.Run(async () => {
+                _ = Task.Run(async () =>
+                {
                     while (!cancel())
                     {
                         System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
@@ -93,22 +85,17 @@ namespace NetSignal
                         SignalUpdaterUtil.LogOutgoing(reliableOutgoingSignals[1], 1);
                         SignalUpdaterUtil.LogOutgoing(unreliableOutgoingSignals[1], 1);*/
                     }
-
                 });
             }
-            
 
             return new Tuple<ConnectionAPIs, ConnectionMetaData>(serverConnection[0], serverData[0]);
         }
 
-
         //please provide array with one element for server*
-        public async static Task<int> StartClient(int udpPort, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState,
+        public static async Task<int> StartClient(int udpPort, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState,
              ConnectionMetaData[] serverData,
             Func<bool> cancel)
         {
-
-
             int clientI = -1;
             try
             {
@@ -125,18 +112,18 @@ namespace NetSignal
                     storeToClientState[clientI] = connectionState;
                     storeToClientData[clientI] = returnTuple.Item2;
                 }
-
-            } catch (SocketException e)
+            }
+            catch (SocketException e)
             {
                 Logging.Write("couldnt establish connection: " + e.Message);
             }
             return clientI;
         }
-        public async static void StartClientSignalSyncing (int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState, 
+
+        public static async void StartClientSignalSyncing(int clientI, Func<bool> shouldReport, ConnectionAPIs[] storeToClientCon, ConnectionMetaData[] storeToClientData, ConnectionState[] storeToClientState,
             OutgoingSignal[][][] unreliableOutgoingSignals, IncomingSignal[][][] unreliableIncomingSignals,
             OutgoingSignal[][][] reliableOutgoingSignals, IncomingSignal[][][] reliableIncomingSignals, Func<bool> cancel, ConnectionMetaData[] serverData, TimeControl timeControl)
-        { 
-            
+        {
             Logging.Write("StartClient: start receive signals");
 
             _ = Task.Run(() =>
@@ -144,35 +131,35 @@ namespace NetSignal
                 UnreliableSignalUpdater.ReceiveSignals(clientI, storeToClientCon, storeToClientData, storeToClientState, unreliableIncomingSignals, timeControl, cancel,
                 (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " receive ur: " + r); });
             });
-                
+
             ReliableSignalUpdater.ReceiveSignalsReliablyFromAllAndTrackIsConnected(reliableIncomingSignals, timeControl, cancel,
-                (string s) => {
+                (string s) =>
+                {
                     if (shouldReport()) Logging.Write("client " + clientI + " receive r: " + s);
-                    },
-                new [] {clientI},
-                 storeToClientCon , storeToClientData , storeToClientState );
+                },
+                new[] { clientI },
+                 storeToClientCon, storeToClientData, storeToClientState);
 
             Logging.Write("StartClient: start sync signals to server");
 
             var replicatedServerDatas = new ConnectionMetaData[storeToClientCon.Length];
             for (int i = 0; i < replicatedServerDatas.Length; i++) replicatedServerDatas[i] = serverData[0];
             UnreliableSignalUpdater.SyncSignalsToAll(unreliableOutgoingSignals, timeControl,
-            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, storeToClientCon, replicatedServerDatas, storeToClientState, new int[] {clientI });
+            (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send ur: " + r); }, cancel, storeToClientCon, replicatedServerDatas, storeToClientState, new int[] { clientI });
 
             ReliableSignalUpdater.SyncSignalsToAllReliablyAndTrackIsConnected(reliableOutgoingSignals, timeControl, cancel,
                  (string r) => { if (shouldReport()) Logging.Write("client " + clientI + " send r: " + r); }, new[] { clientI },
                                storeToClientCon, storeToClientData, storeToClientState);
-  //storeToClientCon, storeToClientData, storeToClientState);
+            //storeToClientCon, storeToClientData, storeToClientState);
 
-            
-                _ = Task.Run(() =>
-                {
-                    unreliableOutgoingSignals[clientI][clientI][0].WriteInt((int)UdpKeepAliveInfo.NormalMode);
-                    ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals[clientI], unreliableOutgoingSignals[clientI], new[] { clientI }, cancel, timeControl);
-                });
             _ = Task.Run(() =>
             {
-                ConnectionUpdater.DetectUdpComNotWorking(clientI,  reliableIncomingSignals[clientI], unreliableIncomingSignals[clientI], cancel, timeControl,
+                unreliableOutgoingSignals[clientI][clientI][0].WriteInt((int)UdpKeepAliveInfo.NormalMode);
+                ConnectionUpdater.PeriodicallySendKeepAlive(reliableOutgoingSignals[clientI], unreliableOutgoingSignals[clientI], new[] { clientI }, cancel, timeControl);
+            });
+            _ = Task.Run(() =>
+            {
+                ConnectionUpdater.DetectUdpComNotWorking(clientI, reliableIncomingSignals[clientI], unreliableIncomingSignals[clientI], cancel, timeControl,
                     () =>
                     {
                         Logging.Write("shit, udp doesnt seem to work. Instead, receive those over tcp ");
@@ -181,32 +168,25 @@ namespace NetSignal
                         {
                             SignalUpdaterUtil.SyncTcpToUdpSignalsWorkaroundIncoming(reliableIncomingSignals, unreliableIncomingSignals, timeControl, cancel);
                         });
-
                     });
             });
-            
-            
 
-
-        if (!timeControl.HandleTimeManually)
+            if (!timeControl.HandleTimeManually)
             {
-            _ = Task.Run(async () => {
-                while (!cancel())
+                _ = Task.Run(async () =>
                 {
-                    System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
-                    //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
-                    System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
-                    //Logging.Write("timestep client " + clientI + " : " + DateTime.UtcNow.Ticks);
-                    await Task.Delay(timeControl.updateTimeStepMs);
-                }
-            });
+                    while (!cancel())
+                    {
+                        System.Threading.Interlocked.Exchange(ref timeControl.CurrentTimeTicks, DateTime.UtcNow.Ticks);
+                        //System.Threading.Interlocked.Exchange(ref timeControl.CurrentHistIndex, (timeControl.CurrentHistIndex + 1) % timeControl.historySize);
+                        System.Threading.Interlocked.Increment(ref timeControl.CurrentHistIndex);
+                        //Logging.Write("timestep client " + clientI + " : " + DateTime.UtcNow.Ticks);
+                        await Task.Delay(timeControl.updateTimeStepMs);
+                    }
+                });
             }
             ConnectionUpdater.AwaitAndPerformTearDownClientTCP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
             ConnectionUpdater.AwaitAndPerformTearDownClientUDP(storeToClientCon[clientI], cancel, storeToClientState[clientI]);
-            
         }
-
-
-
     }
 }

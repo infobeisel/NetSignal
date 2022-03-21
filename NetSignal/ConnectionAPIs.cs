@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 using System.Net.Http;
+using System.Net.Sockets;
 
 namespace NetSignal
 {
@@ -13,6 +13,6 @@ namespace NetSignal
         public TcpListener tcpListener;
 
         public HttpListener httpListener;
-        public  HttpClient httpClient;
+        public HttpClient httpClient;
     }
 }

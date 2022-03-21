@@ -19,10 +19,10 @@ namespace NetSignal
 
         public int httpListenerStateName;
 
-        public byte [] tcpWriteBytes;
-        public byte [] udpWriteBytes;
-        public byte [] tcpReadBytes;
-        public byte [] udpReadBytes;
+        public byte[] tcpWriteBytes;
+        public byte[] udpWriteBytes;
+        public byte[] tcpReadBytes;
+        public byte[] udpReadBytes;
 
         public bool shouldTearDown;
         public bool isConnectionActive;

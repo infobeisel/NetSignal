@@ -10,8 +10,8 @@ namespace NetSignal
 
         private TimeControl()
         {
-            
         }
+
         public TimeControl(bool shouldTimeBeHandledManually, long startWithTicks, int timeStepInMs, int sizeOfHistory)
         {
             HandleTimeManually = shouldTimeBeHandledManually;

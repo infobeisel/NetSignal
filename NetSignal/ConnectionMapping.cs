@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Net;
-
-namespace NetSignal
+﻿namespace NetSignal
 {
     /*public struct ConnectionMapping
     {

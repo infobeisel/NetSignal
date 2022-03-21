@@ -2,12 +2,11 @@ using System;
 
 namespace NetSignal
 {
-    
-
     [Serializable]
     public struct IncomingSignal
     {
         public DataPackage dataMember;
+
         public DataPackage data
         {
             internal set
@@ -23,7 +22,6 @@ namespace NetSignal
 
         public bool dataHasBeenUpdated;
         public DateTime cameIn;
-
 
         public override string ToString()
         {

@@ -1,19 +1,16 @@
-using System;
-
 namespace NetSignal
 {
     [System.Serializable]
     public struct OutgoingSignal
     {
         private DataPackage dataMember;//TODO WARNING?!
+
         public DataPackage data
         {
             set
             {
-
                 dataMember = value;
                 makeDirty();
-
             }
             internal get { return dataMember; }
         }
@@ -30,7 +27,6 @@ namespace NetSignal
             return "D: " + data + ", d: " + dataDirty;
         }
 
-
         public bool Equals(IncomingSignal incoming)
         {
             if (data.signalType != incoming.data.signalType)
@@ -43,38 +39,33 @@ namespace NetSignal
         }
 
         //convenience:
-        
+
         public void WriteFloat(float f)
         {
-            
             dataMember.WriteFloat(f);
             makeDirty();
         }
 
         public void WriteInt(int i)
         {
-
             dataMember.WriteInt(i);
             makeDirty();
         }
 
         public void WriteUdpAlive()
         {
-
             dataMember.WriteUdpAlive();
             makeDirty();
         }
 
         public void WriteTcpAlive()
         {
-
             dataMember.WriteTcpAlive();
             makeDirty();
         }
 
         public void WriteString(string str)
         {
-
             dataMember.WriteString(str);
             makeDirty();
         }
@@ -91,7 +82,6 @@ namespace NetSignal
                 toD.d3 = longBytes[3];
                 to0.data = toD;
 
-
                 toD = to1.dataMember;
                 toD.d0 = longBytes[4];
                 toD.d1 = longBytes[5];
@@ -100,7 +90,5 @@ namespace NetSignal
                 to1.data = toD;
             }
         }
-
-        
     }
 }

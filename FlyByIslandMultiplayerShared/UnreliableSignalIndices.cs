@@ -9,7 +9,5 @@ namespace NetSignal2Unity
         ROT_1 = 5,
         ROT_2 = 6,
         ROT_3 = 7;
-
-
     }
 }

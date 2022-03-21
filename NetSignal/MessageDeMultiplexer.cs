@@ -6,27 +6,30 @@ namespace NetSignal
     //contains the NetSignal protocol rules for identifying the right type of an incoming udp or tcp message
     public class MessageDeMultiplexer
     {
-        public async static Task Divide(byte [] message, Func<Task> handleDataSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal)
+        public static async Task Divide(byte[] message, Func<Task> handleDataSignal, Func<Task> handleTCPConnectionRequest, Func<Task> handleTCPAliveSignal)
         {
-            switch ((SignalType) message[0])
+            switch ((SignalType)message[0])
             {
                 case SignalType.TCPConnectionRequest: //tcp connection request
                     await handleTCPConnectionRequest();
                     break;
+
                 case SignalType.TCPAlive: //tcp alive signal
                     await handleTCPAliveSignal();
                     break;
+
                 case SignalType.Data:
                     await handleDataSignal();
                     break;
             }
         }
 
-        public async static Task MarkSignal(SignalType signalType, byte[] message, Func<Task> handleSignal)
+        public static async Task MarkSignal(SignalType signalType, byte[] message, Func<Task> handleSignal)
         {
             message[0] = (byte)signalType;
             await handleSignal();
         }
+
         /*
 
         public async static Task MarkFloatSignal(byte[] message, Func<Task> handleFloatSignal)
@@ -34,7 +37,6 @@ namespace NetSignal
             message[0] = (byte)SignalType.Float;
             await handleFloatSignal();
         }
-
 
         public async static Task MarkIntSignal(byte[] message, Func<Task> handleIntSignal)
         {

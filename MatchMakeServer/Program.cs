@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-
-using System.Runtime.InteropServices;
 using NetSignal;
+using System.Threading;
+
 namespace MatchMakeServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var teard = false;
             var con = new ConnectionAPIs();
@@ -18,7 +13,6 @@ namespace MatchMakeServer
             var s = new ConnectionState();
 
             d.matchmakingServerPort = int.Parse(args[0]);
-            
 
             MatchmakingConnectionUpdater.InitializeMatchMakingServer(ref con, ref d, ref s, () => teard);
 
